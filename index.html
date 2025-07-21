@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avaliação de Reunião</title>
+    <title>Analisador de Performance de CS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,18 +12,12 @@
             font-family: 'Inter', sans-serif;
             background-color: #f8f9fa;
         }
-        /* Custom Colors */
         .bg-primary { background-color: #002d72; }
         .text-primary { color: #002d72; }
         .border-primary { border-color: #002d72; }
         .ring-primary { --tw-ring-color: #002d72; }
-        
-        .bg-secondary-yellow { background-color: #ffe800; }
-        .text-secondary-yellow { color: #ffe800; }
-
         .bg-secondary-pink { background-color: #ff40b3; }
         .text-secondary-pink { color: #ff40b3; }
-
         .loader {
             border: 4px solid #e0e0e0;
             border-top: 4px solid #002d72;
@@ -70,21 +64,20 @@
                 </div>
 
                 <div>
-                    <label class="block text-lg font-medium text-gray-700 mb-2">Adicionar Ficheiros (.txt)</label>
+                    <label class="block text-lg font-medium text-gray-700 mb-2">Ou Adicionar Ficheiro (.txt)</label>
                     <div id="file-drop-zone" class="relative w-full p-8 text-center rounded-lg cursor-pointer">
-                        <input type="file" id="file-input" multiple accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <input type="file" id="file-input" accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                         <div class="flex flex-col items-center justify-center">
                             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V7a4 4 0 014-4h1.586A3 3 0 0112.586 3H13a3 3 0 013 3v1.586A3 3 0 0115.414 9H16a4 4 0 014 4v5a3 3 0 01-3 3H7z"></path></svg>
-                            <p class="mt-2 text-gray-600">Arraste seus ficheiros .txt aqui ou <span class="font-semibold text-primary">clique para selecionar</span></p>
+                            <p class="mt-2 text-gray-600">Arraste seu ficheiro .txt aqui ou <span class="font-semibold text-primary">clique para selecionar</span></p>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-500 mt-2"><b>Nota:</b> Apenas ficheiros <b>.txt</b> são suportados. Para outros formatos (PDF, DOCX), por favor copie o texto e cole no campo manual acima.</p>
                     <div id="file-list" class="mt-4 space-y-2"></div>
                 </div>
 
                 <div class="mt-8 text-center">
                     <button id="analyze-btn" class="bg-primary text-white font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-opacity transform focus:outline-none focus:ring-4 ring-primary disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
-                        Analisar Transcrições
+                        Analisar Transcrição
                     </button>
                 </div>
             </div>
@@ -118,12 +111,11 @@
                                 </div>
                             </div>
                             <div id="detailed-report" class="lg:col-span-1 space-y-4">
-                                <h3 class="text-xl font-semibold mb-4 text-center lg:text-left">Avaliação Detalhada</h3>
-                            </div>
+                                </div>
                         </div>
                         
                         <div id="highlight-section" class="mt-12 pt-8 border-t border-gray-200"></div>
-                        <div id="opportunities-section" class="mt-12 pt-8 border-t border-gray-200"></div>
+                        <div id="opportunities-section" class="mt-12 pt-8 border-t border-gray-200 hidden"></div>
                         <div id="profile-analysis-section" class="mt-12 pt-8 border-t border-gray-200"></div>
                         <div id="summary-section" class="mt-12 pt-8 border-t border-gray-200"></div>
                     </div>
@@ -132,12 +124,15 @@
         </main>
 
         <footer class="text-center mt-12 text-gray-500 text-sm">
-            <p>&copy; 2024 Avaliação de Reunião. Todos os direitos reservados.</p>
+            <p>&copy; 2024 Analisador de Performance. Criado com IA.</p>
         </footer>
     </div>
 
     <script>
-        const apiKey = "AIzaSyAH2RPUA6WLkg02xbgRlmLGwj_xa1IcyDA"; // API Key re-added to fix authentication error.
+        // ############### CONFIGURAÇÃO ###############
+        // ADICIONE A SUA CHAVE DE API DA GOOGLE AQUI
+        const apiKey = "SUA_CHAVE_API_AQUI"; 
+        // ##########################################
 
         const csNameInput = document.getElementById('cs-name-input');
         const transcriptInput = document.getElementById('transcript-input');
@@ -161,102 +156,80 @@
         const opportunitiesSection = document.getElementById('opportunities-section');
         
         let radarChartInstance = null;
-        let uploadedFiles = [];
+        let uploadedFile = null;
 
         csNameInput.addEventListener('input', checkAnalysisButtonState);
         transcriptInput.addEventListener('input', checkAnalysisButtonState);
         fileDropZone.addEventListener('click', () => fileInput.click());
         fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
         fileDropZone.addEventListener('dragleave', () => fileDropZone.classList.remove('dragover'));
-        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
-        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-        analyzeBtn.addEventListener('click', () => {
-             resultsSection.classList.remove('hidden');
-             setTimeout(() => {
-                 resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-             }, 100);
-             handleAnalysis();
-        });
+        fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        analyzeBtn.addEventListener('click', handleAnalysis);
 
         function checkAnalysisButtonState() {
             const hasText = transcriptInput.value.trim().length > 0;
-            const hasFiles = uploadedFiles.length > 0;
+            const hasFile = uploadedFile !== null;
             const hasCsName = csNameInput.value.trim().length > 0;
-            analyzeBtn.disabled = !(hasCsName && (hasText || hasFiles));
+            analyzeBtn.disabled = !(hasCsName && (hasText || hasFile));
         }
 
-        function handleFiles(files) {
-            const newFiles = Array.from(files).filter(file => file.type === 'text/plain' || file.name.endsWith('.txt'));
-            newFiles.forEach(newFile => {
-                if (!uploadedFiles.some(existingFile => existingFile.name === newFile.name)) {
-                    uploadedFiles.push(newFile);
-                }
-            });
+        function handleFile(file) {
+            if (!file || !file.name.endsWith('.txt')) {
+                alert('Por favor, selecione um ficheiro .txt');
+                return;
+            }
+            uploadedFile = file;
             renderFileList();
             checkAnalysisButtonState();
         }
 
         function renderFileList() {
             fileList.innerHTML = '';
-            if (uploadedFiles.length > 0) {
-                const list = document.createElement('ul');
-                list.className = 'list-disc list-inside text-gray-600';
-                uploadedFiles.forEach((file, index) => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'flex items-center justify-between text-sm';
-                    listItem.textContent = file.name;
-                    const removeBtn = document.createElement('button');
-                    removeBtn.textContent = '✖';
-                    removeBtn.className = 'ml-4 text-red-500 hover:text-red-700 font-bold';
-                    removeBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        uploadedFiles.splice(index, 1);
-                        renderFileList();
-                        checkAnalysisButtonState();
-                    };
-                    listItem.appendChild(removeBtn);
-                    list.appendChild(listItem);
-                });
-                fileList.appendChild(list);
+            if (uploadedFile) {
+                const listItem = document.createElement('div');
+                listItem.className = 'flex items-center justify-between text-sm bg-gray-100 p-2 rounded';
+                listItem.textContent = uploadedFile.name;
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '✖';
+                removeBtn.className = 'ml-4 text-red-500 hover:text-red-700 font-bold';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    uploadedFile = null;
+                    fileInput.value = ''; // Reset file input
+                    renderFileList();
+                    checkAnalysisButtonState();
+                };
+                listItem.appendChild(removeBtn);
+                fileList.appendChild(listItem);
             }
-        }
-
-        async function fetchWithRetry(url, options, retries = 3) {
-            let delay = 2000;
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.status !== 503) return response;
-                    loadingText.textContent = `Servidor sobrecarregado. A tentar novamente em ${delay / 1000}s... (${i + 1}/${retries})`;
-                } catch (error) {
-                    console.error(`Fetch attempt ${i + 1} failed:`, error);
-                }
-                await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2;
-            }
-            throw new Error(`O modelo continua sobrecarregado após ${retries} tentativas. Por favor, tente mais tarde.`);
         }
 
         async function handleAnalysis() {
+            if (apiKey === "SUA_CHAVE_API_AQUI") {
+                alert("Por favor, adicione sua chave de API da Google no código HTML.");
+                return;
+            }
+            
+            resultsSection.classList.remove('hidden');
             analysisResults.classList.add('hidden');
             errorMessage.classList.add('hidden');
             loadingSpinner.classList.remove('hidden');
-            loadingText.textContent = 'A analisar... Isto pode levar alguns segundos.';
+            window.scrollTo({ top: resultsSection.offsetTop, behavior: 'smooth' });
 
-            const manualTranscript = transcriptInput.value.trim();
+            let transcriptContent = transcriptInput.value.trim();
             const csName = csNameInput.value.trim();
 
-            const readPromises = uploadedFiles.map(file => file.text());
-
             try {
-                const fileTranscripts = await Promise.all(readPromises);
-                const allTranscripts = [manualTranscript, ...fileTranscripts].filter(Boolean);
-                const combinedTranscript = allTranscripts.join('\n\n---\n\n');
-
-                if (!combinedTranscript) {
-                    throw new Error("Nenhum conteúdo de transcrição foi fornecido. Verifique os ficheiros ou o texto colado.");
+                if (uploadedFile) {
+                    transcriptContent = await uploadedFile.text();
                 }
 
+                if (!transcriptContent) {
+                    throw new Error("Nenhum conteúdo de transcrição foi fornecido.");
+                }
+
+                // ### PROMPT ATUALIZADO E INTEGRADO ###
                 const evaluationPrompt = `
                     Você é um avaliador sênior de Customer Experience, especializado em produtos de software para contabilidade. A sua tarefa é analisar a performance do CS, cujo nome é "${csName}", com base na transcrição da reunião abaixo.
 
@@ -269,20 +242,29 @@
                         - NIBO EMISSOR: https://ajuda.nibo.com.br/pt-BR/?q=NIBO+EMISSOR
 
                     **INSTRUÇÕES DETALHADAS:**
+
                     1.  **Análise de Habilidades e Nota Geral:**
                         - Avalie o CS em CADA um dos 14 critérios listados. Atribua uma nota de 1 a 10.
                         - **Justificativa Específica:** Para cada critério, se a nota não for 10, explique especificamente o que faltou para a nota máxima.
-                        - **Problemas Técnicos:** Se ocorrer um problema técnico (ex: sistema lento, queda de conexão), não penalize a nota de "Domínio de Produto". Em vez disso, avalie como o CS lidou com a situação nos critérios "Postura" e "Flexibilidade".
+                        - **Regra sobre Problemas do Produto:** Se o problema discutido for uma falha real ou limitação do produto (e não um erro de conhecimento do CS), a nota de 'Domínio de Produto' não deve ser penalizada. Nesse caso, a sua análise deve focar em como o CS comunicou e gerenciou a situação nos critérios de 'Postura', 'Clareza' e 'Flexibilidade'. A nota de 'Domínio de Produto' só deve ser penalizada se houver uma solução ou método alternativo documentado (na Central de Ajuda) que o CS deveria conhecer, mas demonstrou desconhecer.
                         - **Foco em Encantamento:** A nota de 'Encantamento' deve considerar tanto a percepção de valor expressa pelo cliente (se o cliente diz que viu valor, a nota do CS pode ser 10) quanto o esforço do CS em demonstrar valor com exemplos práticos e personalizados para o dia a dia do cliente.
                         - **Verificação de Precisão:** Verifique se as explicações do CS sobre o produto estão corretas de acordo com a Central de Ajuda.
                         - **Calcular Nota Geral:** Calcule a média de todas as 14 notas para gerar uma "notaGeral".
+
                     2.  **REGRA ESPECIAL:** Se para um critério específico não houver evidências claras na transcrição para fazer uma avaliação (positiva ou negativa), **atribua a nota máxima (10)** e justifique brevemente mencionando a ausência de evidências.
+
                     3.  **Análise de Perfil do Contador:** Identifique o perfil comportamental do contador (ex: analítico, apressado, cético, colaborativo). Descreva como o CS lidou com esse perfil e, em seguida, ofereça sugestões sobre como o CS poderia ter adaptado melhor a sua comunicação ou abordagem.
+
                     4.  **Análise de Fala:** Sua tarefa é calcular a distribuição de fala. Analise a transcrição linha por linha. Atribua cada linha ao 'CS' (procurando por marcadores como 'CS:', o nome "${csName}:") ou ao 'Cliente'. Se uma linha não puder ser atribuída com certeza a nenhum dos dois, ignore-a na contagem. Some o total de palavras para todas as linhas atribuídas ao CS e ao Cliente. Calcule a percentagem de cada um em relação ao total de palavras contadas. Se for impossível distinguir os locutores, retorne os valores para "cs" e "client" como 0.
+
                     5.  **Alerta de Cancelamento:** Analise a transcrição em busca de sinais de insatisfação do cliente. Se um risco for detectado, defina "risk" como true e descreva o motivo. Caso contrário, defina "risk" como false.
+
                     6.  **Ponto Alto da Reunião:** Identifique e descreva o momento mais positivo da conversa.
+
                     7.  **Oportunidades de Venda:** Identifique oportunidades para os produtos adicionais (GF, COF, WHATSAPP, NIBO EMISSOR) **apenas se o cliente mencionar explicitamente uma dor, um problema ou uma necessidade direta** que um desses produtos resolve. Se nenhuma necessidade explícita for mencionada, retorne uma lista vazia.
+
                     8.  **Resumo e Plano de Ação:** Crie um resumo geral da performance. Em seguida, crie uma lista de 'Erros Específicos', detalhando o que o CS errou e o que deveria ter feito. Por fim, liste 'Sugestões de Melhoria' práticas.
+
                     9.  **Formato de Saída:** A sua resposta DEVE ser um único objeto JSON, com as chaves: "notaGeral", "evaluation", "speakingTime", "profileAnalysis", "summary", "cancellationAlert", "meetingHighlight", e "opportunities".
 
                     **CRITÉRIOS DE AVALIAÇÃO:**
@@ -290,30 +272,24 @@
 
                     **TRANSCRIÇÃO PARA ANÁLISE:**
                     ---
-                    ${combinedTranscript}
+                    ${transcriptContent}
                     ---
                 `;
 
-                const schema = {
-                    type: "OBJECT",
-                    properties: {
-                        "notaGeral": { "type": "NUMBER" },
-                        "evaluation": { type: "ARRAY", items: { type: "OBJECT", properties: { "criterio": { "type": "STRING" }, "nota": { "type": "NUMBER" }, "justificativa": { "type": "STRING" } }, required: ["criterio", "nota", "justificativa"] } },
-                        "speakingTime": { type: "OBJECT", properties: { "cs": { "type": "NUMBER" }, "client": { "type": "NUMBER" } }, required: ["cs", "client"] },
-                        "profileAnalysis": { type: "OBJECT", properties: { "profile": { "type": "STRING" }, "handling": { "type": "STRING" }, "suggestions": { "type": "STRING" } }, required: ["profile", "handling", "suggestions"] },
-                        "summary": { type: "OBJECT", properties: { "geral": { "type": "STRING" }, "specificErrors": { "type": "ARRAY", "items": { "type": "STRING" } }, "sugestoes": { "type": "ARRAY", items: { "type": "STRING" } } }, required: ["geral", "specificErrors", "sugestoes"] },
-                        "cancellationAlert": { type: "OBJECT", properties: { "risk": { "type": "BOOLEAN" }, "reason": { "type": "STRING" } }, required: ["risk", "reason"] },
-                        "meetingHighlight": { "type": "STRING" },
-                        "opportunities": { type: "ARRAY", items: { type: "OBJECT", properties: { "product": { "type": "STRING" }, "reason": { "type": "STRING" } }, required: ["product", "reason"] } }
-                    },
-                    required: ["notaGeral", "evaluation", "speakingTime", "profileAnalysis", "summary", "cancellationAlert", "meetingHighlight", "opportunities"]
+                const payload = {
+                    contents: [{
+                        parts: [{ text: evaluationPrompt }]
+                    }]
                 };
 
-                const payload = { contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema } };
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
                 
-                const response = await fetchWithRetry(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     const errorDetails = `Status: ${response.status}. Mensagem: ${errorData.error?.message || response.statusText}`;
@@ -323,16 +299,20 @@
                 const result = await response.json();
                 
                 if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
-                    const analysisData = JSON.parse(result.candidates[0].content.parts[0].text);
+                    // Limpar o texto para garantir que é um JSON válido
+                    const rawText = result.candidates[0].content.parts[0].text;
+                    const jsonText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const analysisData = JSON.parse(jsonText);
                     displayResults(analysisData);
                 } else {
-                    throw new Error("A resposta da API está malformada ou vazia.");
+                    console.error("Resposta inesperada da API:", result);
+                    throw new Error("A resposta da API está malformada ou vazia. Verifique o console para mais detalhes.");
                 }
 
             } catch (error) {
-                console.error("Erro ao analisar:", error);
+                console.error("Erro no processo de análise:", error);
                 loadingSpinner.classList.add('hidden');
-                errorMessage.textContent = `Ocorreu um erro na análise. ${error.message}. Por favor, verifique o conteúdo da transcrição e tente novamente.`;
+                errorMessage.textContent = `Ocorreu um erro: ${error.message}`;
                 errorMessage.classList.remove('hidden');
             }
         }
@@ -343,15 +323,16 @@
             displayGeneralScore(data.notaGeral);
             displayCancellationAlert(data.cancellationAlert);
             
-            data.evaluation.sort((a, b) => b.nota - a.nota);
+            const sortedEvaluation = [...data.evaluation].sort((a, b) => {
+                const criteriaOrder = ["Consultividade", "Escuta Ativa", "Jornada do Cliente", "Encantamento", "Objeções", "Rapport", "Autoridade", "Postura", "Gestão de Tempo", "Contextualização", "Clareza", "Flexibilidade", "Domínio de Produto", "Compreensão do Ecossistema"];
+                return criteriaOrder.indexOf(a.criterio) - criteriaOrder.indexOf(b.criterio);
+            });
 
             detailedReport.innerHTML = '<h3 class="text-xl font-semibold mb-4 text-center lg:text-left">Avaliação Detalhada</h3>';
-            data.evaluation.forEach(item => {
+            sortedEvaluation.forEach(item => {
                 const reportItem = document.createElement('div');
                 reportItem.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50';
-                
                 const scoreColor = item.nota >= 8 ? 'text-green-600' : item.nota >= 5 ? 'text-yellow-600' : 'text-red-600';
-
                 reportItem.innerHTML = `
                     <div class="flex justify-between items-center">
                         <h4 class="text-md font-semibold text-gray-800">${item.criterio}</h4>
@@ -364,14 +345,32 @@
                 `;
                 detailedReport.appendChild(reportItem);
             });
+            
+            const radarLabels = sortedEvaluation.map(item => item.criterio);
+            const radarScores = sortedEvaluation.map(item => item.nota);
 
-            const radarLabels = data.evaluation.map(item => item.criterio);
-            const radarScores = data.evaluation.map(item => item.nota);
             if (radarChartInstance) radarChartInstance.destroy();
             radarChartInstance = new Chart(radarChartCanvas, {
                 type: 'radar',
-                data: { labels: radarLabels, datasets: [{ label: 'Performance', data: radarScores, backgroundColor: 'rgba(0, 45, 114, 0.2)', borderColor: '#002d72', borderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, min: 0, max: 10, stepSize: 2 } }, plugins: { legend: { display: false } } }
+                data: {
+                    labels: radarLabels,
+                    datasets: [{
+                        label: 'Performance',
+                        data: radarScores,
+                        backgroundColor: 'rgba(0, 45, 114, 0.2)',
+                        borderColor: '#002d72',
+                        pointBackgroundColor: '#002d72',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#002d72'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { r: { beginAtZero: true, min: 0, max: 10, stepSize: 2 } },
+                    plugins: { legend: { display: false } }
+                }
             });
 
             displaySpeakingTime(data.speakingTime);
@@ -381,6 +380,8 @@
             displaySummary(data.summary);
             analysisResults.classList.remove('hidden');
         }
+        
+        // --- Funções de Display (Renderização dos Resultados) ---
 
         function displayGeneralScore(score) {
             if (score === null || isNaN(score)) return;
@@ -395,15 +396,12 @@
 
         function displayCancellationAlert(alertData) {
             cancellationAlertSection.innerHTML = '';
+            cancellationAlertSection.classList.add('hidden');
             if (alertData && alertData.risk) {
                 cancellationAlertSection.innerHTML = `
                     <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg" role="alert">
                         <div class="flex">
-                            <div class="py-1">
-                                <svg class="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm-1 15H9v-2h2v2zm0-4H9V5h2v6z"/>
-                                </svg>
-                            </div>
+                            <div class="py-1"><svg class="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm-1 15H9v-2h2v2zm0-4H9V5h2v6z"/></svg></div>
                             <div>
                                 <p class="font-bold">Alerta de Risco de Cancelamento!</p>
                                 <p class="text-sm">${alertData.reason}</p>
@@ -412,8 +410,6 @@
                     </div>
                 `;
                 cancellationAlertSection.classList.remove('hidden');
-            } else {
-                cancellationAlertSection.classList.add('hidden');
             }
         }
 
@@ -429,40 +425,39 @@
                         <span class="text-sm font-medium text-primary">${Math.round(cs)}%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div class="bg-primary h-4 rounded-full" style="width: ${Math.min(cs, 100)}%"></div>
+                        <div class="bg-primary h-4 rounded-full" style="width: ${Math.round(cs)}%"></div>
                     </div>
                 </div>
-                <div class="mt-3">
+                <div class="mt-4">
                     <div class="flex justify-between mb-1">
                         <span class="text-base font-medium text-secondary-pink">Cliente</span>
                         <span class="text-sm font-medium text-secondary-pink">${Math.round(client)}%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div class="bg-secondary-pink h-4 rounded-full" style="width: ${Math.min(client, 100)}%"></div>
+                        <div class="bg-secondary-pink h-4 rounded-full" style="width: ${Math.round(client)}%"></div>
                     </div>
                 </div>`;
         }
         
         function displayMeetingHighlight(highlight) {
+            highlightSection.innerHTML = '';
             if (!highlight) return;
             highlightSection.innerHTML = `
                 <h3 class="text-2xl font-bold text-center text-primary">Ponto Alto da Reunião</h3>
-                <div class="mt-6 bg-green-50/50 p-6 rounded-lg">
-                     <p class="text-gray-700">${highlight}</p>
+                <div class="mt-6 bg-green-50/50 p-6 rounded-lg text-center">
+                    <p class="text-gray-700 italic">"${highlight}"</p>
                 </div>
             `;
         }
 
         function displayOpportunities(opportunities) {
-            // This function will only display the section if the opportunities array is not empty.
-            if (!opportunities || opportunities.length === 0) {
-                opportunitiesSection.innerHTML = '';
-                opportunitiesSection.classList.add('hidden');
-                return;
-            };
+            opportunitiesSection.innerHTML = '';
+            opportunitiesSection.classList.add('hidden');
+            if (!opportunities || opportunities.length === 0) return;
+            
             const opportunitiesList = opportunities.map(op => `
-                <div class="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                    <h4 class="text-md font-semibold text-gray-800">${op.product}</h4>
+                <div class="p-4 border border-blue-200 rounded-lg bg-blue-50/50">
+                    <h4 class="text-md font-semibold text-primary">${op.product}</h4>
                     <p class="text-gray-600 mt-2 pl-1 text-sm">${op.reason}</p>
                 </div>
             `).join('');
@@ -478,9 +473,7 @@
             profileAnalysisSection.innerHTML = `
                 <h3 class="text-2xl font-bold text-center text-primary">Análise de Perfil do Contador</h3>
                 <div class="mt-6 bg-yellow-50/60 p-6 rounded-lg">
-                    <h4 class="text-lg font-semibold mb-2 text-primary">Perfil Identificado</h4>
-                    <p class="text-gray-700">${profileData.profile}</p>
-                    <h4 class="text-lg font-semibold mt-6 mb-2 text-primary">Como o CS Lidou</h4>
+                    <h4 class="text-lg font-semibold mb-2 text-primary">Perfil Identificado: <span class="font-bold">${profileData.profile}</span></h4>
                     <p class="text-gray-700">${profileData.handling}</p>
                     <h4 class="text-lg font-semibold mt-6 mb-2 text-primary">Sugestões de Abordagem</h4>
                     <p class="text-gray-700">${profileData.suggestions}</p>
@@ -499,10 +492,10 @@
                     <h4 class="text-lg font-semibold mb-2 text-primary">Resumo da Performance</h4>
                     <p class="text-gray-700">${summaryData.geral}</p>
                     
-                    <h4 class="text-lg font-semibold mt-6 mb-3 text-primary">Erros Específicos</h4>
-                    <ul class="space-y-2 text-gray-700">${errorsList}</ul>
+                    <h4 class="text-lg font-semibold mt-6 mb-3 text-red-700">Pontos a Corrigir</h4>
+                    <ul class="space-y-2 text-gray-700">${errorsList || '<li>Nenhum erro específico identificado.</li>'}</ul>
 
-                    <h4 class="text-lg font-semibold mt-6 mb-3 text-primary">Sugestões de Melhoria</h4>
+                    <h4 class="text-lg font-semibold mt-6 mb-3 text-green-700">Próximos Passos e Melhorias</h4>
                     <ul class="space-y-2 text-gray-700">${suggestionsList}</ul>
                 </div>
             `;
