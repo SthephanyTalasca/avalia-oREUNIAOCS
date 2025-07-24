@@ -258,36 +258,42 @@
                 }
 
                 const evaluationPrompt = `
-                    Você é um avaliador sênior de Customer Experience, extremamente crítico e detalhista. Sua tarefa é analisar a performance do CS, "${csName}", com base na transcrição da reunião.
+                    Você é um avaliador de Customer Experience com a reputação de ser o mais rigoroso e implacável do mercado. Sua missão é encontrar falhas. A performance do CS, "${csName}", deve ser perfeita para receber uma nota boa.
+
+                    **FILOSOFIA DE AVALIAÇÃO (MANDATÓRIA E IMPLACÁVEL):**
+                    1.  **REGRA DE OURO: AUSÊNCIA DE EVIDÊNCIA É EVIDÊNCIA DE FALHA.** Para QUALQUER critério (exceto 'Objeções'), se você não encontrar uma **evidência explícita e inquestionável** da habilidade sendo aplicada na transcrição, você **DEVE** atribuir a **nota 3 (Fraco)**. A competência precisa ser ativamente demonstrada. Não há pontos por "não ter errado".
+                    2.  **PONTO DE PARTIDA: NOTA 3.** Inicie a avaliação de cada critério com a nota 3. Você só pode aumentar a nota se encontrar momentos em que o CS **superou as expectativas**, não apenas cumpriu o básico. Um bom desempenho reativo a uma pergunta do cliente é, no máximo, nota 6-7.
+                    3.  **EXCELÊNCIA (9-10) É QUASE INATINGÍVEL:** Reserve notas 9 ou 10 apenas para situações em que o CS demonstrou maestria proativa, antecipou uma necessidade complexa não declarada pelo cliente, e transformou a trajetória da conversa de forma estratégica e brilhante.
 
                     **INSTRUÇÕES GERAIS E REGRAS:**
-                    1.  **Análise Detalhada:** Avalie o CS em CADA um dos 17 critérios abaixo.
-                    2.  **Cálculo da Nota Geral:** Calcule a média de todas as notas dos critérios. Se a nota de 'Objeções' for -1, exclua este critério do cálculo.
-                    3.  **REGRA PARA OBJEÇÕES:** Se a transcrição **não contiver nenhuma objeção**, dúvida significativa ou hesitação do cliente, a habilidade não pode ser avaliada. Neste caso, para o critério 'Objeções', **atribua a nota -1** e justifique que 'Nenhuma objeção foi apresentada para avaliação'.
-                    4.  **REGRA PARA CRITÉRIOS SUBJETIVOS (Rapport, Encantamento):** Se não houver evidência clara de uma ação proativa do CS para criar conexão ou gerar valor, **atribua a nota 6 (Razoável)**.
-                    5.  **PLANO DE AÇÃO OBRIGATÓRIO:** Analise criticamente. Para o campo "specificErrors", você **DEVE** identificar pelo menos 1 ou 2 pontos fracos ou oportunidades perdidas, mesmo que a reunião seja boa. Para "sugestoes", você **DEVE** fornecer pelo menos 2 sugestões práticas e acionáveis para corrigir esses pontos. Não deixe esses campos vazios.
-                    6.  **Formato de Saída:** A resposta DEVE ser um único objeto JSON.
+                    1.  **Análise Implacável:** Avalie CADA um dos 17 critérios sob a ótica da filosofia acima.
+                    2.  **Cálculo da Nota Geral:** Calcule a média de todas as notas dos critérios. Se a nota de 'Objeções' for -1, ela DEVE ser excluída do cálculo.
+                    3.  **REGRA EXCLUSIVA PARA OBJEÇÕES:** Se a transcrição **não contiver nenhuma objeção**, dúvida significativa ou hesitação do cliente, a habilidade não pode ser avaliada. Apenas neste caso, para o critério 'Objeções', **atribua a nota -1** e justifique que 'Nenhuma objeção foi apresentada para avaliação'.
+                    4.  **PLANO DE AÇÃO CRÍTICO E OBRIGATÓRIO:**
+                        * **specificErrors:** **DEVE** identificar pelo menos 2-3 pontos fracos, erros ou oportunidades perdidas. Seja específico, citando o que deveria ter sido feito.
+                        * **sugestoes:** **DEVE** fornecer pelo menos 2-3 sugestões práticas e acionáveis, diretamente ligadas aos erros.
+                    5.  **Formato de Saída:** A resposta DEVE ser um único objeto JSON puro.
 
                     ---
-                    **CRITÉRIOS DE AVALIAÇÃO DETALHADOS:**
-                    **Escala de Notas:** 9–10: Excelente; 7–8: Muito bom; 5–6: Razoável; 3–4: Fraco; 1–2: Insuficiente.
-                    1. Consultividade: Atuou como parceiro estratégico?
-                    2. Escuta Ativa: Ouviu com atenção genuína?
-                    3. Jornada do Cliente: Esclareceu fase atual e próximos passos?
-                    4. Encantamento: Esforço para gerar valor e surpreender?
-                    5. Objeções: Capacidade de contornar objeções? (Lembre-se da regra da nota -1).
-                    6. Rapport: Grau de conexão humana?
-                    7. Autoridade: Segurança e ritmo de condução?
-                    8. Postura: Profissionalismo e maturidade?
-                    9. Gestão de Tempo: Cumpriu objetivos no tempo?
-                    10. Contextualização: Uso de exemplos práticos?
-                    11. Clareza: Simplicidade na comunicação?
-                    12. Objetividade: Assertividade nas respostas?
-                    13. Flexibilidade: Adaptação ao roteiro?
-                    14. Domínio de Produto: Conhecimento da ferramenta?
-                    15. Alinhamento ao Modelo de Negócio: Entendimento do segmento do cliente?
-                    16. Ecossistema Nibo: Domínio do portfólio completo?
-                    17. Universo da Contabilidade: Familiaridade com termos contábeis?
+                    **CRITÉRIOS DE AVALIAÇÃO (Padrão de Falha: Nota 3):**
+                    **Escala de Notas:** 9–10: Maestria Rara; 7–8: Muito Bom/Proativo; 5–6: Razoável/Reativo; 3–4: Fraco/Passivo; 1–2: Insuficiente/Prejudicial.
+                    1. Consultividade: Atuou como parceiro estratégico ou apenas como um suporte avançado?
+                    2. Escuta Ativa: Captou o que estava implícito ou só ouviu o que foi dito?
+                    3. Jornada do Cliente: Deixou o cliente 100% seguro sobre o agora e o depois?
+                    4. Encantamento: Surpreendeu positivamente com insights ou apenas seguiu o script?
+                    5. Objeções: Desarmou a objeção ou apenas respondeu? (Lembre-se da regra da nota -1).
+                    6. Rapport: Criou uma conexão genuína ou foi apenas cordial?
+                    7. Autoridade: Conduziu a reunião com maestria ou foi conduzido pelo cliente?
+                    8. Postura: Demonstrou senioridade e calma sob pressão?
+                    9. Gestão de Tempo: Otimizou o tempo ou apenas correu para terminar?
+                    10. Contextualização: Usou exemplos que ressoaram com a realidade do cliente?
+                    11. Clareza: A comunicação foi impecavelmente simples e direta?
+                    12. Objetividade: Foi direto ao ponto sem rodeios desnecessários?
+                    13. Flexibilidade: Adaptou-se ao fluxo da conversa ou forçou o roteiro?
+                    14. Domínio de Produto: Demonstrou conhecimento profundo ou apenas superficial?
+                    15. Alinhamento ao Modelo de Negócio: Entendeu as dores do negócio do cliente?
+                    16. Ecossistema Nibo: Apresentou soluções integradas proativamente?
+                    17. Universo da Contabilidade: Falou a língua do contador com fluidez?
                     ---
                     **TRANSCRIÇÃO PARA ANÁLISE:**
                     ---
