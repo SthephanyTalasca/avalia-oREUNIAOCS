@@ -258,35 +258,67 @@
                 }
 
                 const evaluationPrompt = `
-                    Você é um avaliador sênior de Customer Experience, especializado em produtos de software para contabilidade. A sua tarefa é analisar a performance do CS, cujo nome é "${csName}", com base na transcrição da reunião abaixo.
+                    Você é um avaliador sênior de Customer Experience. Sua tarefa é analisar a performance do CS, "${csName}", com base na transcrição da reunião.
 
                     **FONTES DE CONHECIMENTO:**
-                    - **Principal:** Use o conteúdo geral da Central de Ajuda da Nibo como a fonte primária da verdade: https://ajuda.nibo.com.br/pt-BR/
-                    - **Produtos Adicionais para Oportunidades:**
-                        - GF: https://ajuda.nibo.com.br/pt-BR/?q=GF
-                        - COF: https://ajuda.nibo.com.br/pt-BR/?q=CONCILIADOR
-                        - WHATSAPP: https://ajuda.nibo.com.br/pt-BR/?q=WHATSAPP
-                        - NIBO EMISSOR: https://ajuda.nibo.com.br/pt-BR/?q=NIBO+EMISSOR
+                    - As Armas da Persuasão, Como Fazer Amigos e Influenciar Pessoas, Manual de Persuasão do FBI, Como Chegar ao Sim.
 
-                    **INSTRUÇÕES DETALHADAS:**
-                    1.  **Análise de Habilidades e Nota Geral:**
-                        - Avalie o CS em CADA um dos 14 critérios listados. Atribua uma nota de 1 a 10.
-                        - **Justificativa Específica:** Para cada critério, se a nota não for 10, explique especificamente o que faltou para a nota máxima.
-                        - **Problemas Técnicos:** Se ocorrer um problema técnico (ex: sistema lento, queda de conexão), não penalize a nota de "Domínio de Produto". Em vez disso, avalie como o CS lidou com a situação nos critérios "Postura" e "Flexibilidade".
-                        - **Foco em Encantamento:** A nota de 'Encantamento' deve considerar tanto a percepção de valor expressa pelo cliente (se o cliente diz que viu valor, a nota do CS pode ser 10) quanto o esforço do CS em demonstrar valor com exemplos práticos e personalizados para o dia a dia do cliente.
-                        - **Verificação de Precisão:** Verifique se as explicações do CS sobre o produto estão corretas de acordo com a Central de Ajuda.
-                        - **Calcular Nota Geral:** Calcule a média de todas as 14 notas para gerar uma "notaGeral".
-                    2.  **REGRA ESPECIAL:** Se para um critério específico não houver evidências claras na transcrição para fazer uma avaliação (positiva ou negativa), **atribua a nota máxima (10)** e justifique brevemente mencionando a ausência de evidências.
-                    3.  **Análise de Perfil do Contador:** Identifique o perfil comportamental do contador (ex: analítico, apressado, cético, colaborativo). Descreva como o CS lidou com esse perfil e, em seguida, ofereça sugestões sobre como o CS poderia ter adaptado melhor a sua comunicação ou abordagem.
-                    4.  **Análise de Fala:** Sua tarefa é calcular a distribuição de fala. Analise a transcrição linha por linha. Atribua cada linha ao 'CS' (procurando por marcadores como 'CS:', o nome "${csName}:") ou ao 'Cliente'. Se uma linha não puder ser atribuída com certeza a nenhum dos dois, ignore-a na contagem. Some o total de palavras para todas as linhas atribuídas ao CS e ao Cliente. Calcule a percentagem de cada um em relação ao total de palavras contadas. Se for impossível distinguir os locutores, retorne os valores para "cs" e "client" como 0.
-                    5.  **Alerta de Cancelamento:** Analise a transcrição em busca de sinais de insatisfação do cliente. Se um risco for detectado, defina "risk" como true e descreva o motivo. Caso contrário, defina "risk" como false.
-                    6.  **Ponto Alto da Reunião:** Identifique e descreva o momento mais positivo da conversa.
-                    7.  **Oportunidades de Venda:** Identifique oportunidades para os produtos adicionais (GF, COF, WHATSAPP, NIBO EMISSOR) **apenas se o cliente mencionar explicitamente uma dor, um problema ou uma necessidade direta** que um desses produtos resolve. Se nenhuma necessidade explícita for mencionada, retorne uma lista vazia.
-                    8.  **Resumo e Plano de Ação:** Crie um resumo geral da performance. Em seguida, crie uma lista de 'Erros Específicos', detalhando o que o CS errou e o que deveria ter feito. Por fim, liste 'Sugestões de Melhoria' práticas.
-                    9.  **Formato de Saída:** A sua resposta DEVE ser um único objeto JSON, com as chaves: "notaGeral", "evaluation", "speakingTime", "profileAnalysis", "summary", "cancellationAlert", "meetingHighlight", e "opportunities".
+                    **INSTRUÇÕES GERAIS E REGRAS:**
+                    1.  **Análise Detalhada:** Avalie o CS em CADA um dos 17 critérios abaixo, fornecendo **Nota (1–10)** e **Justificativa (1–2 frases)**.
+                    2.  **Cálculo da Nota Geral:** Calcule a média de todas as notas dos critérios. **Exceção importante:** se a nota de 'Objeções' for -1, exclua este critério do cálculo da média.
+                    3.  **REGRA PARA OBJEÇÕES:** Se a transcrição **não contiver nenhuma objeção**, dúvida significativa ou hesitação do cliente, a habilidade não pode ser avaliada. Neste caso, para o critério 'Objeções', **atribua a nota -1** e justifique que 'Nenhuma objeção foi apresentada para avaliação'.
+                    4.  **REGRA PARA CRITÉRIOS SUBJETIVOS (Rapport, Encantamento):** Se não houver evidência positiva ou negativa na transcrição, considere a postura como passiva e **atribua a nota 6 (Razoável)**, justificando a ausência de uma ação proativa do CS.
+                    5.  **Formato de Saída:** A resposta DEVE ser um único objeto JSON.
 
-                    **CRITÉRIOS DE AVALIAÇÃO:**
-                    (Consultividade, Escuta Ativa, Jornada do Cliente, Encantamento, Objeções, Rapport, Autoridade, Postura, Gestão de Tempo, Contextualização, Clareza, Flexibilidade, Domínio de Produto, Compreensão do Ecossistema)
+                    ---
+                    **CRITÉRIOS DE AVALIAÇÃO DETALHADOS:**
+
+                    **Escala de Notas:**
+                    - 9–10: Excelente; 7–8: Muito bom; 5–6: Razoável; 3–4: Fraco; 1–2: Insuficiente.
+
+                    **Critério 1: Consultividade**
+                    - *Avalie (1–10) se o CS atuou como parceiro estratégico.*
+                    - 9–10: Postura plenamente consultiva, soluções muito alinhadas ao negócio, antecipação de oportunidades e riscos.
+                    - 1–2: Postura passiva ou puramente técnica.
+
+                    **Critério 2: Escuta Ativa**
+                    - *Avalie (1–10) se o CS ouviu com atenção genuína.*
+                    - 9–10: Captou nuances, validou sentimentos e ajustou abordagem com empatia.
+                    - 1–2: Desatenção ou comportamento robótico.
+
+                    **Critério 3: Jornada do Cliente**
+                    - *Avalie (1–10) se o CS esclareceu a fase atual e próximos passos.*
+                    - 9–10: Explicou claramente fases, responsabilidades e prazos, checando entendimento.
+                    - 1–2: Não deixou claro em que estágio está e o que vem a seguir.
+
+                    **Critério 4: Encantamento**
+                    - *Avalie (1–10) o esforço para gerar valor e surpreender.*
+                    - 9–10: Demonstração entusiasmada, personalizada e impactante.
+                    - 1–2: Total ausência de encantamento; foco apenas em funcionalidades.
+
+                    **Critério 5: Objeções**
+                    - *Avalie (1–10) a capacidade de antecipar e contornar objeções.*
+                    - 9–10: Antecipou dúvidas, respondeu com segurança, revertendo objeções em oportunidades.
+                    - 1–2: Ignorou ou não conseguiu contornar objeções.
+                    - (Lembre-se da regra da nota -1 se não houver objeções).
+
+                    **Critério 6: Rapport**
+                    - *Avalie (1–10) o grau de conexão humana.*
+                    - 9–10: Ambiente leve e acolhedor, interações espontâneas.
+                    - 1–2: Relação fria e impessoal.
+
+                    **Critério 7: Autoridade** - (1–10) Segurança e ritmo de condução.
+                    **Critério 8: Postura** - (1–10) Profissionalismo e maturidade.
+                    **Critério 9: Gestão de Tempo** - (1–10) Cumpriu objetivos no tempo previsto.
+                    **Critério 10: Contextualização** - (1–10) Uso de exemplos práticos.
+                    **Critério 11: Clareza** - (1–10) Simplicidade na comunicação.
+                    **Critério 12: Objetividade** - (1–10) Assertividade e foco nas respostas.
+                    **Critério 13: Flexibilidade** - (1–10) Adaptação do roteiro ao cliente.
+                    **Critério 14: Domínio de Produto** - (1–10) Conhecimento profundo da ferramenta.
+                    **Critério 15: Alinhamento ao Modelo de Negócio** - (1–10) Entendimento do segmento do cliente.
+                    **Critério 16: Ecossistema Nibo** - (1–10) Domínio do portfólio completo.
+                    **Critério 17: Universo da Contabilidade** - (1–10) Familiaridade com processos e termos contábeis.
+                    ---
 
                     **TRANSCRIÇÃO PARA ANÁLISE:**
                     ---
@@ -310,7 +342,7 @@
                 };
 
                 const payload = { contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema } };
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
                 
                 const response = await fetchWithRetry(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 
@@ -343,170 +375,4 @@
             displayGeneralScore(data.notaGeral);
             displayCancellationAlert(data.cancellationAlert);
             
-            data.evaluation.sort((a, b) => b.nota - a.nota);
-
-            detailedReport.innerHTML = '<h3 class="text-xl font-semibold mb-4 text-center lg:text-left">Avaliação Detalhada</h3>';
-            data.evaluation.forEach(item => {
-                const reportItem = document.createElement('div');
-                reportItem.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50';
-                
-                const scoreColor = item.nota >= 8 ? 'text-green-600' : item.nota >= 5 ? 'text-yellow-600' : 'text-red-600';
-
-                reportItem.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <h4 class="text-md font-semibold text-gray-800">${item.criterio}</h4>
-                        <div class="text-right">
-                            <span class="font-bold text-lg ${scoreColor}">${item.nota.toFixed(1)}</span>
-                            <span class="text-sm text-gray-500">/ 10</span>
-                        </div>
-                    </div>
-                    <p class="text-gray-600 mt-2 pl-1 text-sm">${item.justificativa}</p>
-                `;
-                detailedReport.appendChild(reportItem);
-            });
-
-            const radarLabels = data.evaluation.map(item => item.criterio);
-            const radarScores = data.evaluation.map(item => item.nota);
-            if (radarChartInstance) radarChartInstance.destroy();
-            radarChartInstance = new Chart(radarChartCanvas, {
-                type: 'radar',
-                data: { labels: radarLabels, datasets: [{ label: 'Performance', data: radarScores, backgroundColor: 'rgba(0, 45, 114, 0.2)', borderColor: '#002d72', borderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, min: 0, max: 10, stepSize: 2 } }, plugins: { legend: { display: false } } }
-            });
-
-            displaySpeakingTime(data.speakingTime);
-            displayMeetingHighlight(data.meetingHighlight);
-            displayOpportunities(data.opportunities);
-            displayProfileAnalysis(data.profileAnalysis);
-            displaySummary(data.summary);
-            analysisResults.classList.remove('hidden');
-        }
-
-        function displayGeneralScore(score) {
-            if (score === null || isNaN(score)) return;
-            const scoreColor = score >= 8 ? 'text-green-600' : score >= 5 ? 'text-yellow-600' : 'text-red-600';
-            generalScoreSection.innerHTML = `
-                <div class="text-center bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-xl font-semibold text-primary">Nota Geral da Reunião</h3>
-                    <p class="text-5xl font-bold ${scoreColor} mt-2">${score.toFixed(1)}</p>
-                </div>
-            `;
-        }
-
-        function displayCancellationAlert(alertData) {
-            cancellationAlertSection.innerHTML = '';
-            if (alertData && alertData.risk) {
-                cancellationAlertSection.innerHTML = `
-                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg" role="alert">
-                        <div class="flex">
-                            <div class="py-1">
-                                <svg class="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm-1 15H9v-2h2v2zm0-4H9V5h2v6z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="font-bold">Alerta de Risco de Cancelamento!</p>
-                                <p class="text-sm">${alertData.reason}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                cancellationAlertSection.classList.remove('hidden');
-            } else {
-                cancellationAlertSection.classList.add('hidden');
-            }
-        }
-
-        function displaySpeakingTime({ cs, client }) {
-            if (isNaN(cs) || isNaN(client) || (cs === 0 && client === 0)) {
-                speakingTimeAnalysis.innerHTML = `<p class="text-center text-gray-500 text-sm">Não foi possível analisar a distribuição de fala. Verifique a formatação da transcrição.</p>`;
-                return;
-            }
-            speakingTimeAnalysis.innerHTML = `
-                <div class="space-y-3">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-base font-medium text-primary">CS</span>
-                        <span class="text-sm font-medium text-primary">${Math.round(cs)}%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div class="bg-primary h-4 rounded-full" style="width: ${Math.min(cs, 100)}%"></div>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-base font-medium text-secondary-pink">Cliente</span>
-                        <span class="text-sm font-medium text-secondary-pink">${Math.round(client)}%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div class="bg-secondary-pink h-4 rounded-full" style="width: ${Math.min(client, 100)}%"></div>
-                    </div>
-                </div>`;
-        }
-        
-        function displayMeetingHighlight(highlight) {
-            if (!highlight) return;
-            highlightSection.innerHTML = `
-                <h3 class="text-2xl font-bold text-center text-primary">Ponto Alto da Reunião</h3>
-                <div class="mt-6 bg-green-50/50 p-6 rounded-lg">
-                     <p class="text-gray-700">${highlight}</p>
-                </div>
-            `;
-        }
-
-        function displayOpportunities(opportunities) {
-            // This function will only display the section if the opportunities array is not empty.
-            if (!opportunities || opportunities.length === 0) {
-                opportunitiesSection.innerHTML = '';
-                opportunitiesSection.classList.add('hidden');
-                return;
-            };
-            const opportunitiesList = opportunities.map(op => `
-                <div class="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                    <h4 class="text-md font-semibold text-gray-800">${op.product}</h4>
-                    <p class="text-gray-600 mt-2 pl-1 text-sm">${op.reason}</p>
-                </div>
-            `).join('');
-
-            opportunitiesSection.innerHTML = `
-                <h3 class="text-2xl font-bold text-center text-primary">Oportunidades Identificadas</h3>
-                <div class="mt-6 space-y-4">${opportunitiesList}</div>
-            `;
-            opportunitiesSection.classList.remove('hidden');
-        }
-
-        function displayProfileAnalysis(profileData) {
-            profileAnalysisSection.innerHTML = `
-                <h3 class="text-2xl font-bold text-center text-primary">Análise de Perfil do Contador</h3>
-                <div class="mt-6 bg-yellow-50/60 p-6 rounded-lg">
-                    <h4 class="text-lg font-semibold mb-2 text-primary">Perfil Identificado</h4>
-                    <p class="text-gray-700">${profileData.profile}</p>
-                    <h4 class="text-lg font-semibold mt-6 mb-2 text-primary">Como o CS Lidou</h4>
-                    <p class="text-gray-700">${profileData.handling}</p>
-                    <h4 class="text-lg font-semibold mt-6 mb-2 text-primary">Sugestões de Abordagem</h4>
-                    <p class="text-gray-700">${profileData.suggestions}</p>
-                </div>
-            `;
-        }
-
-        function displaySummary(summaryData) {
-            const csName = csNameInput.value.trim();
-            const errorsList = summaryData.specificErrors.map(e => `<li class="flex items-start"><span class="text-red-500 mr-2 mt-1">&#10007;</span><span>${e}</span></li>`).join('');
-            const suggestionsList = summaryData.sugestoes.map(s => `<li class="flex items-start"><span class="text-primary mr-2 mt-1">&#10003;</span><span>${s}</span></li>`).join('');
-            
-            summarySection.innerHTML = `
-                <h3 class="text-2xl font-bold text-center text-primary">Plano de Ação para <span class="text-secondary-pink">${csName}</span></h3>
-                <div class="mt-6 bg-blue-50/50 p-6 rounded-lg">
-                    <h4 class="text-lg font-semibold mb-2 text-primary">Resumo da Performance</h4>
-                    <p class="text-gray-700">${summaryData.geral}</p>
-                    
-                    <h4 class="text-lg font-semibold mt-6 mb-3 text-primary">Erros Específicos</h4>
-                    <ul class="space-y-2 text-gray-700">${errorsList}</ul>
-
-                    <h4 class="text-lg font-semibold mt-6 mb-3 text-primary">Sugestões de Melhoria</h4>
-                    <ul class="space-y-2 text-gray-700">${suggestionsList}</ul>
-                </div>
-            `;
-        }
-    </script>
-</body>
-</html>
+            const criteriaOrder = ["Consultividade", "Escuta Ativa", "Jornada do Cliente", "Encantamento", "Objeções", "Rapport",
