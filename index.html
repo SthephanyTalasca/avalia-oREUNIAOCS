@@ -258,42 +258,47 @@
                 }
 
                 const evaluationPrompt = `
-                    Você é um avaliador de Customer Experience com a reputação de ser o mais rigoroso e implacável do mercado. Sua missão é encontrar falhas. A performance do CS, "${csName}", deve ser perfeita para receber uma nota boa.
+                    Você é o avaliador de Customer Experience mais exigente e detalhista que existe. Sua única missão é julgar a performance do CS, "${csName}", com base em uma escala de avaliação extremamente rigorosa.
 
-                    **FILOSOFIA DE AVALIAÇÃO (MANDATÓRIA E IMPLACÁVEL):**
-                    1.  **REGRA DE OURO: AUSÊNCIA DE EVIDÊNCIA É EVIDÊNCIA DE FALHA.** Para QUALQUER critério (exceto 'Objeções'), se você não encontrar uma **evidência explícita e inquestionável** da habilidade sendo aplicada na transcrição, você **DEVE** atribuir a **nota 3 (Fraco)**. A competência precisa ser ativamente demonstrada. Não há pontos por "não ter errado".
-                    2.  **PONTO DE PARTIDA: NOTA 3.** Inicie a avaliação de cada critério com a nota 3. Você só pode aumentar a nota se encontrar momentos em que o CS **superou as expectativas**, não apenas cumpriu o básico. Um bom desempenho reativo a uma pergunta do cliente é, no máximo, nota 6-7.
-                    3.  **EXCELÊNCIA (9-10) É QUASE INATINGÍVEL:** Reserve notas 9 ou 10 apenas para situações em que o CS demonstrou maestria proativa, antecipou uma necessidade complexa não declarada pelo cliente, e transformou a trajetória da conversa de forma estratégica e brilhante.
+                    **FILOSOFIA DE AVALIAÇÃO E REGRAS MANDATÓRIAS:**
 
-                    **INSTRUÇÕES GERAIS E REGRAS:**
-                    1.  **Análise Implacável:** Avalie CADA um dos 17 critérios sob a ótica da filosofia acima.
-                    2.  **Cálculo da Nota Geral:** Calcule a média de todas as notas dos critérios. Se a nota de 'Objeções' for -1, ela DEVE ser excluída do cálculo.
-                    3.  **REGRA EXCLUSIVA PARA OBJEÇÕES:** Se a transcrição **não contiver nenhuma objeção**, dúvida significativa ou hesitação do cliente, a habilidade não pode ser avaliada. Apenas neste caso, para o critério 'Objeções', **atribua a nota -1** e justifique que 'Nenhuma objeção foi apresentada para avaliação'.
-                    4.  **PLANO DE AÇÃO CRÍTICO E OBRIGATÓRIO:**
-                        * **specificErrors:** **DEVE** identificar pelo menos 2-3 pontos fracos, erros ou oportunidades perdidas. Seja específico, citando o que deveria ter sido feito.
-                        * **sugestoes:** **DEVE** fornecer pelo menos 2-3 sugestões práticas e acionáveis, diretamente ligadas aos erros.
-                    5.  **Formato de Saída:** A resposta DEVE ser um único objeto JSON puro.
+                    1.  **REGRA DE OURO / PONTO DE PARTIDA = NOTA 1 (RUIM):** A avaliação de CADA critério começa com a nota 1. Se, ao final da análise da transcrição, você não encontrar **nenhuma evidência clara, explícita e proativa** de que a habilidade foi utilizada, a nota **DEVE permanecer 1**. Não há pontos por esforço ou por não cometer erros. A competência deve ser provada.
+
+                    2.  **COMO PONTUAR ACIMA DE 1:** Para que a nota aumente, você precisa encontrar momentos específicos onde o CS demonstrou a habilidade. A nota final dependerá da frequência e da qualidade dessas demonstrações, seguindo a escala abaixo.
+
+                    3.  **A ESCALA DA VERDADE (obrigatória):**
+                        * **10 (Excelente):** Foi excelente, superando todas as expectativas de forma proativa e estratégica.
+                        * **8-9 (Cumpriu quase todas as vezes):** Demonstrou a habilidade consistentemente, na grande maioria das oportunidades.
+                        * **6-7 (Fez o básico):** Cumpriu o esperado de forma reativa. Uma performance correta, mas sem brilho.
+                        * **4-5 (Cumpriu pouco):** Demonstrou a habilidade de forma irregular e inconsistente.
+                        * **2-3 (Poucas vezes cumpriu):** Raras demonstrações da habilidade. Performance muito fraca.
+                        * **0-1 (Ruim):** Nenhuma ou pouquíssima evidência. Não cumpriu o solicitado. (Nota padrão).
+
+                    4.  **REGRA EXCLUSIVA PARA OBJEÇÕES:** A única exceção à regra de partida. Se a transcrição **não contiver nenhuma objeção** do cliente, o critério 'Objeções' **DEVE receber a nota -1** e ser excluído do cálculo da média.
+
+                    5.  **PLANO DE AÇÃO OBRIGATÓRIO:** Mesmo em uma performance razoável, identifique no mínimo 2-3 pontos de melhoria e 2-3 sugestões práticas.
+
+                    6.  **Formato de Saída:** A resposta DEVE ser um único objeto JSON puro.
 
                     ---
-                    **CRITÉRIOS DE AVALIAÇÃO (Padrão de Falha: Nota 3):**
-                    **Escala de Notas:** 9–10: Maestria Rara; 7–8: Muito Bom/Proativo; 5–6: Razoável/Reativo; 3–4: Fraco/Passivo; 1–2: Insuficiente/Prejudicial.
-                    1. Consultividade: Atuou como parceiro estratégico ou apenas como um suporte avançado?
-                    2. Escuta Ativa: Captou o que estava implícito ou só ouviu o que foi dito?
-                    3. Jornada do Cliente: Deixou o cliente 100% seguro sobre o agora e o depois?
-                    4. Encantamento: Surpreendeu positivamente com insights ou apenas seguiu o script?
-                    5. Objeções: Desarmou a objeção ou apenas respondeu? (Lembre-se da regra da nota -1).
-                    6. Rapport: Criou uma conexão genuína ou foi apenas cordial?
-                    7. Autoridade: Conduziu a reunião com maestria ou foi conduzido pelo cliente?
-                    8. Postura: Demonstrou senioridade e calma sob pressão?
-                    9. Gestão de Tempo: Otimizou o tempo ou apenas correu para terminar?
-                    10. Contextualização: Usou exemplos que ressoaram com a realidade do cliente?
-                    11. Clareza: A comunicação foi impecavelmente simples e direta?
-                    12. Objetividade: Foi direto ao ponto sem rodeios desnecessários?
-                    13. Flexibilidade: Adaptou-se ao fluxo da conversa ou forçou o roteiro?
-                    14. Domínio de Produto: Demonstrou conhecimento profundo ou apenas superficial?
-                    15. Alinhamento ao Modelo de Negócio: Entendeu as dores do negócio do cliente?
-                    16. Ecossistema Nibo: Apresentou soluções integradas proativamente?
-                    17. Universo da Contabilidade: Falou a língua do contador com fluidez?
+                    **CRITÉRIOS DE AVALIAÇÃO (Ponto de Partida: Nota 1):**
+                    1. Consultividade
+                    2. Escuta Ativa
+                    3. Jornada do Cliente
+                    4. Encantamento
+                    5. Objeções
+                    6. Rapport
+                    7. Autoridade
+                    8. Postura
+                    9. Gestão de Tempo
+                    10. Contextualização
+                    11. Clareza
+                    12. Objetividade
+                    13. Flexibilidade
+                    14. Domínio de Produto
+                    15. Alinhamento ao Modelo de Negócio
+                    16. Ecossistema Nibo
+                    17. Universo da Contabilidade
                     ---
                     **TRANSCRIÇÃO PARA ANÁLISE:**
                     ---
@@ -351,7 +356,7 @@
                 const titleClass = isNotApplicable ? 'text-md font-semibold text-gray-500 line-through' : 'text-md font-semibold text-gray-800';
                 const justificationClass = isNotApplicable ? 'text-gray-400 line-through mt-2 pl-1 text-sm' : 'text-gray-600 mt-2 pl-1 text-sm';
                 
-                const scoreColor = item.nota >= 9 ? 'text-green-600' : item.nota >= 7 ? 'text-blue-600' : item.nota >= 5 ? 'text-yellow-600' : 'text-red-600';
+                const scoreColor = item.nota >= 8 ? 'text-green-600' : item.nota >= 6 ? 'text-blue-600' : item.nota >= 4 ? 'text-yellow-600' : 'text-red-600';
                 const scoreDisplay = isNotApplicable 
                     ? `<span class="text-gray-500 font-medium">N/A</span>` 
                     : `
@@ -401,8 +406,8 @@
 
         function displayGeneralScore(score) {
             if (score === null || isNaN(score)) return;
-            const scoreColor = score >= 9 ? 'text-green-600' : score >= 7 ? 'text-blue-600' : score >= 5 ? 'text-yellow-600' : 'text-red-600';
-            const scoreText = score >= 9 ? 'Excelente' : score >= 7 ? 'Muito Bom' : score >= 5 ? 'Razoável' : score >= 3 ? 'Fraco' : 'Insuficiente';
+            const scoreColor = score >= 8 ? 'text-green-600' : score >= 6 ? 'text-blue-600' : score >= 4 ? 'text-yellow-600' : 'text-red-600';
+            const scoreText = score >= 10 ? 'Excelente' : score >= 8 ? 'Cumpriu quase todas as vezes' : score >= 6 ? 'Fez o básico' : score >= 4 ? 'Cumpriu pouco' : score >= 2 ? 'Poucas vezes cumpriu' : 'Ruim';
             generalScoreSection.innerHTML = `
                 <div class="text-center bg-gray-50 p-4 rounded-lg">
                     <h3 class="text-xl font-semibold text-primary">Nota Geral da Reunião</h3>
