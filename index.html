@@ -258,31 +258,32 @@
                 }
 
                 const evaluationPrompt = `
-                    Você é um avaliador sênior de Customer Experience. Sua tarefa é analisar a performance do CS, "${csName}", com base na transcrição da reunião.
+                    Você é um avaliador sênior de Customer Experience, extremamente crítico e detalhista. Sua tarefa é analisar a performance do CS, "${csName}", com base na transcrição da reunião.
 
                     **INSTRUÇÕES GERAIS E REGRAS:**
-                    1.  **Análise Detalhada:** Avalie o CS em CADA um dos 17 critérios abaixo, fornecendo **Nota (1–10)** e **Justificativa (1–2 frases)**.
-                    2.  **Cálculo da Nota Geral:** Calcule a média de todas as notas dos critérios. **Exceção importante:** se a nota de 'Objeções' for -1, exclua este critério do cálculo da média.
+                    1.  **Análise Detalhada:** Avalie o CS em CADA um dos 17 critérios abaixo.
+                    2.  **Cálculo da Nota Geral:** Calcule a média de todas as notas dos critérios. Se a nota de 'Objeções' for -1, exclua este critério do cálculo.
                     3.  **REGRA PARA OBJEÇÕES:** Se a transcrição **não contiver nenhuma objeção**, dúvida significativa ou hesitação do cliente, a habilidade não pode ser avaliada. Neste caso, para o critério 'Objeções', **atribua a nota -1** e justifique que 'Nenhuma objeção foi apresentada para avaliação'.
-                    4.  **REGRA PARA CRITÉRIOS SUBJETIVOS (Rapport, Encantamento):** Se não houver evidência positiva ou negativa na transcrição, considere a postura como passiva e **atribua a nota 6 (Razoável)**, justificando a ausência de uma ação proativa do CS.
-                    5.  **Formato de Saída:** A resposta DEVE ser um único objeto JSON.
+                    4.  **REGRA PARA CRITÉRIOS SUBJETIVOS (Rapport, Encantamento):** Se não houver evidência clara de uma ação proativa do CS para criar conexão ou gerar valor, **atribua a nota 6 (Razoável)**.
+                    5.  **PLANO DE AÇÃO OBRIGATÓRIO:** Analise criticamente. Para o campo "specificErrors", você **DEVE** identificar pelo menos 1 ou 2 pontos fracos ou oportunidades perdidas, mesmo que a reunião seja boa. Para "sugestoes", você **DEVE** fornecer pelo menos 2 sugestões práticas e acionáveis para corrigir esses pontos. Não deixe esses campos vazios.
+                    6.  **Formato de Saída:** A resposta DEVE ser um único objeto JSON.
 
                     ---
                     **CRITÉRIOS DE AVALIAÇÃO DETALHADOS:**
                     **Escala de Notas:** 9–10: Excelente; 7–8: Muito bom; 5–6: Razoável; 3–4: Fraco; 1–2: Insuficiente.
-                    1. Consultividade: CS atuou como parceiro estratégico?
-                    2. Escuta Ativa: CS ouviu com atenção genuína?
-                    3. Jornada do Cliente: CS esclareceu fase atual e próximos passos?
+                    1. Consultividade: Atuou como parceiro estratégico?
+                    2. Escuta Ativa: Ouviu com atenção genuína?
+                    3. Jornada do Cliente: Esclareceu fase atual e próximos passos?
                     4. Encantamento: Esforço para gerar valor e surpreender?
-                    5. Objeções: Capacidade de antecipar e contornar objeções? (Lembre-se da regra da nota -1).
+                    5. Objeções: Capacidade de contornar objeções? (Lembre-se da regra da nota -1).
                     6. Rapport: Grau de conexão humana?
                     7. Autoridade: Segurança e ritmo de condução?
                     8. Postura: Profissionalismo e maturidade?
                     9. Gestão de Tempo: Cumpriu objetivos no tempo?
                     10. Contextualização: Uso de exemplos práticos?
                     11. Clareza: Simplicidade na comunicação?
-                    12. Objetividade: Assertividade e foco nas respostas?
-                    13. Flexibilidade: Adaptação do roteiro ao cliente?
+                    12. Objetividade: Assertividade nas respostas?
+                    13. Flexibilidade: Adaptação ao roteiro?
                     14. Domínio de Produto: Conhecimento da ferramenta?
                     15. Alinhamento ao Modelo de Negócio: Entendimento do segmento do cliente?
                     16. Ecossistema Nibo: Domínio do portfólio completo?
@@ -364,7 +365,6 @@
                 detailedReport.appendChild(reportItem);
             });
 
-            // <-- FIX: Filter out N/A criteria before creating radar chart data
             const radarData = data.evaluation.filter(item => item.nota !== -1);
             const radarLabels = radarData.map(item => item.criterio);
             const radarScores = radarData.map(item => item.nota);
@@ -373,10 +373,10 @@
             radarChartInstance = new Chart(radarChartCanvas, {
                 type: 'radar',
                 data: { 
-                    labels: radarLabels, // Use filtered labels
+                    labels: radarLabels,
                     datasets: [{ 
                         label: 'Performance', 
-                        data: radarScores, // Use filtered scores
+                        data: radarScores,
                         backgroundColor: 'rgba(0, 45, 114, 0.2)', 
                         borderColor: '#002d72', 
                         borderWidth: 2 
@@ -431,29 +431,32 @@
         }
 
         function displaySpeakingTime({ cs, client }) {
-            if (isNaN(cs) || isNaN(client) || (cs === 0 && client === 0)) {
-                speakingTimeAnalysis.innerHTML = `<p class="text-center text-gray-500 text-sm">Não foi possível analisar a distribuição de fala. Verifique a formatação da transcrição.</p>`;
+            if (isNaN(cs) || isNaN(client)) {
+                speakingTimeAnalysis.innerHTML = `<p class="text-center text-gray-500 text-sm">Dados de fala indisponíveis.</p>`;
                 return;
             }
+
+            const total = cs + client;
+            if (total === 0) {
+                speakingTimeAnalysis.innerHTML = `<p class="text-center text-gray-500 text-sm">Não foi possível analisar a distribuição de fala.</p>`;
+                return;
+            }
+
+            const csPercent = (cs / total) * 100;
+            const clientPercent = 100 - csPercent;
+
             speakingTimeAnalysis.innerHTML = `
-                <div class="space-y-3">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-base font-medium text-primary">CS</span>
-                        <span class="text-sm font-medium text-primary">${Math.round(cs)}%</span>
+                <div class="w-full">
+                    <div class="flex justify-between mb-1 text-sm font-medium">
+                        <span class="text-primary">CS (${Math.round(csPercent)}%)</span>
+                        <span class="text-secondary-pink">Cliente (${Math.round(clientPercent)}%)</span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div class="bg-primary h-4 rounded-full" style="width: ${Math.min(cs, 100)}%"></div>
+                    <div class="w-full rounded-full h-4 flex overflow-hidden">
+                        <div class="h-full bg-primary transition-all duration-500" style="width: ${csPercent}%" title="CS: ${csPercent.toFixed(1)}%"></div>
+                        <div class="h-full bg-secondary-pink transition-all duration-500" style="width: ${clientPercent}%" title="Cliente: ${clientPercent.toFixed(1)}%"></div>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-base font-medium text-secondary-pink">Cliente</span>
-                        <span class="text-sm font-medium text-secondary-pink">${Math.round(client)}%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div class="bg-secondary-pink h-4 rounded-full" style="width: ${Math.min(client, 100)}%"></div>
-                    </div>
-                </div>`;
+            `;
         }
         
         function displayMeetingHighlight(highlight) {
@@ -487,6 +490,10 @@
         }
 
         function displayProfileAnalysis(profileData) {
+            if (!profileData || !profileData.profile) {
+                 profileAnalysisSection.innerHTML = '';
+                 return;
+            }
             profileAnalysisSection.innerHTML = `
                 <h3 class="text-2xl font-bold text-center text-primary">Análise de Perfil do Contador</h3>
                 <div class="mt-6 bg-yellow-50/60 p-6 rounded-lg">
@@ -501,15 +508,24 @@
         }
 
         function displaySummary(summaryData) {
+            if (!summaryData) {
+                summarySection.innerHTML = '';
+                return;
+            }
             const csName = csNameInput.value.trim();
-            const errorsList = summaryData.specificErrors.map(e => `<li class="flex items-start"><span class="text-red-500 mr-2 mt-1">&#10007;</span><span>${e}</span></li>`).join('');
-            const suggestionsList = summaryData.sugestoes.map(s => `<li class="flex items-start"><span class="text-primary mr-2 mt-1">&#10003;</span><span>${s}</span></li>`).join('');
+            const errorsList = summaryData.specificErrors && summaryData.specificErrors.length > 0
+                ? summaryData.specificErrors.map(e => `<li class="flex items-start"><span class="text-red-500 mr-2 mt-1">&#10007;</span><span>${e}</span></li>`).join('')
+                : '<li class="text-gray-500">Nenhum ponto de melhoria crítico foi identificado.</li>';
+
+            const suggestionsList = summaryData.sugestoes && summaryData.sugestoes.length > 0
+                ? summaryData.sugestoes.map(s => `<li class="flex items-start"><span class="text-primary mr-2 mt-1">&#10003;</span><span>${s}</span></li>`).join('')
+                : '<li class="text-gray-500">Nenhuma sugestão adicional.</li>';
             
             summarySection.innerHTML = `
                 <h3 class="text-2xl font-bold text-center text-primary">Plano de Ação para <span class="text-secondary-pink">${csName}</span></h3>
                 <div class="mt-6 bg-blue-50/50 p-6 rounded-lg">
                     <h4 class="text-lg font-semibold mb-2 text-primary">Resumo da Performance</h4>
-                    <p class="text-gray-700">${summaryData.geral}</p>
+                    <p class="text-gray-700">${summaryData.geral || 'Não foi possível gerar um resumo.'}</p>
                     
                     <h4 class="text-lg font-semibold mt-6 mb-3 text-primary">Pontos a Melhorar</h4>
                     <ul class="space-y-2 text-gray-700">${errorsList}</ul>
