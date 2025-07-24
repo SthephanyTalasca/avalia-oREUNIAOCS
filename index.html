@@ -132,12 +132,12 @@
         </main>
 
         <footer class="text-center mt-12 text-gray-500 text-sm">
-            <p>&copy; 2024 Avaliação de Reunião. Todos os direitos reservados.</p>
+            <p>&copy; 2025 Avaliação de Reunião. Todos os direitos reservados.</p>
         </footer>
     </div>
 
     <script>
-        const apiKey = "AIzaSyAH2RPUA6WLkg02xbgRlmLGwj_xa1IcyDA"; // API Key re-added to fix authentication error.
+        const apiKey = "AIzaSyAH2RPUA6WLkg02xbgRlmLGwj_xa1IcyDA";
 
         const csNameInput = document.getElementById('cs-name-input');
         const transcriptInput = document.getElementById('transcript-input');
@@ -242,10 +242,10 @@
             errorMessage.classList.add('hidden');
             loadingSpinner.classList.remove('hidden');
             loadingText.textContent = 'A analisar... Isto pode levar alguns segundos.';
+            analyzeBtn.disabled = true;
 
             const manualTranscript = transcriptInput.value.trim();
             const csName = csNameInput.value.trim();
-
             const readPromises = uploadedFiles.map(file => file.text());
 
             try {
@@ -258,113 +258,43 @@
                 }
 
                 const evaluationPrompt = `
-                    Você é um avaliador sênior de Customer Experience, especialista em software contábil. Sua tarefa é analisar a performance do CS, "${csName}", com base na transcrição da reunião.
+                    Você é um avaliador sênior de Customer Experience. Sua tarefa é analisar a performance do CS, "${csName}", com base na transcrição da reunião.
 
-                    **FONTES DE CONHECIMENTO:**
-                    - **Fontes Adicionais para analisar contorno de objeções:**
-                        - As Armas da Persuasão (princípios de Cialdini)
-                        - Como Fazer Amigos e Influenciar Pessoas (princípios de Carnegie)
-                        - Manual de Persuasão do FBI (técnicas de rapport e negociação)
-                        - Como Chegar ao Sim (negociação baseada em interesses)
-
-                    **INSTRUÇÕES GERAIS:**
-                    1.  **Análise Detalhada:** Avalie o CS em CADA um dos 17 critérios abaixo. Para cada um, forneça uma **Nota (1–10)** e uma **Justificativa breve (1–2 frases)**.
-                    2.  **Regra de Evidência:** Para critérios subjetivos como 'Rapport' e 'Encantamento', se não houver nenhuma evidência positiva ou negativa na transcrição, a postura deve ser considerada passiva. Nestes casos, **atribua a nota 6 (Razoável)** e justifique que o CS não criou ativamente a conexão ou o momento de valor. Para outros critérios, se não houver evidência, pode atribuir nota maior se a ausência não indicar uma falha.
-                    3.  **Resumo Final:** Ao final, crie um resumo geral da performance e forneça sugestões práticas de melhoria.
-                    4.  **Formato de Saída:** A sua resposta DEVE ser um único objeto JSON.
+                    **INSTRUÇÕES GERAIS E REGRAS:**
+                    1.  **Análise Detalhada:** Avalie o CS em CADA um dos 17 critérios abaixo, fornecendo **Nota (1–10)** e **Justificativa (1–2 frases)**.
+                    2.  **Cálculo da Nota Geral:** Calcule a média de todas as notas dos critérios. **Exceção importante:** se a nota de 'Objeções' for -1, exclua este critério do cálculo da média.
+                    3.  **REGRA PARA OBJEÇÕES:** Se a transcrição **não contiver nenhuma objeção**, dúvida significativa ou hesitação do cliente, a habilidade não pode ser avaliada. Neste caso, para o critério 'Objeções', **atribua a nota -1** e justifique que 'Nenhuma objeção foi apresentada para avaliação'.
+                    4.  **REGRA PARA CRITÉRIOS SUBJETIVOS (Rapport, Encantamento):** Se não houver evidência positiva ou negativa na transcrição, considere a postura como passiva e **atribua a nota 6 (Razoável)**, justificando a ausência de uma ação proativa do CS.
+                    5.  **Formato de Saída:** A resposta DEVE ser um único objeto JSON.
 
                     ---
                     **CRITÉRIOS DE AVALIAÇÃO DETALHADOS:**
-
-                    **Escala de Notas:**
-                    - **9–10 – Excelente:** Performance exemplar, superando as expectativas.
-                    - **7–8 – Muito bom:** Performance sólida, cumpriu bem o esperado.
-                    - **5–6 – Razoável:** Cumpriu o básico, mas com espaço claro para melhorias.
-                    - **3–4 – Fraco:** Falhas significativas na execução.
-                    - **1–2 – Insuficiente:** Performance muito abaixo do esperado.
-
-                    **Critério 1: Consultividade**
-                    - *Avalie (1–10) se o CS atuou como parceiro estratégico, oferecendo recomendações personalizadas e visão de futuro.*
-                    - 9–10: Postura plenamente consultiva, soluções muito alinhadas ao negócio, antecipação de oportunidades e riscos.
-                    - 7–8: Boas recomendações e adaptações, faltou um pouco de profundidade ou proatividade extra.
-                    - 5–6: Sugestões genéricas ou somente reativas; pouca antecipação.
-                    - 3–4: Explicou só a ferramenta; não contextualizou para o cliente.
-                    - 1–2: Postura passiva ou puramente técnica, sem recomendações estratégicas.
-
-                    **Critério 2: Escuta Ativa**
-                    - *Avalie (1–10) se o CS ouviu com atenção genuína, validou percepções e mostrou empatia.*
-                    - 9–10: Captou nuances, validou sentimentos e ajustou abordagem com empatia.
-                    - 7–8: Boa escuta e acolhimento, mas sem tanta profundidade nas entrelinhas.
-                    - 5–6: Ouviu e respondeu, porém de forma mais mecânica ou superficial.
-                    - 3–4: Respostas genéricas, interrupções ou pontos ignorados.
-                    - 1–2: Desatenção ou comportamento robótico, sem retorno às falas do cliente.
-
-                    **Critério 3: Jornada do Cliente**
-                    - *Avalie (1–10) se o CS esclareceu a fase atual da implementação e próximos passos.*
-                    - 9–10: Explicou claramente fases, responsabilidades e prazos, checando entendimento e dúvidas.
-                    - 7–8: Bom detalhamento, mas faltou confirmação de dúvidas ou prazo concreto.
-                    - 5–6: Mencionou etapas, mas de forma superficial ou sem checagem de entendimento.
-                    - 3–4: Falta de clareza na jornada, ou apenas roteiro genérico.
-                    - 1–2: Não deixou claro em que estágio está e o que vem a seguir.
-
-                    **Critério 4: Encantamento**
-                    - *Avalie (1–10) o esforço para gerar valor e surpreender o cliente.*
-                    - 9–10: Demonstração entusiasmada, personalizada e impactante do valor da ferramenta.
-                    - 7–8: Valor relevante e personalizado, com leve falta de entusiasmo ou profundidade.
-                    - 5–6: Benefícios apresentados, mas de modo genérico e pouco inspirador.
-                    - 3–4: Apresentação padrão, sem conexão emocional ou diferencial.
-                    - 1–2: Total ausência de encantamento; foco apenas em funcionalidades.
-
-                    **Critério 5: Objeções**
-                    - *Avalie (1–10) a capacidade de antecipar e contornar objeções com empatia e assertividade.*
-                    - 9–10: Antecipou dúvidas, respondeu com segurança e empatia, revertendo objeções em oportunidades.
-                    - 7–8: Boa reação a objeções, mas faltou proatividade total.
-                    - 5–6: Contornou apenas o que foi questionado; pouco além do esperado.
-                    - 3–4: Respostas evasivas ou superficiais às objeções.
-                    - 1–2: Ignorou ou não conseguiu contornar objeções.
-
-                    **Critério 6: Rapport**
-                    - *Avalie (1–10) o grau de conexão humana e empatia.*
-                    - 9–10: Ambiente leve e acolhedor, uso de nomes e interações espontâneas.
-                    - 7–8: Simpatia e empatia evidentes, mas sem elementos informais mais marcantes.
-                    - 5–6: Cordialidade básica, sem aprofundar vínculo.
-                    - 3–4: Formalidade excessiva; pouca conexão.
-                    - 1–2: Relação fria e impessoal.
-
-                    **Critério 7: Autoridade** - Avalie (1–10) a segurança e o ritmo de condução da reunião.
-                    **Critério 8: Postura** - Avalie (1–10) o profissionalismo e a maturidade diante de problemas.
-                    **Critério 9: Gestão de Tempo** - Avalie (1–10) a capacidade de cobrir os objetivos em ~1h.
-                    **Critério 10: Contextualização** - Avalie (1–10) o uso de exemplos práticos ao explicar telas e funcionalidades.
-                    **Critério 11: Clareza** - Avalie (1–10) a simplicidade e acessibilidade na comunicação.
-                    **Critério 12: Objetividade** - Avalie (1–10) a assertividade e foco nas respostas.
-                    **Critério 13: Flexibilidade** - Avalie (1–10) a adaptação do roteiro conforme prioridades do cliente.
-                    **Critério 14: Domínio de Produto** - Avalie (1–10) o conhecimento profundo do Nibo, respostas técnicas seguras.
-                    **Critério 15: Alinhamento ao Modelo de Negócio** - Avalie (1–10) se o CS entendeu o segmento e conectou à proposta de valor.
-                    **Critério 16: Ecossistema Nibo** - Avalie (1–10) o domínio do portfólio completo e integrações estratégicas.
-                    **Critério 17: Universo da Contabilidade** - Avalie (1–10) a familiaridade com processos contábeis e termos do contador.
+                    **Escala de Notas:** 9–10: Excelente; 7–8: Muito bom; 5–6: Razoável; 3–4: Fraco; 1–2: Insuficiente.
+                    1. Consultividade: CS atuou como parceiro estratégico?
+                    2. Escuta Ativa: CS ouviu com atenção genuína?
+                    3. Jornada do Cliente: CS esclareceu fase atual e próximos passos?
+                    4. Encantamento: Esforço para gerar valor e surpreender?
+                    5. Objeções: Capacidade de antecipar e contornar objeções? (Lembre-se da regra da nota -1).
+                    6. Rapport: Grau de conexão humana?
+                    7. Autoridade: Segurança e ritmo de condução?
+                    8. Postura: Profissionalismo e maturidade?
+                    9. Gestão de Tempo: Cumpriu objetivos no tempo?
+                    10. Contextualização: Uso de exemplos práticos?
+                    11. Clareza: Simplicidade na comunicação?
+                    12. Objetividade: Assertividade e foco nas respostas?
+                    13. Flexibilidade: Adaptação do roteiro ao cliente?
+                    14. Domínio de Produto: Conhecimento da ferramenta?
+                    15. Alinhamento ao Modelo de Negócio: Entendimento do segmento do cliente?
+                    16. Ecossistema Nibo: Domínio do portfólio completo?
+                    17. Universo da Contabilidade: Familiaridade com termos contábeis?
                     ---
-
                     **TRANSCRIÇÃO PARA ANÁLISE:**
                     ---
                     ${combinedTranscript}
                     ---
                 `;
 
-                const schema = {
-                    type: "OBJECT",
-                    properties: {
-                        "notaGeral": { "type": "NUMBER" },
-                        "evaluation": { type: "ARRAY", items: { type: "OBJECT", properties: { "criterio": { "type": "STRING" }, "nota": { "type": "NUMBER" }, "justificativa": { "type": "STRING" } }, required: ["criterio", "nota", "justificativa"] } },
-                        "speakingTime": { type: "OBJECT", properties: { "cs": { "type": "NUMBER" }, "client": { "type": "NUMBER" } }, required: ["cs", "client"] },
-                        "profileAnalysis": { type: "OBJECT", properties: { "profile": { "type": "STRING" }, "handling": { "type": "STRING" }, "suggestions": { "type": "STRING" } }, required: ["profile", "handling", "suggestions"] },
-                        "summary": { type: "OBJECT", properties: { "geral": { "type": "STRING" }, "specificErrors": { "type": "ARRAY", "items": { "type": "STRING" } }, "sugestoes": { "type": "ARRAY", items: { "type": "STRING" } } }, required: ["geral", "specificErrors", "sugestoes"] },
-                        "cancellationAlert": { type: "OBJECT", properties: { "risk": { "type": "BOOLEAN" }, "reason": { "type": "STRING" } }, required: ["risk", "reason"] },
-                        "meetingHighlight": { "type": "STRING" },
-                        "opportunities": { type: "ARRAY", items: { type: "OBJECT", properties: { "product": { "type": "STRING" }, "reason": { "type": "STRING" } }, required: ["product", "reason"] } }
-                    },
-                    required: ["notaGeral", "evaluation", "speakingTime", "profileAnalysis", "summary", "cancellationAlert", "meetingHighlight", "opportunities"]
-                };
-
+                const schema = { type: "OBJECT", properties: { "notaGeral": { "type": "NUMBER" }, "evaluation": { type: "ARRAY", items: { type: "OBJECT", properties: { "criterio": { "type": "STRING" }, "nota": { "type": "NUMBER" }, "justificativa": { "type": "STRING" } }, required: ["criterio", "nota", "justificativa"] } }, "speakingTime": { type: "OBJECT", properties: { "cs": { "type": "NUMBER" }, "client": { "type": "NUMBER" } }, required: ["cs", "client"] }, "profileAnalysis": { type: "OBJECT", properties: { "profile": { "type": "STRING" }, "handling": { "type": "STRING" }, "suggestions": { "type": "STRING" } }, required: ["profile", "handling", "suggestions"] }, "summary": { type: "OBJECT", properties: { "geral": { "type": "STRING" }, "specificErrors": { "type": "ARRAY", "items": { "type": "STRING" } }, "sugestoes": { "type": "ARRAY", items: { "type": "STRING" } } }, required: ["geral", "specificErrors", "sugestoes"] }, "cancellationAlert": { type: "OBJECT", properties: { "risk": { "type": "BOOLEAN" }, "reason": { "type": "STRING" } }, required: ["risk", "reason"] }, "meetingHighlight": { "type": "STRING" }, "opportunities": { type: "ARRAY", items: { type: "OBJECT", properties: { "product": { "type": "STRING" }, "reason": { "type": "STRING" } }, required: ["product", "reason"] } } }, required: ["notaGeral", "evaluation", "speakingTime", "profileAnalysis", "summary", "cancellationAlert", "meetingHighlight", "opportunities"] };
                 const payload = { contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema } };
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
                 
@@ -390,6 +320,8 @@
                 loadingSpinner.classList.add('hidden');
                 errorMessage.textContent = `Ocorreu um erro na análise. ${error.message}. Por favor, verifique o conteúdo da transcrição e tente novamente.`;
                 errorMessage.classList.remove('hidden');
+            } finally {
+                checkAnalysisButtonState();
             }
         }
 
@@ -399,38 +331,57 @@
             displayGeneralScore(data.notaGeral);
             displayCancellationAlert(data.cancellationAlert);
             
-            // Sort by criteria name for consistent radar chart order
-            const criteriaOrder = ["Consultividade", "Escuta Ativa", "Jornada do Cliente", "Encantamento", "Objeções", "Rapport", "Autoridade", "Postura", "Gestão de Tempo", "Contextualização", "Clareza", "Objetividade", "Flexibilidade", "Domínio de Produto", "Alinhamento ao Modelo de Negócio", "Ecossistema Nibo", "Universo da Contabilidade"];
-            data.evaluation.sort((a, b) => criteriaOrder.indexOf(a.criterio) - criteriaOrder.indexOf(b.criterio));
-
+            const sortedForDisplay = [...data.evaluation].sort((a, b) => (b.nota === -1 ? -Infinity : b.nota) - (a.nota === -1 ? -Infinity : a.nota));
 
             detailedReport.innerHTML = '<h3 class="text-xl font-semibold mb-4 text-center lg:text-left">Avaliação Detalhada</h3>';
-            const sortedForDisplay = [...data.evaluation].sort((a, b) => b.nota - a.nota); // Sort by score for display
+            
             sortedForDisplay.forEach(item => {
                 const reportItem = document.createElement('div');
                 reportItem.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50';
                 
+                const isNotApplicable = item.nota === -1;
+
+                const titleClass = isNotApplicable ? 'text-md font-semibold text-gray-500 line-through' : 'text-md font-semibold text-gray-800';
+                const justificationClass = isNotApplicable ? 'text-gray-400 line-through mt-2 pl-1 text-sm' : 'text-gray-600 mt-2 pl-1 text-sm';
+                
                 const scoreColor = item.nota >= 9 ? 'text-green-600' : item.nota >= 7 ? 'text-blue-600' : item.nota >= 5 ? 'text-yellow-600' : 'text-red-600';
+                const scoreDisplay = isNotApplicable 
+                    ? `<span class="text-gray-500 font-medium">N/A</span>` 
+                    : `
+                        <span class="font-bold text-lg ${scoreColor}">${item.nota.toFixed(1)}</span>
+                        <span class="text-sm text-gray-500">/ 10</span>
+                    `;
 
                 reportItem.innerHTML = `
                     <div class="flex justify-between items-center">
-                        <h4 class="text-md font-semibold text-gray-800">${item.criterio}</h4>
+                        <h4 class="${titleClass}">${item.criterio}</h4>
                         <div class="text-right">
-                            <span class="font-bold text-lg ${scoreColor}">${item.nota.toFixed(1)}</span>
-                            <span class="text-sm text-gray-500">/ 10</span>
+                            ${scoreDisplay}
                         </div>
                     </div>
-                    <p class="text-gray-600 mt-2 pl-1 text-sm">${item.justificativa}</p>
+                    <p class="${justificationClass}">${item.justificativa}</p>
                 `;
                 detailedReport.appendChild(reportItem);
             });
 
-            const radarLabels = data.evaluation.map(item => item.criterio);
-            const radarScores = data.evaluation.map(item => item.nota);
+            // <-- FIX: Filter out N/A criteria before creating radar chart data
+            const radarData = data.evaluation.filter(item => item.nota !== -1);
+            const radarLabels = radarData.map(item => item.criterio);
+            const radarScores = radarData.map(item => item.nota);
+
             if (radarChartInstance) radarChartInstance.destroy();
             radarChartInstance = new Chart(radarChartCanvas, {
                 type: 'radar',
-                data: { labels: radarLabels, datasets: [{ label: 'Performance', data: radarScores, backgroundColor: 'rgba(0, 45, 114, 0.2)', borderColor: '#002d72', borderWidth: 2 }] },
+                data: { 
+                    labels: radarLabels, // Use filtered labels
+                    datasets: [{ 
+                        label: 'Performance', 
+                        data: radarScores, // Use filtered scores
+                        backgroundColor: 'rgba(0, 45, 114, 0.2)', 
+                        borderColor: '#002d72', 
+                        borderWidth: 2 
+                    }] 
+                },
                 options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, min: 0, max: 10, stepSize: 2 } }, plugins: { legend: { display: false } } }
             });
 
@@ -516,7 +467,6 @@
         }
 
         function displayOpportunities(opportunities) {
-            // This function will only display the section if the opportunities array is not empty.
             if (!opportunities || opportunities.length === 0) {
                 opportunitiesSection.innerHTML = '';
                 opportunitiesSection.classList.add('hidden');
