@@ -138,7 +138,7 @@
 
     <script>
         // ATENÇÃO: Insira a sua chave da API do Google AI Studio aqui.
-        const apiKey = "AIzaSyAAc8LMjIbXz5BQiHhGVSdwjvZUT9vHo8A"; 
+        const apiKey = "AIzaSyAAc8LMjIbXz5BQiHhGVSdwjvZUT9vHo8A";
 
         const csNameInput = document.getElementById('cs-name-input');
         const transcriptInput = document.getElementById('transcript-input');
@@ -258,7 +258,7 @@
             const readPromises = uploadedFiles.map(file => file.text());
 
             try {
-                if (apiKey === "AIzaSyDp7L_MK46uDrwCGHI2kze0VpxG3_AZfrs") {
+                if (apiKey === "AIzaSyAAc8LMjIbXz5BQiHhGVSdwjvZUT9vHo8A") {
                     throw new Error("Por favor, insira uma chave de API válida no código-fonte (const apiKey).");
                 }
 
@@ -274,7 +274,7 @@
                 const evaluationPrompt = `
                 **MISSÃO PRINCIPAL:**
 
-                Você é um especialista em Quality Assurance de Customer Experience.. A sua única missão é analisar a transcrição de uma reunião entre um Customer Success (CS), "${csName}", e um cliente, avaliando a performance do CS com base nas regras e critérios invioláveis abaixo. A sua análise deve ser implacável, baseada apenas em evidências explícitas na transcrição.
+                Você é um especialista em Quality Assurance de Customer Experience. A sua única missão é analisar a transcrição de uma reunião entre um Customer Success (CS), "${csName}", e um cliente, avaliando a performance do CS com base nas regras e critérios invioláveis abaixo. A sua análise deve ser implacável, baseada apenas em evidências explícitas na transcrição.
 
                 ---
 
@@ -285,7 +285,7 @@
                 2.  **A ESCALA DA VERDADE (OBRIGATÓRIA):** A pontuação deve seguir estritamente esta escala:
                     * **10 (Excelente):** Superou todas as expectativas de forma proativa, estratégica e memorável. Demonstrou maestria.
                     * **8-9 (Cumpriu Quase Sempre):** Demonstrou a habilidade consistentemente, na grande maioria das oportunidades, com poucas falhas.
-                    * **6-7 (Fez o Básico):** Cumpriu o esperado de forma reativa. Uma performance correta, mas sem brilho, iniciativa ou personalização.
+                    * **6-7 (Fez o Básico):** O CS cumpriu o esperado de forma reativa. Uma performance correta, mas sem brilho, iniciativa ou personalização.
                     * **4-5 (Cumpriu Pouco):** Demonstrou a habilidade de forma irregular e inconsistente. Mais falhas do que acertos.
                     * **2-3 (Raramente Cumpriu):** Raras e fracas demonstrações da habilidade. Performance muito deficiente.
                     * **0-1 (Ruim/Não Cumpriu):** Nenhuma ou pouquíssima evidência. (Nota padrão).
@@ -296,53 +296,36 @@
 
                 4.  **REGRA DA EXCEÇÃO "OBJEÇÕES":** Se a transcrição **não contiver nenhuma objeção** explícita do cliente, o critério 'Objeções' **DEVE** receber a **nota -1** e a justificativa deve ser: "Não foram identificadas objeções claras por parte do cliente durante a transcrição da chamada. Portanto, este critério não é aplicável para avaliação."
 
-                5.  **REGRA "ENCANTAMENTO É INDEPENDENTE":** A avaliação do critério 'Encantamento' não deve ser impactada pela presença ou ausência de objeções. Avalie-o com base na capacidade do CS de criar momentos "uau" e superar as expectativas.
+                5.  **REGRA DE EXCEÇÕES (GERAL):** Não penalize o CS por atrasos do cliente, nem por erros técnicos referentes a internet, áudio ou qualquer outro problema que não possa ser evitado.
 
-                6.  **PONTO DE ATENÇÃO "ESCUTA ATIVA":** O tempo de fala é um indicador chave. Se o percentual de fala do CS for **superior a 70%**, comece a descontar pontos da nota de Escuta Ativa (ex: -1 ponto a cada 10% acima do limite). Além disso, se o CS **interromper o cliente desnecessariamente e de forma intencional**, desconte pontos. Contudo, lembre-se que estes são apenas **fatores** da nota; a avaliação principal ainda é se o CS ouviu para entender, captou as entrelinhas e validou o entendimento.
+                6.  **ANÁLISE DE PERFIL DE CLIENTE:** Analise a linguagem, o tom e as perguntas do cliente para criar um **perfil descritivo** (ex: "O Cético Sobrecarregado", "O Analítico Detalhista", "O Novato Ansioso"). Justifique por que você chegou a essa conclusão com base em evidências da transcrição e avalie como o CS lidou (ou falhou em lidar) com esse perfil específico.
 
                 7.  **PLANO DE AÇÃO OBRIGATÓRIO:** A análise **DEVE** conter um plano de ação claro. Identifique, no mínimo, **2-3 pontos de melhoria** (erros específicos cometidos) e **2-3 sugestões práticas** (ações claras que o CS pode tomar para melhorar).
 
-                8.  **ANÁLISE DE PERFIL DE CLIENTE:** Analise a linguagem, o tom e as perguntas do cliente para criar um **perfil descritivo** (ex: "O Cético Sobrecarregado", "O Analítico Detalhista", "O Novato Ansioso"). Justifique por que você chegou a essa conclusão com base em evidências da transcrição e avalie como o CS lidou (ou falhou em lidar) com esse perfil específico.
-                 
-                9.  **REGRA DE EXEÇÕES:** Não penalize o CS por atrasos do cliente, nem por erros técnicos referente a internet, aúdio não funcionar ou qualquer outro problema que não possa ser evitado.
-                
-                9.  **JUSTIFICATIVA OBRIGATÓRIA:** Sempre justificar por que a nota não foi máxima,** mesmo sendo 9 ou 8.**
-
-                10.  **FORMATO DE SAÍDA (MANDATÓRIO):** A resposta final **DEVE** ser um único e puro objeto JSON, sem nenhum texto, comentário ou formatação markdown antes ou depois dele.
+                8.  **FORMATO DE SAÍDA (MANDATÓRIO):** A resposta final **DEVE** ser um único e puro objeto JSON, sem nenhum texto, comentário ou formatação markdown antes ou depois dele.
 
                 ---
 
                 ### **CRITÉRIOS DE AVALIAÇÃO DETALHADOS:**
 
                 * **Consultividade:** O CS agiu como um parceiro estratégico ou apenas como um apresentador de software? Ele fez perguntas investigativas para diagnosticar as dores do cliente antes de apresentar soluções?
-                * **Escuta Ativa:** O CS escutou o cliente com atenção. Avalie o impacto do tempo de fala e das interrupções conforme a regra #6.
-                * **Jornada do Cliente:** O CS conseguiu conectar a reunião atual com os passos anteriores e futuros, dando ao cliente uma visão clara de seu progresso e do que esperar a seguir?
-                * **Objeções:** (Lembre-se da regra -1). Se houve objeções, o CS as contornou com empatia e dados, ou foi reativo e defensivo? Ele antecipou alguma objeção?
-                * **Autoridade:** O CS conduziu a reunião com confiança e estabeleceu um ritmo adequado, ou pareceu passivo e inseguro? Ele inspirou confiança como um especialista? 
+                * **Escuta Ativa:** O CS demonstrou ouvir para entender, ou apenas para responder? Ele captou as entrelinhas e as preocupações não ditas? Se o tempo de fala do CS for **superior a 80%**, a nota deve ser drasticamente reduzida. Além disso, se o CS **interromper o cliente desnecessariamente**, desconte pontos.
+                * **Jornada do Cliente:** O CS conseguiu conectar a reunião atual com os passos anteriores e futuros, dando ao cliente uma visão clara de seu progresso e do que esperar a seguir? Para nota 10, o CS deve ter deixado claro em qual etapa o cliente está E explicado os próximos passos e a evolução.
+                * **Objeções:** Se houveram objeções, o CS as contornou com empatia e dados, ou foi reativo e defensivo? Ele antecipou alguma objeção?
+                * **Autoridade:** O CS conduziu a reunião com confiança e estabeleceu um ritmo adequado, ou pareceu passivo e inseguro? Ele inspirou confiança como um especialista? A nota se refere apenas a sua postura, e não a habilidade de solucionar problemas.
                 * **Postura:** O CS demonstrou maturidade ao lidar com perguntas difíceis ou problemas?
                 * **Gestão de Tempo:** Avalie a eficiência do tempo. Uma reunião de **1h a 1h15** bem conduzida é nota 10. Uma reunião **curta e eficaz (ex: 30 min)** também é nota 10. Contudo, se a reunião se arrastar desnecessariamente para **1h30 ou 2h**, a nota deve ser **drasticamente reduzida**. O foco é na produtividade dentro de um tempo razoável.
-                * **Contextualização:** O CS contextualizou as telas e como o cliente usaria aquilo em sua rotina.
-                * **Clareza:** A comunicação foi simples, direta e livre de jargões?
-                * **Objetividade:** O CS foi direto ao ponto ou divagou? 
-                * **Flexibilidade:** O CS soube adaptar o roteiro para atender a uma necessidade urgente do cliente, ou se manteve rigidamente preso ao script?
-                * **Domínio de Produto:** O CS demonstrou conhecimento profundo sobre a ferramenta, não usou o termo "não sei" ou "vou ver".
-                * **Alinhamento ao Modelo de Negócio:** O discurso do CS refletiu a estratégia da empresa de construir uma parceria de longo prazo, ou foi puramente transacional?
-                * **Ecossistema Nibo:** O CS demonstrou como as diferentes ferramentas do Nibo se integram para gerar mais valor, ou tratou o produto de forma isolada? ( Não penalize se não houve oportunidades.)
-                * **Universo da Contabilidade:** O CS usou a linguagem e demonstrou conhecimento dos processos e dores do mundo contábil para criar uma conexão mais forte com o cliente
-                * **Contextualização:** Se o CS explicou para que serve cada parte da ferramenta E utilizou exemplos práticos, a nota é 10. Caso contrário, a nota diminui.
-                * **Objetividade:** Se o CS foi direto, explicou a funcionalidade e deu exemplos, a nota é 10. Se foi pouco claro, a nota diminui.
-                * **Alinhamento ao Modelo de Negócio:** Se o CS demonstrou entender o modelo de negócio do cliente E conseguiu aplicar isso à ferramenta ou aos próximos passos, a nota é 10.
-                * **Ecossistema Nibo:** Se o CS citou outras ferramentas da plataforma E explicou como se relacionam com o que estava sendo apresentado, a nota é 10.
-                * **Universo da Contabilidade:** Se o CS mostrou domínio de termos (DAS, DARF,Emissão, Notas físcais, NFS, Boletos e etc.), usou exemplos práticos ("esse DCTFWeb aqui você protocola assim...") e falou com naturalidade sobre contabilidade, a nota é 10.
-                * **Escuta Ativa:** Avalie se o CS demonstrou ouvir ativamente. **Fatores de penalidade (não zeram a nota, mas a reduzem):**
-                    * **Tempo de fala:** Se for superior a 90%, desconte pontos proporcionalmente (ex: -1 ponto a cada 10% acima).
-                    * **Interrupções:** Se o CS interrompeu o cliente de forma desnecessária e intencional, desconte pontos.
-                * **Jornada do Cliente:** Se o CS deixou claro em qual etapa o cliente está E explicou os próximos passos e a evolução, a nota é 10.
-                * **Rapport:** A nota deve refletir o nível de conexão. Se o CS chamou o cliente pelo nome, criou um ambiente amigável e a conversa teve leveza a nota é 10
-                * **Clareza:** Se o CS se comunicou de forma clara, assertiva, o cliente entendeu, a nota é 10.
-                * **Flexibilidade:** Se não houve oportunidade para demonstrar flexibilidade, a nota é 10 com a justificativa de que não foi necessário. Se houve necessidade e o CS se adaptou com tranquilidade, a nota é 10. Se houve necessidade e o CS não se adaptou, a nota diminui.
-                * **Encantamento:** A nota aumenta conforme o nível de encantamento gerado. Fatores a observar:CS falou sobre o que a ferramenta pode ajudar.
-
+                * **Contextualização:** O CS traduziu "features" em "benefícios" para o cliente? Para nota 10, o CS deve ter explicado para que serve cada parte da ferramenta E ter utilizado exemplos práticos.
+                * **Clareza:** A comunicação foi simples, direta e livre de jargões? Para nota 10, o CS deve se comunicar de forma clara, assertiva, e garantir que o cliente entendeu a mensagem.
+                * **Objetividade:** O CS foi direto ao ponto ou divagou? As soluções apresentadas eram assertivas e resolviam diretamente a questão do cliente? Para nota 10, o CS deve ser direto, explicar a funcionalidade e dar exemplos, sem ficar se enrolando para falar a mesma coisa.
+                * **Flexibilidade:** O CS soube adaptar o roteiro para atender a uma necessidade urgente do cliente, ou se manteve rigidamente preso ao script? Para nota 10, o CS deve se adaptar com tranquilidade, ou a justificativa deve ser que não houve oportunidade para demonstrar a habilidade.
+                * **Domínio de Produto:** O CS demonstrou conhecimento profundo sobre a ferramenta, incluindo casos de uso avançados e boas práticas, ou apenas o conhecimento superficial? Para nota 10, o CS não pode ter usado termos como "não sei" ou "vou ver".
+                * **Alinhamento ao Modelo de Negócio:** O discurso do CS refletiu a estratégia da empresa de construir uma parceria de longo prazo, ou foi puramente transacional? Para nota 10, o CS deve ter demonstrado entender o modelo de negócio do cliente E conseguido aplicar isso à ferramenta ou aos próximos passos.
+                * **Ecossistema Nibo:** O CS demonstrou como as diferentes ferramentas do Nibo se integram para gerar mais valor? Para nota 10, o CS deve ter citado outras ferramentas da plataforma E explicado como se relacionam com o que estava sendo apresentado. Não penalize se não houveram oportunidades.
+                * **Universo da Contabilidade:** O CS usou a linguagem e demonstrou conhecimento dos processos e do mundo contábil para criar uma conexão mais forte com o cliente? Para nota 10, o CS deve mostrar domínio de termos (DAS, DARF, Emissão, Notas Físcais, NFS, Boletos etc.) e usar exemplos práticos.
+                * **Rapport:** A nota deve refletir o nível de conexão. O CS chamou o cliente pelo nome, criou um ambiente amigável e a conversa teve leveza? Para nota 10, todos esses fatores devem ser observados.
+                * **Encantamento:** A nota aumenta conforme o nível de encantamento gerado. A avaliação é baseada em fatores como: o CS falou sobre o que a ferramenta pode ajudar o cliente; e/ou o cliente demonstrou entusiasmo e satisfação na fala (ex: 'vai me ajudar bastante', 'legal', 'gostei', 'bem legal').
+                
                 ---
                 **TRANSCRIÇÃO PARA ANÁLISE:**
                 ---
@@ -600,12 +583,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
