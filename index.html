@@ -327,6 +327,21 @@
                 * **Encantamento:** A nota aumenta conforme o nível de encantamento gerado. A avaliação é baseada em fatores como: o CS falou sobre o que a ferramenta pode ajudar o cliente; e/ou o cliente demonstrou entusiasmo e satisfação na fala (ex: 'vai me ajudar bastante', 'legal', 'gostei', 'bem legal').
                 
                 ---
+                **INSTRUÇÕES FINAIS PARA O FORMATO DE SAÍDA (MANDATÓRIO):**
+
+                Você **DEVE** retornar um único e puro objeto JSON. Este objeto deve conter **EXATAMENTE** as seguintes chaves, mesmo que algumas estejam vazias ou com valores nulos:
+                - `notaGeral` (Número)
+                - `evaluation` (Array de Objetos)
+                - `speakingTime` (Objeto)
+                - `profileAnalysis` (Objeto)
+                - `summary` (Objeto)
+                - `cancellationAlert` (Objeto)
+                - `meetingHighlight` (String)
+                - `opportunities` (Array de Objetos)
+                
+                Não adicione nenhum texto, comentário ou formatação markdown antes ou depois do objeto JSON.
+
+                ---
                 **TRANSCRIÇÃO PARA ANÁLISE:**
                 ---
                 ${combinedTranscript}
