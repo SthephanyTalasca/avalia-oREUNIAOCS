@@ -137,11 +137,11 @@
     </div>
 
     <script>
-        // ATENÇÃO: Insira a sua chave da API do Google AI Studio aqui.
-        const apiKey = "AIzaSyAAc8LMjIbXz5BQiHhGVSdwjvZUT9vHo8A"; 
-
-        // [O restante do seu código JavaScript começa aqui...]
-        // ... (código dos elementos DOM) ...
+        // ####################################################################
+        // ## ATENÇÃO: COLOQUE A SUA NOVA CHAVE DE API SECRETA AQUI          ##
+        // ## (E mantenha este ficheiro APENAS no seu computador)            ##
+        // ####################################################################
+        const apiKey = "COLE_A_SUA_NOVA_CHAVE_DE_API_AQUI"; 
         
         const csNameInput = document.getElementById('cs-name-input');
         const transcriptInput = document.getElementById('transcript-input');
@@ -261,8 +261,8 @@
             const readPromises = uploadedFiles.map(file => file.text());
 
             try {
-                if (apiKey === "SUA_CHAVE_DA_API_VEM_AQUI") {
-                    throw new Error("Por favor, insira uma chave de API válida no código-fonte (const apiKey).");
+                if (apiKey === "COLE_A_SUA_NOVA_CHAVE_DE_API_AQUI" || apiKey.length < 30) {
+                    throw new Error("Por favor, insira uma chave de API VÁLIDA do Google AI Studio na linha 208 do código.");
                 }
 
                 const fileTranscripts = await Promise.all(readPromises);
@@ -301,7 +301,7 @@
 
                 5.  **REGRA "ENCANTAMENTO É INDEPENDENTE":** A avaliação do critério 'Encantamento' não deve ser impactada pela presença ou ausência de objeções. Avalie-o com base na capacidade do CS de criar momentos "uau" e superar as expectativas.
 
-                6.  **PONTO DE ATENÇÃO "ESCUTA ATIVA":** O tempo de fala é um indicador chave. Se o percentual de fala do CS for **superior a 70%**, comece a descontar pontos da nota de Escuta Ativa (ex: -1 ponto a cada 10% acima do limite). Além disso, se o CS **interromper o cliente desnecessariamente e de forma intencional**, desconte pontos. Contudo, lembre-se que estes são apenas **fatores** da nota; a avaliação principal ainda é se o CS ouviu para entender, captou as entrelinhas e validou o entendimento.
+                6.  **PONTO DE ATENÇÃO "ESCUTA ATIVA":** O tempo de fala é um indicador chave. Se o percentual de fala do CS for **superior a 70%**, comece a descontar pontos da nota de Escuta Ativa (ex: -1 ponto a cada 10% acima do limite). Além disso, se o CS **interromper o cliente desnecessariamente e de forma intencional**, desconte pontos. Contudo, lembre-se que estes são apenas **fatoRES** da nota; a avaliação principal ainda é se o CS ouviu para entender, captou as entrelinhas e validou o entendimento.
 
                 7.  **PLANO DE AÇÃO OBRIGATÓRIO:** A análise **DEVE** conter um plano de ação claro. Identifique, no mínimo, **2-3 pontos de melhoria** (erros específicos cometidos) e **2-3 sugestões práticas** (ações claras que o CS pode tomar para melhorar).
 
@@ -354,18 +354,26 @@
                 `;
 
                 // This schema defines the expected JSON structure for the AI's response.
-                const schema = { type: "OBJECT", properties: { "notaGeral": { "type": "NUMBER" }, "evaluation": { type: "ARRAY", items: { type: "OBJECT", properties: { "criterio": { "type": "STRING" }, "nota": { "type": "NUMBER" }, "justificativa": { "type": "STRING" } }, required: ["criterio", "nota", "justificativa"] } }, "speakingTime": { type: "OBJECT", properties: { "cs": { "type": "NUMBER" }, "client": { "type": "NUMBER" } }, required: ["cs", "client"] }, "profileAnalysis": { type: "OBJECT", properties: { "profile": { "type": "STRING" }, "handling": { "type": "STRING" }, "suggestions": { "type": "STRING" } }, required: ["profile", "handling", "suggestions"] }, "summary": { type: "OBJECT", properties: { "geral": { "type": "STRING" }, "specificErrors": { "type": "ARRAY", "items": { "type": "STRING" } }, "sugestoes": { "type": "ARRAY", items: { "type": "STRING" } } }, required: ["geral", "specificErrors", "sugestoes"] }, "cancellationAlert": { type: "OBJECT", properties: { "risk": { "type": "BOOLEAN" }, "reason": { "type": "STRING" } }, required: ["risk", "reason"] }, "meetingHighlight": { "type": "STRING" }, "opportunities": { type: "ARRAY", items: { "type": "OBJECT", properties: { "product": { "type": "STRING" }, "reason": { "type": "STRING" } }, required: ["product", "reason"] } } }, required: ["notaGeral", "evaluation", "speakingTime", "profileAnalysis", "summary", "cancellationAlert", "meetingHighlight", "opportunities"] };
+                const schema = { type: "OBJECT", properties: { "notaGeral": { "type": "NUMBER" }, "evaluation": { type: "ARRAY", items: { type: "OBJECT", properties: { "criterio": { "type": "STRING" }, "nota": { "type": "NUMBER" }, "justificativa": { "type": "STRING" } }, required: ["criterio", "nota", "justificativa"] } }, "speakingTime": { type: "OBJECT", properties: { "cs": { "type": "NUMBER" }, "client": { "type": "NUMBER" } }, required: ["cs", "client"] }, "profileAnalysis": { type: "OBJECT", properties: { "profile": { "type": "STRING" }, "handling": { "type": "STRING" }, "suggestions": { "type": "STRING" } }, required: ["profile", "handling", "suggestions"] }, "summary": { type: "OBJECT", properties: { "geral": { "type": "STRING" }, "specificErrors": { "type": "ARRAY", "items": { "type": "STRING" } }, "sugestoes": { "type": "ARRAY", items: { "type": "STRING" } } }, required: ["geral", "specificErrors", "sugestoes"] }, "cancellationAlert": { type: "OBJECT", properties: { "risk": { "type": "BOOLEAN" }, "reason": { "type": "STRING" } }, required: ["risk", "reason"] }, "meetingHighlight": { "type": "STRING" }, "opportunities": { type: "ARRAY", items: { type: "OBJECT", properties: { "product": { "type": "STRING" }, "reason": { "type": "STRING" } }, required: ["product", "reason"] } } }, required: ["notaGeral", "evaluation", "speakingTime", "profileAnalysis", "summary", "cancellationAlert", "meetingHighlight", "opportunities"] };
                 const payload = { contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema } };
                 
                 // ######################################################
-                // ##               AQUI ESTÁ A CORREÇÃO               ##
+                // ##          USANDO O MODELO ESTÁVEL 'gemini-pro'    ##
                 // ######################################################
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
                 
                 const response = await fetchWithRetry(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
+                    
+                    if (response.status === 400) {
+                         throw new Error(`Erro na API da Google (400). Verifique se sua chave de API é válida e se o faturamento (billing) está ativado na sua conta Google Cloud.`);
+                    }
+                     if (response.status === 404) {
+                         throw new Error(`Erro na API da Google (404). O modelo 'gemini-pro' não foi encontrado. Isso pode ser um problema temporário ou de permissão da sua chave.`);
+                    }
+                    
                     const errorDetails = `Status: ${response.status}. Mensagem: ${errorData.error?.message || response.statusText}`;
                     throw new Error(`Erro na API da Google. ${errorDetails}`);
                 }
@@ -376,13 +384,17 @@
                     const analysisData = JSON.parse(result.candidates[0].content.parts[0].text);
                     displayResults(analysisData);
                 } else {
+                     console.warn("Resposta da API recebida, mas sem conteúdo 'candidates'.", result);
+                    if (result.candidates && result.candidates[0].finishReason === 'SAFETY') {
+                        throw new Error("A análise foi bloqueada pelos filtros de segurança da Google. Tente uma transcrição diferente.");
+                    }
                     throw new Error("A resposta da API está malformada ou vazia.");
                 }
 
             } catch (error) {
                 console.error("Erro ao analisar:", error);
                 loadingSpinner.classList.add('hidden');
-                errorMessage.textContent = `Ocorreu um erro na análise. ${error.message}. Por favor, verifique o conteúdo da transcrição e tente novamente.`;
+                errorMessage.textContent = `${error.message}. Por favor, verifique sua chave de API (linha 211) e o conteúdo da transcrição.`;
                 errorMessage.classList.remove('hidden');
             } finally {
                 checkAnalysisButtonState();
