@@ -64,7 +64,7 @@
                 </div>
 
                 <div class="mb-6">
-                     <label for="transcript-input" class="block text-lg font-medium text-gray-700 mb-2">Colar Transcrição Manualmente</label>
+                    <label for="transcript-input" class="block text-lg font-medium text-gray-700 mb-2">Colar Transcrição Manualmente</label>
                     <textarea id="transcript-input" rows="10" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 ring-primary" placeholder="Cole aqui a transcrição..."></textarea>
                     <p class="text-sm text-gray-500 mt-2"><b>Dica:</b> Para uma análise de fala mais precisa, formate a transcrição com marcadores claros, como "CS:" e "Cliente:" antes de cada fala.</p>
                 </div>
@@ -140,6 +140,9 @@
         // ATENÇÃO: Insira a sua chave da API do Google AI Studio aqui.
         const apiKey = "AIzaSyAAc8LMjIbXz5BQiHhGVSdwjvZUT9vHo8A"; 
 
+        // [O restante do seu código JavaScript começa aqui...]
+        // ... (código dos elementos DOM) ...
+        
         const csNameInput = document.getElementById('cs-name-input');
         const transcriptInput = document.getElementById('transcript-input');
         const analyzeBtn = document.getElementById('analyze-btn');
@@ -173,11 +176,11 @@
         fileDropZone.addEventListener('drop', (e) => { e.preventDefault(); fileDropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
         fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
         analyzeBtn.addEventListener('click', () => {
-             resultsSection.classList.remove('hidden');
-             setTimeout(() => {
-                 resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-             }, 100);
-             handleAnalysis();
+            resultsSection.classList.remove('hidden');
+            setTimeout(() => {
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+            handleAnalysis();
         });
 
         // Function to enable/disable the analysis button based on input
@@ -303,12 +306,12 @@
                 7.  **PLANO DE AÇÃO OBRIGATÓRIO:** A análise **DEVE** conter um plano de ação claro. Identifique, no mínimo, **2-3 pontos de melhoria** (erros específicos cometidos) e **2-3 sugestões práticas** (ações claras que o CS pode tomar para melhorar).
 
                 8.  **ANÁLISE DE PERFIL DE CLIENTE:** Analise a linguagem, o tom e as perguntas do cliente para criar um **perfil descritivo** (ex: "O Cético Sobrecarregado", "O Analítico Detalhista", "O Novato Ansioso"). Justifique por que você chegou a essa conclusão com base em evidências da transcrição e avalie como o CS lidou (ou falhou em lidar) com esse perfil específico.
-                 
+                
                 9.  **REGRA DE EXEÇÕES:** Não penalize o CS por atrasos do cliente, nem por erros técnicos referente a internet, aúdio não funcionar ou qualquer outro problema que não possa ser evitado.
                 
                 9.  **JUSTIFICATIVA OBRIGATÓRIA:** Sempre justificar por que a nota não foi máxima,** mesmo sendo 9 ou 8.**
 
-                10.  **FORMATO DE SAÍDA (MANDATÓRIO):** A resposta final **DEVE** ser um único e puro objeto JSON, sem nenhum texto, comentário ou formatação markdown antes ou depois dele.
+                10. **FORMATO DE SAÍDA (MANDATÓRIO):** A resposta final **DEVE** ser um único e puro objeto JSON, sem nenhum texto, comentário ou formatação markdown antes ou depois dele.
 
                 ---
 
@@ -325,7 +328,7 @@
                 * **Clareza:** A comunicação foi simples, direta e livre de jargões? O CS usou diferentes formas (analogias, exemplos) para explicar o mesmo ponto quando necessário?
                 * **Objetividade:** O CS foi direto ao ponto ou divagou? As soluções apresentadas eram assertivas e resolviam diretamente a questão do cliente?
                 * **Flexibilidade:** O CS soube adaptar o roteiro para atender a uma necessidade urgente do cliente, ou se manteve rigidamente preso ao script?
-                * **Domínio de Produto:** O CS demonstrou conhecimento profundo, incluindo casos de uso avançados e boas práticas, ou apenas o conhecimento superficial?
+                * **Domínio de Produto:** O CS demonstou conhecimento profundo, incluindo casos de uso avançados e boas práticas, ou apenas o conhecimento superficial?
                 * **Alinhamento ao Modelo de Negócio:** O discurso do CS refletiu a estratégia da empresa de construir uma parceria de longo prazo, ou foi puramente transacional?
                 * **Ecossistema Nibo:** O CS demonstrou como as diferentes ferramentas do Nibo se integram para gerar mais valor, ou tratou o produto de forma isolada? ( Não penalize se não houve oportunidades.)
                 * **Universo da Contabilidade:** O CS usou a linguagem e demonstrou conhecimento dos processos e dores do mundo contábil para criar uma conexão mais forte com o cliente
@@ -353,7 +356,11 @@
                 // This schema defines the expected JSON structure for the AI's response.
                 const schema = { type: "OBJECT", properties: { "notaGeral": { "type": "NUMBER" }, "evaluation": { type: "ARRAY", items: { type: "OBJECT", properties: { "criterio": { "type": "STRING" }, "nota": { "type": "NUMBER" }, "justificativa": { "type": "STRING" } }, required: ["criterio", "nota", "justificativa"] } }, "speakingTime": { type: "OBJECT", properties: { "cs": { "type": "NUMBER" }, "client": { "type": "NUMBER" } }, required: ["cs", "client"] }, "profileAnalysis": { type: "OBJECT", properties: { "profile": { "type": "STRING" }, "handling": { "type": "STRING" }, "suggestions": { "type": "STRING" } }, required: ["profile", "handling", "suggestions"] }, "summary": { type: "OBJECT", properties: { "geral": { "type": "STRING" }, "specificErrors": { "type": "ARRAY", "items": { "type": "STRING" } }, "sugestoes": { "type": "ARRAY", items: { "type": "STRING" } } }, required: ["geral", "specificErrors", "sugestoes"] }, "cancellationAlert": { type: "OBJECT", properties: { "risk": { "type": "BOOLEAN" }, "reason": { "type": "STRING" } }, required: ["risk", "reason"] }, "meetingHighlight": { "type": "STRING" }, "opportunities": { type: "ARRAY", items: { "type": "OBJECT", properties: { "product": { "type": "STRING" }, "reason": { "type": "STRING" } }, required: ["product", "reason"] } } }, required: ["notaGeral", "evaluation", "speakingTime", "profileAnalysis", "summary", "cancellationAlert", "meetingHighlight", "opportunities"] };
                 const payload = { contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema } };
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                
+                // ######################################################
+                // ##               AQUI ESTÁ A CORREÇÃO               ##
+                // ######################################################
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
                 
                 const response = await fetchWithRetry(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 
@@ -526,7 +533,7 @@
             highlightSection.innerHTML = `
                 <h3 class="text-2xl font-bold text-center text-primary">Ponto Alto da Reunião</h3>
                 <div class="mt-6 bg-green-50/50 p-6 rounded-lg">
-                     <p class="text-gray-700">${highlight}</p>
+                    <p class="text-gray-700">${highlight}</p>
                 </div>
             `;
         }
@@ -553,8 +560,8 @@
 
         function displayProfileAnalysis(profileData) {
             if (!profileData || !profileData.profile) {
-                 profileAnalysisSection.innerHTML = '';
-                 return;
+                profileAnalysisSection.innerHTML = '';
+                return;
             }
             profileAnalysisSection.innerHTML = `
                 <h3 class="text-2xl font-bold text-center text-primary">Análise de Perfil do Contador</h3>
@@ -600,9 +607,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
