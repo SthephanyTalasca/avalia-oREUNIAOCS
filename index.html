@@ -141,7 +141,8 @@
         // ## ATENÇÃO: COLOQUE A SUA NOVA CHAVE DE API SECRETA AQUI          ##
         // ## (E mantenha este ficheiro APENAS no seu computador)            ##
         // ####################################################################
-        const apiKey = "COLE_A_SUA_NOVA_CHAVE_DE_API_AQUI"; 
+       const apiKey = process.env.API_KEY;
+
         
         const csNameInput = document.getElementById('cs-name-input');
         const transcriptInput = document.getElementById('transcript-input');
@@ -619,3 +620,4 @@
     </script>
 </body>
 </html>
+
