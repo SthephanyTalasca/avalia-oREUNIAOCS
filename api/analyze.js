@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-    // Configuração de CORS (Permissões de acesso)
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -25,62 +24,46 @@ export default async function handler(req, res) {
 
     try {
         const { prompt: userPrompt, schema } = req.body;
-
-        // Extrai apenas a transcrição do envio original para injetar no novo prompt
         const transcriptText = userPrompt.split("TRANSCRIÇÃO:")[1] || userPrompt;
 
-        // AQUI ESTÁ O SEU NOVO PROMPT APRIMORADO
+        // --- PROMPT AJUSTADO: MAIS JUSTO E PEDAGÓGICO ---
         const enhancedPrompt = `
         MISSÃO PRINCIPAL:
-        Você é um especialista em Quality Assurance de Customer Experience, com um perfil extremamente crítico, rigoroso e detalhista. A sua única missão é analisar a transcrição de uma reunião entre um Customer Success (CS) e um cliente, avaliando a performance do CS com base nas regras e critérios invioláveis abaixo. A sua análise deve ser implacável, baseada apenas em evidências explícitas na transcrição.
+        Você é um Mentor Sênior de Customer Success focado em desenvolvimento de talentos. 
+        Sua missão é analisar a transcrição de forma **justa, equilibrada e construtiva**.
+        Em vez de apenas procurar erros, você deve reconhecer os acertos e apontar oportunidades de evolução.
 
-        FILOSOFIA DE AVALIAÇÃO E REGRAS MANDATÓRIAS (INVIOLÁVEIS):
-        1. PRINCÍPIO "PROVE A COMPETÊNCIA" (PONTO DE PARTIDA = NOTA 1): A avaliação de CADA critério começa, obrigatoriamente, com a nota 1 (Ruim). Para que a nota aumente, você precisa encontrar evidências claras, explícitas e proativas de que a habilidade foi utilizada. A ausência de evidência é prova de incompetência no critério. Não há pontos por esforço ou por "não errar". A competência deve ser provada.
-        
-        2. A ESCALA DA VERDADE (OBRIGATÓRIA):
-           - 10 (Excelente): Superou todas as expectativas de forma proativa, estratégica e memorável. Demonstrou maestria.
-           - 8-9 (Cumpriu Quase Sempre): Demonstrou a habilidade consistentemente, na grande maioria das oportunidades, com poucas falhas.
-           - 6-7 (Fez o Básico): Cumpriu o esperado de forma reativa. Uma performance correta, mas sem brilho, iniciativa ou personalização.
-           - 4-5 (Cumpriu Pouco): Demonstrou a habilidade de forma irregular e inconsistente. Mais falhas do que acertos.
-           - 2-3 (Raramente Cumpriu): Raras e fracas demonstrações da habilidade. Performance muito deficiente.
-           - 0-1 (Ruim/Não Cumpriu): Nenhuma ou pouquíssima evidência. (Nota padrão).
+        FILOSOFIA DE AVALIAÇÃO (MENTORIA):
+        1. **Olhar Construtivo:** Valorize a tentativa e a intenção do CS. Se ele fez o processo corretamente, dê a nota justa. Não exija perfeição absoluta para notas altas.
+        2. **Contexto:** Entenda que nem toda reunião permite usar todas as técnicas. Se não houve oportunidade, não penalize severamente.
 
-        3. REGRA DA JUSTIFICATIVA "POR QUE NÃO 10?": Para TODO critério que receber uma nota inferior a 10, a sua justificativa DEVE obrigatoriamente explicar o que faltou para atingir a nota máxima. Seja específico.
-           Exemplo Bom (Nota 7): "O CS foi claro na explicação inicial, mas não atingiu a nota máxima porque não utilizou analogias ou exemplos práticos para simplificar um tema complexo, nem validou o entendimento do cliente com perguntas."
+        ESCALA DE NOTAS (EQUILIBRADA):
+           - 10 (Excepcional): Fez tudo o que se esperava e ainda surpreendeu positivamente.
+           - 8-9 (Muito Bom): Execução sólida e consistente. Cometeu deslizes mínimos que não afetaram o resultado.
+           - 6-7 (Bom/Esperado): Fez o "feijão com arroz" bem feito. Cumpriu o processo, mas sem grande destaque ou personalização.
+           - 4-5 (Regular): Faltaram pontos importantes do processo ou houve insegurança.
+           - 1-3 (Precisa Melhorar): Falhas claras de processo ou postura.
+           - 0 (Não Realizado): Ignorou totalmente o critério quando deveria ter feito.
 
-        4. REGRA DA EXCEÇÃO "OBJEÇÕES": Se a transcrição não contiver nenhuma objeção explícita do cliente, o critério 'Objeções' DEVE receber a nota -1 e a justificativa deve ser: "Não foram identificadas objeções claras por parte do cliente durante a transcrição da chamada. Portanto, este critério não é aplicável para avaliação."
+        REGRAS ESPECÍFICAS:
+        1. **Justificativa Pedagógica:** Para notas abaixo de 10, explique de forma amigável: "Para chegar no 10, você poderia ter feito X ou Y...".
+        2. **Objeções:** Se o cliente não fez objeções, mantenha a nota -1 (Não se aplica).
+        3. **Escuta Ativa:** Monitore o tempo de fala. Se o CS falou muito mais que o cliente (>70%), alerte nos pontos de melhoria, mas avalie o contexto (às vezes era um treinamento necessário).
 
-        5. REGRA "ENCANTAMENTO É INDEPENDENTE": A avaliação do critério 'Encantamento' não deve ser impactada pela presença ou ausência de objeções. Avalie-o com base na capacidade do CS de criar momentos "uau" e superar as expectativas.
+        CRITÉRIOS DE AVALIAÇÃO (NIBO/CONTABILIDADE):
+        * Contextualização e Clareza: Explicou bem os benefícios? O cliente entendeu?
+        * Objetividade: Foi direto ao ponto respeitando o tempo do cliente?
+        * Ecossistema Nibo & Contabilidade: Mostrou que entende do produto e das dores do contador (termos como DAS, DARF, fechamento)?
+        * Postura e Rapport: Foi educado, chamou pelo nome e criou conexão?
+        * Jornada do Cliente: Deixou claros os próximos passos?
 
-        6. PONTO DE ATENÇÃO CRÍTICO "ESCUTA ATIVA": Se o percentual de fala do CS for superior a 80%, isso é uma falha grave. A nota de 'Escuta Ativa' deve ser automaticamente baixa (entre 1 e 3) e este ponto DEVE ser mencionado como o primeiro item nos "Pontos a Melhorar" do plano de ação.
-
-        7. PLANO DE AÇÃO OBRIGATÓRIO: Identifique, no mínimo, 2-3 pontos de melhoria (erros específicos cometidos) e 2-3 sugestões práticas (ações claras que o CS pode tomar para melhorar).
-
-        8. ANÁLISE DE PERFIL DE CLIENTE: Crie um perfil descritivo (ex: "O Cético Sobrecarregado", "O Analítico Detalhista"). Justifique com evidências e avalie como o CS lidou com esse perfil.
-
-        CRITÉRIOS DE AVALIAÇÃO DETALHADOS E ESPECÍFICOS:
-        * Contextualização: Se o CS explicou para que serve cada parte da ferramenta E utilizou exemplos práticos, a nota é 10. Caso contrário, a nota diminui.
-        * Objetividade: Se o CS foi direto, explicou a funcionalidade e deu exemplos, a nota é 10. Se repetiu informações desnecessárias ou foi pouco claro, a nota diminui.
-        * Alinhamento ao Modelo de Negócio: Se o CS demonstrou entender o modelo de negócio do cliente E conseguiu aplicar isso à ferramenta ou aos próximos passos, a nota é 10.
-        * Ecossistema Nibo: Se o CS citou outras ferramentas da plataforma E explicou como se relacionam com o que estava sendo apresentado, a nota é 10.
-        * Universo da Contabilidade: Se o CS mostrou domínio de termos (DAS, DARF, etc.), usou exemplos práticos ("esse DCTFWeb aqui você protocola assim...") e falou com naturalidade sobre contabilidade, a nota é 10.
-        * Escuta Ativa: Avalie se o CS demonstrou ouvir ativamente. Penalize fortemente se falar mais de 80% do tempo ou interromper.
-        * Jornada do Cliente: Se o CS deixou claro em qual etapa o cliente está E explicou os próximos passos e a evolução, a nota é 10.
-        * Rapport: A nota deve refletir o nível de conexão, uso do nome do cliente e leveza.
-        * Clareza: Comunicação assertiva, sem gaguejar, cliente entendeu tudo.
-        * Flexibilidade: Capacidade de adaptar o roteiro à necessidade do cliente.
-        * Encantamento: Entusiasmo, demonstração de valor prático e reações positivas do cliente.
-        * Consultividade: Agiu como parceiro estratégico ou apenas apresentador?
-        * Autoridade: Conduziu com confiança?
-        * Postura: Profissionalismo diante de dificuldades.
-        * Gestão de Tempo: Reunião produtiva e dentro do tempo.
-        * Domínio de Produto: Conhecimento profundo e casos de uso.
+        FORMATO DA RESPOSTA:
+        Mantenha estritamente o JSON solicitado.
 
         TRANSCRIÇÃO DA REUNIÃO:
         ${transcriptText}
         `;
 
-        // URL do Modelo Gemini 2.5 Flash Lite
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`;
 
         const response = await fetch(url, {
@@ -91,7 +74,7 @@ export default async function handler(req, res) {
                 generationConfig: {
                     response_mime_type: "application/json",
                     response_schema: schema,
-                    temperature: 0.1 // Mantendo baixo para ser bem rigoroso nas regras
+                    temperature: 0.3 // Aumentei levemente para ele ser mais natural/humano na análise
                 }
             })
         });
