@@ -44,7 +44,7 @@ export default async function handler(req, res) {
         🚨 PROBLEMA A EVITAR: Não dê notas médias (6, 7 ou 8) para todo mundo. Isso é inútil.
         
         SUA NOVA DIRETRIZ DE CALIBRAGEM:
-        1. **Fuja da Média:** Se foi ruim, dê 2, 3 ou 4 sem medo. Se foi incrível, dê 9 ou 10. Só dê 7 se for realmente "apenas ok".
+        1. **Fuja da Média:** Se foi ruim, dê 4, 5 ou 6 sem medo. Se foi incrível, dê 9 ou 10. Só dê 7 se for realmente "apenas ok".
         2. **Compare com a Excelência:** Uma nota 10 significa que o CS não apenas fez o básico, mas encantou, usou técnicas avançadas e dominou a conversa. Se ele só "seguiu o script", a nota é 6.
         3. **Seja Específico:** Não repita elogios genéricos. Encontre o detalhe que fez a diferença (para o bem ou para o mal).
 
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
         * Contextualização: O cliente entendeu o "porquê"? (Nota 10 = Cliente teve um momento "Ah, entendi!")
         * Objetividade: Foi direto? (Nota baixa se o cliente teve que interromper ou perguntar "mas e quanto a X?")
         * Ecossistema Nibo/Contabilidade: Usou os termos certos? (DAS, DARF, Fechamento). Se falou termo errado, a nota cai drasticamente.
-        * Postura/Rapport: Parecia um robô (nota 4) ou um parceiro humano (nota 9)?
+        * Postura/Rapport: Parecia um robô (nota 4) ou um parceiro humano (nota 10)?
         * Jornada: O próximo passo ficou cristalino?
 
         FORMATO JSON OBRIGATÓRIO:
