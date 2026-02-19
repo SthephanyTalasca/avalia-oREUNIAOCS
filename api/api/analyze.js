@@ -1,64 +1,63 @@
-// Este é o ficheiro api/analyze.js (Node.js)
-// Ele roda no SERVIDOR da Vercel.
-
+// api/analyze.js
 export default async function handler(req, res) {
-  // Verifica se o método é POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido' });
-  }
+    // 1. Configuração de CORS para aceitar requisições do seu site
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    );
 
-  try {
-    // 1. Pega os dados que o seu frontend (HTML) enviou
-    const { evaluationPrompt, schema } = req.body;
-
-    if (!evaluationPrompt || !schema) {
-      return res.status(400).json({ error: 'Faltam dados no pedido (prompt ou schema)' });
+    // Trata requisição OPTIONS (pre-flight do navegador)
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
     }
 
-    // 2. Pega a sua chave secreta da Vercel.
-    //    Estou a usar 'API_KEY' como você disse que configurou.
-    const apiKey = process.env.API_KEY;
-
-    if (!apiKey) {
-      // Este erro aparecerá nos logs da Vercel
-      console.error("Erro: A variável de ambiente API_KEY não foi encontrada.");
-      return res.status(500).json({ error: 'Chave de API não configurada no servidor' });
+    // 2. Verifica se é POST
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Método não permitido. Use POST.' });
     }
 
-    // 3. Monta a URL da API do Google
-    const googleApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+    // 3. Pega a chave segura do ambiente da Vercel
+    const API_KEY = process.env.GEMINI_API_KEY;
 
-    // 4. Monta o payload que o Google espera
-    const googlePayload = {
-      contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: schema,
-      },
-    };
-
-    // 5. Chama a API do Google (do lado do servidor)
-    const response = await fetch(googleApiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(googlePayload),
-    });
-
-    // 6. Analisa a resposta do Google
-    const data = await response.json();
-
-    if (!response.ok) {
-      // Se o Google der erro, repassa o erro para o frontend
-      console.error('Erro da API do Google:', data);
-      return res.status(response.status).json(data);
+    if (!API_KEY) {
+        return res.status(500).json({ error: 'ERRO CRÍTICO: Chave de API não configurada no servidor Vercel.' });
     }
 
-    // 7. Se der certo, repassa a resposta do Google para o frontend
-    return res.status(200).json(data);
+    try {
+        const { prompt, schema } = req.body;
 
-  } catch (error) {
-    // Se o nosso backend falhar
-    console.error('Erro interno no backend:', error);
-    return res.status(500).json({ error: 'Erro interno no servidor da Vercel' });
-  }
+        // 4. Conecta com o Google usando o modelo GEMINI 2.5 FLASH LITE
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    response_mime_type: "application/json",
+                    response_schema: schema,
+                    temperature: 0.2
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || `Erro Google API: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Retorna os dados para o seu site
+        res.status(200).json(data);
+
+    } catch (error) {
+        console.error("Erro no Backend:", error);
+        res.status(500).json({ error: error.message });
+    }
 }
