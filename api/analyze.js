@@ -52,7 +52,7 @@ export default async function handler(req, res) {
 
         5. REGRA "ENCANTAMENTO É INDEPENDENTE": A avaliação do critério 'Encantamento' não deve ser impactada pela presença ou ausência de objeções. Avalie-o com base na capacidade do CS de criar momentos "uau" e superar as expectativas.
 
-        6. PONTO DE ATENÇÃO CRÍTICO "ESCUTA ATIVA": Se o percentual de fala do CS for superior a 70%, isso é uma falha grave. A nota de 'Escuta Ativa' deve ser automaticamente baixa (entre 1 e 3) e este ponto DEVE ser mencionado como o primeiro item nos "Pontos a Melhorar" do plano de ação.
+        6. PONTO DE ATENÇÃO CRÍTICO "ESCUTA ATIVA": Se o percentual de fala do CS for superior a 80%, isso é uma falha grave. A nota de 'Escuta Ativa' deve ser automaticamente baixa (entre 1 e 3) e este ponto DEVE ser mencionado como o primeiro item nos "Pontos a Melhorar" do plano de ação.
 
         7. PLANO DE AÇÃO OBRIGATÓRIO: Identifique, no mínimo, 2-3 pontos de melhoria (erros específicos cometidos) e 2-3 sugestões práticas (ações claras que o CS pode tomar para melhorar).
 
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
         * Alinhamento ao Modelo de Negócio: Se o CS demonstrou entender o modelo de negócio do cliente E conseguiu aplicar isso à ferramenta ou aos próximos passos, a nota é 10.
         * Ecossistema Nibo: Se o CS citou outras ferramentas da plataforma E explicou como se relacionam com o que estava sendo apresentado, a nota é 10.
         * Universo da Contabilidade: Se o CS mostrou domínio de termos (DAS, DARF, etc.), usou exemplos práticos ("esse DCTFWeb aqui você protocola assim...") e falou com naturalidade sobre contabilidade, a nota é 10.
-        * Escuta Ativa: Avalie se o CS demonstrou ouvir ativamente. Penalize fortemente se falar mais de 70% do tempo ou interromper.
+        * Escuta Ativa: Avalie se o CS demonstrou ouvir ativamente. Penalize fortemente se falar mais de 80% do tempo ou interromper.
         * Jornada do Cliente: Se o CS deixou claro em qual etapa o cliente está E explicou os próximos passos e a evolução, a nota é 10.
         * Rapport: A nota deve refletir o nível de conexão, uso do nome do cliente e leveza.
         * Clareza: Comunicação assertiva, sem gaguejar, cliente entendeu tudo.
