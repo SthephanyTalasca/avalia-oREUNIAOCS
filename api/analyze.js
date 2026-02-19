@@ -26,42 +26,61 @@ export default async function handler(req, res) {
     try {
         const { prompt: userPrompt, schema } = req.body;
         
-        // Separa a transcrição para garantir que a IA foque nela
+        // Separa a transcrição
         const transcriptText = userPrompt.split("TRANSCRIÇÃO:")[1] || userPrompt;
-        
-        // Debug: Mostra nos logs da Vercel o tamanho do texto recebido
-        console.log("Recebendo transcrição com tamanho:", transcriptText.length);
 
-        if (transcriptText.length < 50) {
-            return res.status(400).json({ error: "O texto da transcrição parece muito curto ou vazio." });
-        }
-
-        // --- PROMPT DE "ALTA SENSIBILIDADE" ---
         const enhancedPrompt = `
-        MISSÃO:
-        Você é um Mentor Sênior de Customer Success. Sua tarefa é avaliar a reunião abaixo com **ALTA SENSIBILIDADE ÀS NUANCES**.
-        
-        🚨 PROBLEMA A EVITAR: Não dê notas médias (6, 7 ou 8) para todo mundo. Isso é inútil.
-        
-        SUA NOVA DIRETRIZ DE CALIBRAGEM:
-        1. **Fuja da Média:** Se foi ruim, dê 4, 5 ou 6 sem medo. Se foi incrível, dê 9 ou 10. Só dê 7 se for realmente "apenas ok".
-        2. **Compare com a Excelência:** Uma nota 10 significa que o CS não apenas fez o básico, mas encantou, usou técnicas avançadas e dominou a conversa. Se ele só "seguiu o script", a nota é 6.
-        3. **Seja Específico:** Não repita elogios genéricos. Encontre o detalhe que fez a diferença (para o bem ou para o mal).
+        MISSÃO PRINCIPAL:
+        Você é um **Mentor Sênior de CS e Especialista em Expansão de Contas (Upsell)**.
+        Além de avaliar a performance técnica e comportamental, sua missão crítica é **identificar oportunidades de vendas** baseadas nas dores e falas do cliente.
 
-        CRITÉRIOS DE AVALIAÇÃO (MENTORIA):
-        * Contextualização: O cliente entendeu o "porquê"? (Nota 10 = Cliente teve um momento "Ah, entendi!")
-        * Objetividade: Foi direto? (Nota baixa se o cliente teve que interromper ou perguntar "mas e quanto a X?")
-        * Ecossistema Nibo/Contabilidade: Usou os termos certos? (DAS, DARF, Fechamento). Se falou termo errado, a nota cai drasticamente.
-        * Postura/Rapport: Parecia um robô (nota 4) ou um parceiro humano (nota 10)?
-        * Jornada: O próximo passo ficou cristalino?
+        ---
+        ### 1. RADAR DE VENDAS (REGRA DE OURO):
+        Você deve varrer a transcrição procurando *intencionalmente* pelos termos abaixo. Se o cliente mencionar qualquer variação destes termos, você **DEVE** adicionar o produto correspondente no campo 'opportunities' do JSON.
 
-        FORMATO JSON OBRIGATÓRIO:
-        Mantenha a estrutura JSON solicitada.
+        | PRODUTO | GATILHOS (PALAVRAS-CHAVE DO CLIENTE) |
+        | :--- | :--- |
+        | **CONCILIADOR OPEN FINANCE** | "Extratos bancários", "Dificuldade de cobrar documentos", "Cobrança de documentos", "Pegar extrato", "Baixar do banco" |
+        | **GESTÃO FINANCEIRA** | "Emitir notas fiscais", "Emitir boletos", "Controle de caixa", "Contas a pagar", "Fluxo de caixa" |
+        | **NIBO INTEGRAÇÃO WHATSAPP** | "Whatsapp dentro do Nibo", "Atendimento via Whatsapp", "Protocolo por Whatsapp", "Centralizar zap", "Vários atendentes" |
+        | **BPO FINANCEIRO** | "BPO", "Terceirizar financeiro", "Assumir o financeiro" |
+        | **EMISSOR DE NOTAS** | "Emitir notas" (específico apenas para nota), "Nota de serviço" |
+        | **RADAR ECAC** | "Situação fiscal", "Parcelamentos", "CNDs", "Certidão negativa", "Multa da receita", "Pendência fiscal" |
 
-        TRANSCRIÇÃO DA REUNIÃO PARA ANÁLISE:
+        ---
+        ### 2. FILOSOFIA DE AVALIAÇÃO (MENTORIA):
+        * **Olhar Construtivo:** Valorize a tentativa. Dê a nota justa pelo que foi executado.
+        * **Escala Equilibrada:**
+           - 10 (Uau): Perfeito + Surpreendente.
+           - 8-9 (Muito Bom): Sólido com mínimos detalhes.
+           - 6-7 (Bom/Padrão): Fez o básico bem feito.
+           - 4-5 (Regular): Faltou processo ou segurança.
+           - 1-3 (Fraco): Erro grave de processo.
+
+        * **Regra do GAP:** Para notas < 10, diga: "Para ser 10, faltou..."
+        * **Objeções:** Sem objeções = Nota -1.
+
+        ---
+        ### 3. CRITÉRIOS DETALHADOS (NIBO):
+        * **Contextualização:** Traduziu feature em benefício real?
+        * **Objetividade:** Direto ao ponto?
+        * **Alinhamento ao Modelo:** Foco em parceria ou só transacional?
+        * **Ecossistema Nibo:** Mostrou como as ferramentas se conectam?
+        * **Universo Contábil:** Usou termos como DAS, DARF, Fechamento?
+        * **Escuta Ativa:** Falou menos de 70% do tempo?
+        * **Jornada:** Próximos passos claros?
+        * **Rapport:** Conexão genuína?
+        * **Encantamento:** O cliente elogiou ou demonstrou alívio?
+
+        ---
+        **FORMATO DE SAÍDA:**
+        Retorne APENAS o JSON válido conforme o schema solicitado.
+
+        **TRANSCRIÇÃO PARA ANÁLISE:**
         ${transcriptText}
         `;
 
+        // Usando o modelo Gemini 2.5 Flash Lite (Rápido e Eficiente)
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`;
 
         const response = await fetch(url, {
@@ -72,7 +91,7 @@ export default async function handler(req, res) {
                 generationConfig: {
                     response_mime_type: "application/json",
                     response_schema: schema,
-                    temperature: 0.5 // AUMENTADO: Mais criatividade e variabilidade nas notas
+                    temperature: 0.3 // Equilíbrio entre criatividade e precisão
                 }
             })
         });
