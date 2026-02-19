@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+    // Configuração de CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -24,43 +25,40 @@ export default async function handler(req, res) {
 
     try {
         const { prompt: userPrompt, schema } = req.body;
+        
+        // Separa a transcrição para garantir que a IA foque nela
         const transcriptText = userPrompt.split("TRANSCRIÇÃO:")[1] || userPrompt;
+        
+        // Debug: Mostra nos logs da Vercel o tamanho do texto recebido
+        console.log("Recebendo transcrição com tamanho:", transcriptText.length);
 
-        // --- PROMPT AJUSTADO: MAIS JUSTO E PEDAGÓGICO ---
+        if (transcriptText.length < 50) {
+            return res.status(400).json({ error: "O texto da transcrição parece muito curto ou vazio." });
+        }
+
+        // --- PROMPT DE "ALTA SENSIBILIDADE" ---
         const enhancedPrompt = `
-        MISSÃO PRINCIPAL:
-        Você é um Mentor Sênior de Customer Success focado em desenvolvimento de talentos. 
-        Sua missão é analisar a transcrição de forma **justa, equilibrada e construtiva**.
-        Em vez de apenas procurar erros, você deve reconhecer os acertos e apontar oportunidades de evolução.
+        MISSÃO:
+        Você é um Mentor Sênior de Customer Success. Sua tarefa é avaliar a reunião abaixo com **ALTA SENSIBILIDADE ÀS NUANCES**.
+        
+        🚨 PROBLEMA A EVITAR: Não dê notas médias (6, 7 ou 8) para todo mundo. Isso é inútil.
+        
+        SUA NOVA DIRETRIZ DE CALIBRAGEM:
+        1. **Fuja da Média:** Se foi ruim, dê 2, 3 ou 4 sem medo. Se foi incrível, dê 9 ou 10. Só dê 7 se for realmente "apenas ok".
+        2. **Compare com a Excelência:** Uma nota 10 significa que o CS não apenas fez o básico, mas encantou, usou técnicas avançadas e dominou a conversa. Se ele só "seguiu o script", a nota é 6.
+        3. **Seja Específico:** Não repita elogios genéricos. Encontre o detalhe que fez a diferença (para o bem ou para o mal).
 
-        FILOSOFIA DE AVALIAÇÃO (MENTORIA):
-        1. **Olhar Construtivo:** Valorize a tentativa e a intenção do CS. Se ele fez o processo corretamente, dê a nota justa. Não exija perfeição absoluta para notas altas.
-        2. **Contexto:** Entenda que nem toda reunião permite usar todas as técnicas. Se não houve oportunidade, não penalize severamente.
+        CRITÉRIOS DE AVALIAÇÃO (MENTORIA):
+        * Contextualização: O cliente entendeu o "porquê"? (Nota 10 = Cliente teve um momento "Ah, entendi!")
+        * Objetividade: Foi direto? (Nota baixa se o cliente teve que interromper ou perguntar "mas e quanto a X?")
+        * Ecossistema Nibo/Contabilidade: Usou os termos certos? (DAS, DARF, Fechamento). Se falou termo errado, a nota cai drasticamente.
+        * Postura/Rapport: Parecia um robô (nota 4) ou um parceiro humano (nota 9)?
+        * Jornada: O próximo passo ficou cristalino?
 
-        ESCALA DE NOTAS (EQUILIBRADA):
-           - 10 (Excepcional): Fez tudo o que se esperava e ainda surpreendeu positivamente.
-           - 8-9 (Muito Bom): Execução sólida e consistente. Cometeu deslizes mínimos que não afetaram o resultado.
-           - 6-7 (Bom/Esperado): Fez o "feijão com arroz" bem feito. Cumpriu o processo, mas sem grande destaque ou personalização.
-           - 4-5 (Regular): Faltaram pontos importantes do processo ou houve insegurança.
-           - 1-3 (Precisa Melhorar): Falhas claras de processo ou postura.
-           - 0 (Não Realizado): Ignorou totalmente o critério quando deveria ter feito.
+        FORMATO JSON OBRIGATÓRIO:
+        Mantenha a estrutura JSON solicitada.
 
-        REGRAS ESPECÍFICAS:
-        1. **Justificativa Pedagógica:** Para notas abaixo de 10, explique de forma amigável: "Para chegar no 10, você poderia ter feito X ou Y...".
-        2. **Objeções:** Se o cliente não fez objeções, mantenha a nota -1 (Não se aplica).
-        3. **Escuta Ativa:** Monitore o tempo de fala. Se o CS falou muito mais que o cliente (>70%), alerte nos pontos de melhoria, mas avalie o contexto (às vezes era um treinamento necessário).
-
-        CRITÉRIOS DE AVALIAÇÃO (NIBO/CONTABILIDADE):
-        * Contextualização e Clareza: Explicou bem os benefícios? O cliente entendeu?
-        * Objetividade: Foi direto ao ponto respeitando o tempo do cliente?
-        * Ecossistema Nibo & Contabilidade: Mostrou que entende do produto e das dores do contador (termos como DAS, DARF, fechamento)?
-        * Postura e Rapport: Foi educado, chamou pelo nome e criou conexão?
-        * Jornada do Cliente: Deixou claros os próximos passos?
-
-        FORMATO DA RESPOSTA:
-        Mantenha estritamente o JSON solicitado.
-
-        TRANSCRIÇÃO DA REUNIÃO:
+        TRANSCRIÇÃO DA REUNIÃO PARA ANÁLISE:
         ${transcriptText}
         `;
 
@@ -74,7 +72,7 @@ export default async function handler(req, res) {
                 generationConfig: {
                     response_mime_type: "application/json",
                     response_schema: schema,
-                    temperature: 0.3 // Aumentei levemente para ele ser mais natural/humano na análise
+                    temperature: 0.5 // AUMENTADO: Mais criatividade e variabilidade nas notas
                 }
             })
         });
