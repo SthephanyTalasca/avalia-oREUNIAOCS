@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-    // Configuração de CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -13,56 +12,39 @@ export default async function handler(req, res) {
         return;
     }
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Método não permitido. Use POST.' });
-    }
-
     const API_KEY = process.env.GEMINI_API_KEY;
-
-    if (!API_KEY) {
-        return res.status(500).json({ error: 'Chave de API não configurada na Vercel.' });
-    }
+    if (!API_KEY) return res.status(500).json({ error: 'Chave de API ausente.' });
 
     try {
         const { prompt: userPrompt, schema } = req.body;
         const transcriptText = userPrompt.split("TRANSCRIÇÃO:")[1] || userPrompt;
 
         const enhancedPrompt = `
-        MISSÃO PRINCIPAL:
-        Você é um **Mentor Sênior de CS e Especialista em Upsell**. 
-        Sua análise deve ser **justa, profunda e baseada em evidências**. Fuja do vício de dar notas médias (8.5) para tudo. 
+        VOCÊ É UM AUDITOR DE QUALIDADE SÊNIOR. Sua tarefa é decompor a análise em 5 pilares matemáticos.
+        
+        ### REGRA DE OURO (ISENÇÃO TÉCNICA):
+        Problemas de sistema (Bugs no Emissor, Conciliador, Gestão, BPO, lentidão) são responsabilidade do SUPORTE. 
+        Se o cliente reclamar disso, você deve dar nota máxima (10) no quesito técnico para o CS, avaliando apenas se ele foi empático. **Não puna o humano pelo erro da máquina.**
 
-        ---
-        ### 1. REGRA DE PROTEÇÃO (SISTEMA VS PESSOA)
-        **IMPORTANTE:** Problemas técnicos nos produtos (Conciliador, Emissor, Gestão Financeira ou BPO) são de **responsabilidade do SUPORTE**.
-        * **NÃO DESCONTE NOTA DO CS** por bugs, erros de integração ou lentidão do software.
-        * Avalie o CS pela forma como ele contornou a situação e se manteve o foco na estratégia, mesmo com o cliente reclamando do sistema.
+        ### PILARES DE AVALIAÇÃO (Dê de 0 a 10 em cada um):
+        1. **POSTURA E RAPPORT:** Conexão com o cliente e empatia (especialmente em reclamações de sistema).
+        2. **DOMÍNIO CONTÁBIL:** Uso correto de termos (DAS, DARF, Pro-labore, Balancete).
+        3. **ESCUTA ATIVA E DIAGNÓSTICO:** O CS identificou as dores reais ou apenas seguiu script?
+        4. **RADAR DE VENDAS (UPSOL):** O CS ofereceu Conciliador, Gestão, Zap ou Radar ECAC ao ouvir os gatilhos? (Se não havia gatilho, dê 10. Se havia e ele ignorou, dê 0).
+        5. **RESOLUÇÃO E PRÓXIMOS PASSOS:** A reunião teve um fechamento claro?
 
-        ---
-        ### 2. FILOSOFIA DE NOTAS (OBJETIVIDADE TOTAL):
-        * **Nota 10 (Excelência):** Se o CS cumpriu todos os requisitos, foi empático, técnico e não deixou passar oportunidades, **DÊ 10 SEM HESITAR**. O 10 é o reconhecimento do trabalho bem feito.
-        * **Notas Baixas (Rigor):** Se o CS foi robótico, ignorou o cliente ou perdeu ganchos de venda claros, **dê notas condizentes (4, 5 ou 6)**. Não tente "suavizar" um desempenho fraco com uma nota morna.
-        * **Justificativa:** Toda nota abaixo de 10 deve vir acompanhada de um "Para ser 10, faltou...". Se for 10, justifique o que foi o ponto alto.
+        ### MÉTODO DE CÁLCULO OBRIGATÓRIO:
+        - Você deve atribuir uma nota para cada um dos 5 pilares acima.
+        - A nota final DEVE ser a média aritmética: (P1 + P2 + P3 + P4 + P5) / 5.
+        - Não arredonde para 8.5 por preguiça. Se a soma der 7.2, a nota é 7.2. Se o CS foi perfeito e a soma deu 10, a nota é 10.
 
-        ---
-        ### 3. RADAR DE VENDAS (FOCO EM EXPANSÃO):
-        Identifique ganchos para os produtos abaixo e preencha o campo 'opportunities':
-        - **CONCILIADOR:** Falar de "extratos", "PDF", "demora para conciliar", "cobrar doc do cliente".
-        - **GESTÃO FINANCEIRA:** Falar de "financeiro do cliente", "contas a pagar/receber", "fluxo de caixa".
-        - **INTEGRAÇÃO WHATSAPP:** Falar de "atendimento", "muito volume no zap", "centralizar conversas".
-        - **RADAR ECAC:** Falar de "situação fiscal", "CND", "parcelamento", "multas".
+        ### RADAR DE VENDAS (GATILHOS):
+        - Conciliador (Extratos/Documentos), Gestão (Boletos/Fluxo de Caixa), Zap (Atendimento), Radar ECAC (Pendências Fiscais).
 
-        ---
-        ### 4. CRITÉRIOS DE AVALIAÇÃO:
-        * **Escuta Ativa:** O CS realmente ouviu as dores ou só queria "vender" o próximo passo?
-        * **Domínio Contábil:** Demonstrou autoridade sobre a rotina (fechamentos, obrigações)?
-        * **Condução e Próximos Passos:** A reunião terminou com um plano de ação claro ou ficou solta?
-
-        ---
-        **FORMATO DE SAÍDA:**
-        Retorne APENAS o JSON válido conforme o schema solicitado. Seja específico e analítico nos comentários.
-
-        **TRANSCRIÇÃO PARA ANÁLISE:**
+        FORMATO DE SAÍDA:
+        Retorne APENAS o JSON. No campo de justificativa, mostre o cálculo que você fez: "P1: 10, P2: 8..."
+        
+        TRANSCRIÇÃO:
         ${transcriptText}
         `;
 
@@ -76,21 +58,15 @@ export default async function handler(req, res) {
                 generationConfig: {
                     response_mime_type: "application/json",
                     response_schema: schema,
-                    temperature: 0.6 // Equilíbrio perfeito para discernimento crítico sem perder a lógica.
+                    temperature: 0.5 // Baixada para garantir precisão no cálculo matemático
                 }
             })
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || `Erro Google API: ${response.status}`);
-        }
 
         const data = await response.json();
         res.status(200).json(data);
 
     } catch (error) {
-        console.error("Erro no Backend:", error);
         res.status(500).json({ error: error.message });
     }
 }
