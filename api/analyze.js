@@ -23,7 +23,7 @@ export default async function handler(req, res) {
         2. **ESCALA DA VERDADE:** 10 (Maestria), 8-9 (Consistente), 6-7 (Básico), 4-5 (Pouco), 2-3 (Raramente), 0-1 (Ruim).
         3. **JUSTIFICATIVA "POR QUE NÃO 10?":** Obrigatória para qualquer nota < 10.
         4. **REGRA DAS OBJEÇÕES:** Se não houver, nota -1 e texto padrão: "Não foram identificadas objeções claras...".
-        5. **ESCUTA ATIVA:** Se fala do CS > 70%, nota entre 1-3. Penalize -1 ponto a cada 10% acima de 70%.
+        5. **ESCUTA ATIVA:** Se fala do CS > 90%, nota entre 1-3. Penalize -1 ponto a cada 10% acima de 80%.
 
         ### MÉTODO DE CÁLCULO DA NOTA GERAL:
         A "notaGeral" deve ser a média aritmética exata: (Soma das notas de todos os critérios) / (Quantidade de critérios com nota >= 0). 
