@@ -15,83 +15,45 @@ export default async function handler(req, res) {
             ? userPrompt.split("TRANSCRIÇÃO:")[1] 
             : userPrompt;
 
+        // Lista explícita para forçar o modelo a processar todos os itens
+        const criterios = [
+            "Consultividade", "Escuta Ativa", "Jornada do Cliente", "Encantamento",
+            "Objeções", "Rapport", "Autoridade", "Postura", "Gestão de Tempo",
+            "Contextualização", "Objetividade", "Flexibilidade", "Domínio de Produto",
+            "Alinhamento ao Modelo de Negócio", "Ecossistema Nibo", "Universo da Contabilidade"
+        ];
+
         const enhancedPrompt = `
         VOCÊ É UM AUDITOR DE QUALIDADE MATEMÁTICO E CRÍTICO.
         
-        ### REGRAS INVIOLÁVEIS DE PONTUAÇÃO:
-        1. **PONTO DE PARTIDA NOTA 1:** Tudo começa em 1.
-        2. **GATILHOS DE NOTA 10 (SEJA JUSTO):** Se o CS realizou a ação de forma clara e profissional, a nota DEVE ser 10. Não tire pontos sem um motivo real e grave. Se ele citou termos técnicos corretamente ou usou exemplos do dia a dia, dê o 10.
-        3. **NÃO SEJA "MESQUINHO":** Se a performance cumpriu todos os requisitos do critério detalhado abaixo, atribua nota 10. Reserve notas 8 e 9 apenas se houve uma falha leve perceptível.
-        4. **REGRA DA SOMATÓRIA:** A "notaGeral" deve ser a **SOMA TOTAL** de todas as notas do array evaluation. (Ex: 16 critérios x nota 10 = 160). NÃO CALCULE MÉDIA.
+        ### REGRAS INVIOLÁVEIS:
+        1. **LISTA COMPLETA:** Você DEVE avaliar obrigatoriamente os 16 critérios abaixo. Não omita nenhum.
+        2. **PONTUAÇÃO:** Base 1. Se o CS foi profissional e claro, a nota é 10. Notas 8-9 apenas para falhas leves.
+        3. **SOMA TOTAL:** O campo "notaGeral" DEVE ser a soma exata das 16 notas (Máximo 160). NÃO CALCULE MÉDIA.
+        4. **SAÍDA:** Retorne apenas o JSON puro.
 
-         ### CRITÉRIOS DETALHADOS:
+        ### CRITÉRIOS PARA AVALIAÇÃO:
+        ${criterios.map((c, i) => `${i + 1}. ${c}`).join('\n')}
 
-        - **Consultividade:** Diagnóstico proativo vs apresentador de software.
-
-        - **Escuta Ativa:** Ouvir para entender vs apenas responder.
-
-        - **Jornada do Cliente:** Conexão com passos passados e futuros. Deixou claro os próximos passos.
-
-        - **Encantamento:** Momentos "uau" e superação de expectativas. Fez ou tentou fazer o cliente ver valor na ferramenta.
-
-        - **Objeções:** Soube responder perguntas com empatia. (Regra -1).
-
-        - **Rapport:** Conexão genuína, chamou o cliente pelo nome, tornou a reunião leve.
-
-        - **Autoridade:** Condução, ritmo e confiança.
-
-        - **Postura:** Maturidade e profissionalismo.
-
-        - **Gestão de Tempo:** Reunião durou entre 30 minutos a 1h.
-
-        - **Contextualização:** Soube contextualizar cada funcionalidade da ferramenta trazendo cenários do dia a dia da contabilidade.
-
-        - **Objetividade:** Direto ao ponto, sem divagações.
-
-        - **Flexibilidade:** Adaptação ao imprevisto (Nota 10 se não houve necessidade).
-
-        - **Domínio de Produto:** Mostrou dominar o produto, sabendo responder perguntas e encaixar a ferramenta na rotina do cliente.
-
-        - **Alinhamento ao Modelo de Negócio:** Aplicação estratégica à realidade do cliente.
-
-        - **Ecossistema Nibo:** Conseguiu encaixar o nibo e outras ferramentas do Nibo dentro da rotina do cliente, como gestão financeira, emissor, conciliador,whatsapp wep.
-
-        - **Universo da Contabilidade:** Domínio de termos (DAS, DARF, DCTFWeb) e rotinas contábeis.
-
-
-
-        ### ESTRUTURA DE SAÍDA:
-
-        Retorne um objeto JSON puro seguindo este esquema:
-
+        ### ESTRUTURA DE SAÍDA (JSON):
         {
-
           "notaGeral": number,
-
-          "evaluation": [{"criterio": string, "nota": number, "justificativa": string}],
-
-          "speakingTime": {"cs": number, "client": number},
-
-          "profileAnalysis": {"profile": string, "handling": string, "suggestions": string},
-
-          "summary": {"geral": string, "specificErrors": [string], "sugestoes": [string]},
-
-          "cancellationAlert": {"risk": boolean, "reason": string},
-
-          "meetingHighlight": string,
-
-          "opportunities": [{"product": string, "reason": string}]
-
+          "evaluation": [
+            { "criterio": "string", "nota": number, "justificativa": "string" }
+          ],
+          "speakingTime": { "cs": number, "client": number },
+          "profileAnalysis": { "profile": "string", "handling": "string", "suggestions": "string" },
+          "summary": { "geral": "string", "specificErrors": ["string"], "sugestoes": ["string"] },
+          "cancellationAlert": { "risk": boolean, "reason": "string" },
+          "meetingHighlight": "string",
+          "opportunities": [{ "product": "string", "reason": "string" }]
         }
 
-
-
         TRANSCRIÇÃO:
-
         ${transcriptText}
-
         `;
 
+        // Endpoint atualizado para Gemini 2.0 Flash
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -99,7 +61,7 @@ export default async function handler(req, res) {
                 contents: [{ parts: [{ text: enhancedPrompt }] }],
                 generationConfig: {
                     response_mime_type: "application/json",
-                    temperature: 0.1
+                    temperature: 0.1 // Mantém a precisão e evita alucinações na lista
                 }
             })
         });
@@ -108,10 +70,14 @@ export default async function handler(req, res) {
 
         if (data.error) return res.status(500).json({ error: data.error.message });
 
+        // Extração do texto do candidato
         const resultString = data.candidates[0].content.parts[0].text;
+        
+        // Retorna o JSON parseado
         res.status(200).json(JSON.parse(resultString));
 
     } catch (error) {
-        res.status(500).json({ error: "Erro interno no servidor." });
+        console.error(error);
+        res.status(500).json({ error: "Erro interno no servidor ao processar auditoria." });
     }
 }
