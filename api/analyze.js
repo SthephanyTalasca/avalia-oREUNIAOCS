@@ -11,32 +11,39 @@ export default async function handler(req, res) {
 
     try {
         const { prompt: userPrompt, schema } = req.body;
-        const transcriptText = userPrompt.split("TRANSCRIÇÃO:")[1] || userPrompt;
+        
+        // Extrai apenas o texto da transcrição para evitar poluição no prompt
+        const transcriptText = userPrompt.includes("TRANSCRIÇÃO:") 
+            ? userPrompt.split("TRANSCRIÇÃO:")[1] 
+            : userPrompt;
 
         const enhancedPrompt = `
         VOCÊ É UM AUDITOR MATEMÁTICO DE QUALIDADE. 
-        Sua nota final deve ser a média exata de 5 critérios. Não use 8.5 por padrão.
+        Sua tarefa é analisar a transcrição e atribuir notas de 0 a 10 para 5 critérios específicos.
+
+        ### REGRAS DE OURO:
+        - Erros de sistema/software (bugs, lentidão) = Nota 10 em conhecimento técnico para o CS.
+        - Se não houver gatilho para venda (Expansão) = Nota 10 automático no critério 4.
+
+        ### CRITÉRIOS (C1 a C5):
+        1. **Postura e Empatia**
+        2. **Conhecimento Contábil**
+        3. **Escuta Ativa**
+        4. **Radar de Expansão**
+        5. **Fechamento**
+
+        ### PROTOCOLO DE CÁLCULO OBRIGATÓRIO:
+        Para o campo de nota final, você deve seguir este processo mental:
+        PASSO 1: Defina as notas de C1, C2, C3, C4 e C5.
+        PASSO 2: Calcule a SOMA = (C1 + C2 + C3 + C4 + C5).
+        PASSO 3: Calcule a MÉDIA = SOMA / 5.
         
-        ### REGRA DE OURO (SISTEMA VS HUMANO):
-        Problemas técnicos (Bugs no Emissor, Conciliador, Gestão, BPO ou lentidão) são falhas de SUPORTE. 
-        O CS ganha NOTA 10 no critério técnico se o erro for do sistema, pois ele não pode consertar o software.
-
-        ### CRITÉRIOS DE PONTUAÇÃO (0 a 10):
-        1. **Postura e Empatia:** Conexão e como lidou com as queixas.
-        2. **Conhecimento Contábil:** Termos técnicos e entendimento da rotina do contador.
-        3. **Escuta Ativa:** Diagnosticou as dores ou só seguiu script?
-        4. **Radar de Expansão:** Ofereceu Conciliador, Gestão, Zap ou Radar ECAC nos gatilhos? (Se não houve gatilho, nota 10 automático).
-        5. **Fechamento:** Próximos passos ficaram claros?
-
-        ### MÉTODO DE CÁLCULO:
-        Nota Final = (Critério 1 + 2 + 3 + 4 + 5) / 5.
-        Se a média der 7.4, coloque 7.4. Se der 10, coloque 10. Justifique detalhadamente.
+        A 'nota_final' (ou campo equivalente no schema) DEVE SER EXATAMENTE o resultado do PASSO 3. Não arredonde para cima e não ignore as notas individuais.
 
         TRANSCRIÇÃO:
         ${transcriptText}
         `;
 
-        // CORREÇÃO DO MODELO: Usando 1.5 Flash (estável e rápido)
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
         const response = await fetch(url, {
@@ -47,7 +54,7 @@ export default async function handler(req, res) {
                 generationConfig: {
                     response_mime_type: "application/json",
                     response_schema: schema,
-                    temperature: 0.3 // Baixa para garantir que a conta matemática esteja certa
+                    temperature: 0.1 // Reduzido para 0.1 para precisão máxima em cálculos
                 }
             })
         });
