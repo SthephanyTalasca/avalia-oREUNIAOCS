@@ -26,38 +26,37 @@ export default async function handler(req, res) {
 
          ### CRITÉRIOS DETALHADOS:
 
-        - **Consultividade:** Diagnóstico estratégico vs apenas demonstração de software.
+        - **Consultividade:** Diagnóstico proativo vs apresentador de software.
 
-        - **Escuta Ativa:** Ouve para entender e aprofundar vs responde superficialmente.
+        - **Escuta Ativa:** Ouvir para entender vs apenas responder.
 
-        - **Jornada do Cliente:** Conecta etapas e define próximos passos.
+        - **Jornada do Cliente:** Conexão com passos passados e futuros. Deixou claro os próximos passos.
 
-        - **Encantamento:** Gera valor percebido e momentos "uau".
+        - **Encantamento:** Momentos "uau" e superação de expectativas. Fez ou tentou fazer o cliente ver valor na ferramenta.
 
-        - **Objeções:** Responde com clareza e empatia. (Regra -1 se ignorar/defensivo).
+        - **Objeções:** Soube responder perguntas com empatia. (Regra -1).
 
-        - **Rapport:** Cria conexão genuína e clima leve.
+        - **Rapport:** Conexão genuína, chamou o cliente pelo nome, tornou a reunião leve.
 
-        - **Autoridade:** Conduz com segurança e ritmo.
+        - **Autoridade:** Condução, ritmo e confiança.
 
-        - **Postura:** Profissionalismo e maturidade.
+        - **Postura:** Maturidade e profissionalismo.
 
-        - **Gestão de Tempo:** Entre 30 e 60 minutos.
+        - **Gestão de Tempo:** Reunião durou entre 30 minutos a 1h.
 
-        - **Contextualização:** Exemplos práticos da rotina contábil.
+        - **Contextualização:** Soube contextualizar cada funcionalidade da ferramenta trazendo cenários do dia a dia da contabilidade.
 
-        - **Objetividade:** Direto ao ponto, sem excessos.
+        - **Objetividade:** Direto ao ponto, sem divagações.
 
-        - **Flexibilidade:** Adapta-se a imprevistos. (10 se não necessário).
+        - **Flexibilidade:** Adaptação ao imprevisto (Nota 10 se não houve necessidade).
 
-        - **Domínio de Produto:** Segurança técnica e aplicação prática.
+        - **Domínio de Produto:** Mostrou dominar o produto, sabendo responder perguntas e encaixar a ferramenta na rotina do cliente.
 
         - **Alinhamento ao Modelo de Negócio:** Aplicação estratégica à realidade do cliente.
 
-        - **Ecossistema Nibo:** Integra Nibo e demais soluções na rotina.
+        - **Ecossistema Nibo:** Conseguiu encaixar o nibo e outras ferramentas do Nibo dentro da rotina do cliente, como gestão financeira, emissor, conciliador,whatsapp wep.
 
-        - **Universo da Contabilidade:** Domínio de termos e rotinas contábeis.
-
+        - **Universo da Contabilidade:** Domínio de termos (DAS, DARF, DCTFWeb) e rotinas contábeis.
 
 
 
@@ -93,48 +92,26 @@ export default async function handler(req, res) {
 
         `;
 
-
-
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
-
             headers: { 'Content-Type': 'application/json' },
-
             body: JSON.stringify({
-
                 contents: [{ parts: [{ text: enhancedPrompt }] }],
-
                 generationConfig: {
-
                     response_mime_type: "application/json",
-
                     temperature: 0.1
-
                 }
-
             })
-
         });
-
-
 
         const data = await response.json();
 
-
-
         if (data.error) return res.status(500).json({ error: data.error.message });
 
-
-
-        // O Gemini retorna o JSON como uma string dentro do campo text
-
         const resultString = data.candidates[0].content.parts[0].text;
-
         res.status(200).json(JSON.parse(resultString));
 
-
-
     } catch (error) {
-
         res.status(500).json({ error: "Erro interno no servidor." });
+    }
+}
