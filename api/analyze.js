@@ -26,37 +26,38 @@ export default async function handler(req, res) {
 
          ### CRITÉRIOS DETALHADOS:
 
-        - **Consultividade:** Diagnóstico proativo vs apresentador de software.
+        - **Consultividade:** Diagnóstico estratégico vs apenas demonstração de software.
 
-        - **Escuta Ativa:** Ouvir para entender vs apenas responder.
+        - **Escuta Ativa:** Ouve para entender e aprofundar vs responde superficialmente.
 
-        - **Jornada do Cliente:** Conexão com passos passados e futuros. Deixou claro os próximos passos.
+        - **Jornada do Cliente:** Conecta etapas e define próximos passos.
 
-        - **Encantamento:** Momentos "uau" e superação de expectativas. Fez ou tentou fazer o cliente ver valor na ferramenta.
+        - **Encantamento:** Gera valor percebido e momentos "uau".
 
-        - **Objeções:** Soube responder perguntas com empatia. (Regra -1).
+        - **Objeções:** Responde com clareza e empatia. (Regra -1 se ignorar/defensivo).
 
-        - **Rapport:** Conexão genuína, chamou o cliente pelo nome, tornou a reunião leve.
+        - **Rapport:** Cria conexão genuína e clima leve.
 
-        - **Autoridade:** Condução, ritmo e confiança.
+        - **Autoridade:** Conduz com segurança e ritmo.
 
-        - **Postura:** Maturidade e profissionalismo.
+        - **Postura:** Profissionalismo e maturidade.
 
-        - **Gestão de Tempo:** Reunião durou entre 30 minutos a 1h.
+        - **Gestão de Tempo:** Entre 30 e 60 minutos.
 
-        - **Contextualização:** Soube contextualizar cada funcionalidade da ferramenta trazendo cenários do dia a dia da contabilidade.
+        - **Contextualização:** Exemplos práticos da rotina contábil.
 
-        - **Objetividade:** Direto ao ponto, sem divagações.
+        - **Objetividade:** Direto ao ponto, sem excessos.
 
-        - **Flexibilidade:** Adaptação ao imprevisto (Nota 10 se não houve necessidade).
+        - **Flexibilidade:** Adapta-se a imprevistos. (10 se não necessário).
 
-        - **Domínio de Produto:** Mostrou dominar o produto, sabendo responder perguntas e encaixar a ferramenta na rotina do cliente.
+        - **Domínio de Produto:** Segurança técnica e aplicação prática.
 
         - **Alinhamento ao Modelo de Negócio:** Aplicação estratégica à realidade do cliente.
 
-        - **Ecossistema Nibo:**  Conseguiu encaixar o nibo e outras ferramentas do Nibo dentro da rotina do cliente, como gestão financeira, emissor, conciliador,whatsapp wep.
+        - **Ecossistema Nibo:** Integra Nibo e demais soluções na rotina.
 
-        - **Universo da Contabilidade:** Domínio de termos (DAS, DARF, DCTFWeb) e rotinas contábeis.
+        - **Universo da Contabilidade:** Domínio de termos e rotinas contábeis.
+
 
 
 
