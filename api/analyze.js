@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         
         ### FILOSOFIA DE AVALIAÇÃO (INVIOLÁVEL):
         1. **PROVE A COMPETÊNCIA:** Cada critério começa em NOTA 1. Aumente apenas com evidência clara.
-        2. **ESCALA DA VERDADE:** 10 (Maestria), 8-9 (Consistente), 6-7 (Básico), 4-5 (Pouco), 2-3 (Raramente), 0-1 (Ruim).
+        2. **ESCALA DA VERDADE:** 10 (Muito bom), 8-9 (Bom), 6-7 (Básico), 4-5 (Pouco), 2-3 (Raramente), 0-1 (Ruim).
         3. **JUSTIFICATIVA "POR QUE NÃO 10?":** Obrigatória para qualquer nota < 10.
         4. **REGRA DAS OBJEÇÕES:** Se não houver, nota -1 e texto padrão: "Não foram identificadas objeções claras...".
         5. **ESCUTA ATIVA:** Se fala do CS > 90%, nota entre 1-3. Penalize -1 ponto a cada 10% acima de 80%.
@@ -32,19 +32,19 @@ export default async function handler(req, res) {
         ### CRITÉRIOS DETALHADOS:
         - **Consultividade:** Diagnóstico proativo vs apresentador de software.
         - **Escuta Ativa:** Ouvir para entender vs apenas responder.
-        - **Jornada do Cliente:** Conexão com passos passados e futuros.
-        - **Encantamento:** Momentos "uau" e superação de expectativas.
-        - **Objeções:** Contorno com empatia e dados (Regra -1).
-        - **Rapport:** Conexão genuína, nomes, leveza.
+        - **Jornada do Cliente:** Conexão com passos passados e futuros. Deixou claro os próximos passos.
+        - **Encantamento:** Momentos "uau" e superação de expectativas. Fez ou tentou fazer o cliente ver valor na ferramenta.
+        - **Objeções:** Soube responder perguntas com empatia. (Regra -1).
+        - **Rapport:** Conexão genuína, chamou o cliente pelo nome, tornou a reunião leve.
         - **Autoridade:** Condução, ritmo e confiança.
         - **Postura:** Maturidade e profissionalismo.
-        - **Gestão de Tempo:** Reunião focada e agenda validada.
-        - **Contextualização:** Tradução de features em benefícios práticos.
+        - **Gestão de Tempo:** Reunião durou entre 30 minutos a 1h.
+        - **Contextualização:** Soube contextualizar cada funcionalidade da ferramenta trazendo cenários do dia a dia da contabilidade.
         - **Objetividade:** Direto ao ponto, sem divagações.
         - **Flexibilidade:** Adaptação ao imprevisto (Nota 10 se não houve necessidade).
-        - **Domínio de Produto:** Casos de uso avançados.
+        - **Domínio de Produto:** Mostrou dominar o produto, sabendo responder perguntas e encaixar a ferramenta na rotina do cliente.
         - **Alinhamento ao Modelo de Negócio:** Aplicação estratégica à realidade do cliente.
-        - **Ecossistema Nibo:** Integração entre ferramentas da plataforma.
+        - **Ecossistema Nibo:**  Conseguiu encaixar o nibo e outras ferramentas do Nibo dentro da rotina do cliente, como gestão financeira, emissor, conciliador,whatsapp wep.
         - **Universo da Contabilidade:** Domínio de termos (DAS, DARF, DCTFWeb) e rotinas contábeis.
 
         ### ESTRUTURA DE SAÍDA:
