@@ -16,39 +16,24 @@ export default async function handler(req, res) {
             : userPrompt;
 
         const enhancedPrompt = `
-        VOCÊ É UM ESPECIALISTA EM QUALITY ASSURANCE DE CX, CRÍTICO E RIGOROSO.
+        VOCÊ É UM AUDITOR DE QUALIDADE MATEMÁTICO E CRÍTICO.
         
-        ### FILOSOFIA DE AVALIAÇÃO (INVIOLÁVEL):
-        1. **PROVE A COMPETÊNCIA:** Cada critério começa em NOTA 1. Aumente apenas com evidência clara.
-        2. **ESCALA DA VERDADE:** 10 (Muito bom), 8-9 (Bom), 6-7 (Básico), 4-5 (Pouco), 2-3 (Raramente), 0-1 (Ruim).
-        3. **JUSTIFICATIVA "POR QUE NÃO 10?":** Obrigatória para qualquer nota < 10.
-        4. **REGRA DAS OBJEÇÕES:** Se não houver, nota -1 e texto padrão: "Não foram identificadas objeções claras...".
-        5. **ESCUTA ATIVA:** Se fala do CS > 90%, nota entre 1-3. Penalize -1 ponto a cada 10% acima de 80%.
+        ### REGRAS INVIOLÁVEIS DE PONTUAÇÃO:
+        1. **PONTO DE PARTIDA NOTA 1:** Tudo começa em 1.
+        2. **GATILHOS DE NOTA 10 (SEJA JUSTO):** Se o CS realizou a ação de forma clara e profissional, a nota DEVE ser 10. Não tire pontos sem um motivo real e grave. Se ele citou termos técnicos corretamente ou usou exemplos do dia a dia, dê o 10.
+        3. **NÃO SEJA "MESQUINHO":** Se a performance cumpriu todos os requisitos do critério detalhado abaixo, atribua nota 10. Reserve notas 8 e 9 apenas se houve uma falha leve perceptível.
+        4. **REGRA DA SOMATÓRIA:** A "notaGeral" deve ser a **SOMA TOTAL** de todas as notas do array evaluation. (Ex: 16 critérios x nota 10 = 160). NÃO CALCULE MÉDIA.
 
-        ### MÉTODO DE CÁLCULO DA NOTA GERAL:
-        A "notaGeral" deve ser a média aritmética exata: (Soma das notas de todos os critérios) / (Quantidade de critérios com nota >= 0). 
-        CRÍTICO: O critério com nota -1 NÃO entra no cálculo da média.
+        ### CRITÉRIOS PARA NOTA 10 (GATILHOS):
+        - **Universo da Contabilidade:** Se citou (DAS, DARF, DCTFWeb, impostos) com naturalidade = Nota 10.
+        - **Ecossistema Nibo:** Se citou Emissor, Conciliador, Gestão ou Whatsapp Wheb e explicou a vantagem = Nota 10.
+        - **Contextualização:** Se usou um cenário real (ex: "quando seu cliente mandar a nota...") = Nota 10.
+        - **Flexibilidade:** Se não houve imprevisto, ou se lidou bem com um = Nota 10.
+        - **Objeções:** Se não houve, nota 0 (Zero) para não interferir na soma. Se houve e resolveu = Nota 10.
+        - **Escuta Ativa:** Se o tempo de fala do CS for equilibrado (não dominou sozinho) = Nota 10.
 
-        ### CRITÉRIOS DETALHADOS:
-        - **Consultividade:** Diagnóstico proativo vs apresentador de software.
-        - **Escuta Ativa:** Ouvir para entender vs apenas responder.
-        - **Jornada do Cliente:** Conexão com passos passados e futuros. Deixou claro os próximos passos.
-        - **Encantamento:** Momentos "uau" e superação de expectativas. Fez ou tentou fazer o cliente ver valor na ferramenta.
-        - **Objeções:** Soube responder perguntas com empatia. (Regra -1).
-        - **Rapport:** Conexão genuína, chamou o cliente pelo nome, tornou a reunião leve.
-        - **Autoridade:** Condução, ritmo e confiança.
-        - **Postura:** Maturidade e profissionalismo.
-        - **Gestão de Tempo:** Reunião durou entre 30 minutos a 1h.
-        - **Contextualização:** Soube contextualizar cada funcionalidade da ferramenta trazendo cenários do dia a dia da contabilidade.
-        - **Objetividade:** Direto ao ponto, sem divagações.
-        - **Flexibilidade:** Adaptação ao imprevisto (Nota 10 se não houve necessidade).
-        - **Domínio de Produto:** Mostrou dominar o produto, sabendo responder perguntas e encaixar a ferramenta na rotina do cliente.
-        - **Alinhamento ao Modelo de Negócio:** Aplicação estratégica à realidade do cliente.
-        - **Ecossistema Nibo:**  Conseguiu encaixar o nibo e outras ferramentas do Nibo dentro da rotina do cliente, como gestão financeira, emissor, conciliador,whatsapp wep.
-        - **Universo da Contabilidade:** Domínio de termos (DAS, DARF, DCTFWeb) e rotinas contábeis.
-
-        ### ESTRUTURA DE SAÍDA:
-        Retorne um objeto JSON puro seguindo este esquema:
+        ### FORMATO DE SAÍDA:
+        Retorne APENAS o JSON conforme este esquema:
         {
           "notaGeral": number,
           "evaluation": [{"criterio": string, "nota": number, "justificativa": string}],
@@ -77,10 +62,8 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-
         if (data.error) return res.status(500).json({ error: data.error.message });
 
-        // O Gemini retorna o JSON como uma string dentro do campo text
         const resultString = data.candidates[0].content.parts[0].text;
         res.status(200).json(JSON.parse(resultString));
 
