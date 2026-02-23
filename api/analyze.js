@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-    // Mantendo seus headers de CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -16,22 +15,16 @@ export default async function handler(req, res) {
             ? userPrompt.split("TRANSCRIÇÃO:")[1] 
             : userPrompt;
 
-        // MODELO ESTÁVEL: gemini-1.5-flash (ou gemini-1.5-flash-8b para ser ainda mais leve)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+        // Alterado para v1 (estável) e gemini-1.5-flash-latest
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ 
                     parts: [{ 
-                        text: `VOCÊ É UM AUDITOR DE QUALIDADE. Analise a transcrição abaixo e retorne APENAS o JSON solicitado seguindo as regras de pontuação e os 16 critérios.\n\nTRANSCRIÇÃO:\n${transcriptText}` 
+                        text: `VOCÊ É UM AUDITOR DE QUALIDADE. Gere o JSON com os 16 critérios para a transcrição abaixo:\n\nTRANSCRIÇÃO:\n${transcriptText}` 
                     }] 
                 }],
-                safetySettings: [
-                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-                ],
                 generationConfig: {
                     response_mime_type: "application/json",
                     temperature: 0.1
@@ -42,11 +35,12 @@ export default async function handler(req, res) {
         const data = await response.json();
 
         if (data.error) {
-            return res.status(500).json({ error: data.error.message });
+            // Se ainda der erro de "not found", o erro retornará aqui com detalhes
+            return res.status(data.error.code || 500).json({ error: data.error.message });
         }
 
         if (!data.candidates || !data.candidates[0].content) {
-            return res.status(422).json({ error: "O modelo recusou a resposta por segurança ou cota insuficiente." });
+            return res.status(422).json({ error: "Resposta vazia da API." });
         }
 
         const resultString = data.candidates[0].content.parts[0].text;
