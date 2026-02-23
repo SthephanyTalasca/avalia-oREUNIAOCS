@@ -15,18 +15,19 @@ export default async function handler(req, res) {
             ? userPrompt.split("TRANSCRIÇÃO:")[1] 
             : userPrompt;
 
-        // Alterado para v1 (estável) e gemini-1.5-flash-latest
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
+        // Voltamos para v1beta que aceita melhor o JSON mode e usamos o modelo flash estável
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ 
                     parts: [{ 
-                        text: `VOCÊ É UM AUDITOR DE QUALIDADE. Gere o JSON com os 16 critérios para a transcrição abaixo:\n\nTRANSCRIÇÃO:\n${transcriptText}` 
+                        text: `VOCÊ É UM AUDITOR DE QUALIDADE. Analise a transcrição abaixo e retorne o JSON solicitado.\n\nTRANSCRIÇÃO:\n${transcriptText}` 
                     }] 
                 }],
                 generationConfig: {
-                    response_mime_type: "application/json",
+                    // Usando camelCase que é o padrão esperado em muitos endpoints REST
+                    responseMimeType: "application/json",
                     temperature: 0.1
                 }
             })
@@ -35,18 +36,17 @@ export default async function handler(req, res) {
         const data = await response.json();
 
         if (data.error) {
-            // Se ainda der erro de "not found", o erro retornará aqui com detalhes
             return res.status(data.error.code || 500).json({ error: data.error.message });
         }
 
         if (!data.candidates || !data.candidates[0].content) {
-            return res.status(422).json({ error: "Resposta vazia da API." });
+            return res.status(422).json({ error: "A API não retornou conteúdo válido." });
         }
 
         const resultString = data.candidates[0].content.parts[0].text;
         res.status(200).json(JSON.parse(resultString));
 
     } catch (error) {
-        res.status(500).json({ error: "Erro interno no servidor." });
+        res.status(500).json({ error: "Erro interno ao processar a requisição." });
     }
 }
