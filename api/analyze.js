@@ -15,7 +15,7 @@ export default async function handler(req, res) {
             ? userPrompt.split("TRANSCRIÇÃO:")[1] 
             : userPrompt;
 
-        // Alterado para gemini-2.5-flash-lite
+        // URL ATUALIZADA PARA GEMINI 2.5 FLASH-LITE
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -49,8 +49,7 @@ export default async function handler(req, res) {
         - Ecossistema Nibo
         - Universo da Contabilidade
 
-        ### ESTRUTURA DE SAÍDA:
-        Retorne um objeto JSON seguindo exatamente o esquema:
+        ### ESTRUTURA DE SAÍDA (JSON):
         {
           "notaGeral": number,
           "evaluation": [{"criterio": string, "nota": number, "justificativa": string}],
@@ -63,9 +62,7 @@ export default async function handler(req, res) {
         }
 
         TRANSCRIÇÃO:
-        ${transcriptText}
-
-        IMPORTANTE: Analise a transcrição acima e gere o JSON com todos os 16 critérios listados anteriormente. Não pule nenhum.` 
+        ${transcriptText}` 
                     }] 
                 }],
                 generationConfig: {
@@ -76,12 +73,19 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-        if (data.error) return res.status(500).json({ error: data.error.message });
+
+        // Tratamento de erro de quota ou modelo inexistente
+        if (data.error) {
+            return res.status(data.error.code || 500).json({ 
+                error: data.error.message,
+                tip: "Se o erro for 'Model not found', altere o nome do modelo para gemini-2.0-flash-lite-preview-02-05"
+            });
+        }
 
         const resultString = data.candidates[0].content.parts[0].text;
         res.status(200).json(JSON.parse(resultString));
 
     } catch (error) {
-        res.status(500).json({ error: "Erro interno no servidor." });
+        res.status(500).json({ error: "Erro interno no servidor ao processar JSON." });
     }
 }
