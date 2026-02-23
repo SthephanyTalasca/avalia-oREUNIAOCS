@@ -15,7 +15,8 @@ export default async function handler(req, res) {
             ? userPrompt.split("TRANSCRIÇÃO:")[1] 
             : userPrompt;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
+        // Alterado para gemini-2.5-flash-lite
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
