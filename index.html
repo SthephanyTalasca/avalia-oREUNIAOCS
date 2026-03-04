@@ -12,7 +12,7 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #0f172a; }
         .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: all 0.3s ease; }
-        .glass-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .glass-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .markdown-content h1, .markdown-content h2 { font-weight: 800; color: #1e3a8a; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1rem; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; }
@@ -138,6 +138,22 @@
         </div>
     </main>
 
+    <div id="justification-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="modal-content-box">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <span id="modal-title" class="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-2 block">Pilar</span>
+                    <div id="modal-score" class="text-5xl font-black leading-none">0</div>
+                </div>
+                <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full text-slate-500 transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="w-full h-px bg-slate-100 mb-6"></div>
+            <p id="modal-text" class="text-[13px] text-slate-600 font-medium leading-relaxed">Texto completo aqui.</p>
+        </div>
+    </div>
+
     <script>
     lucide.createIcons();
     const analyzeBtn = document.getElementById('analyze-btn');
@@ -226,7 +242,6 @@
         `).join('');
 
         const status = document.getElementById('status-tag');
-        // Escala agora é de 1 a 5
         if(media >= 4.5) { 
             status.textContent = "Elite CS"; 
             status.className = "px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg"; 
@@ -238,18 +253,22 @@
             status.className = "px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700"; 
         }
 
-        // Renderização dos 17 Cards
+        // Renderização dos 17 Cards com Botão Clicável e Hover
         const gridElement = document.getElementById('notas-grid');
         gridElement.innerHTML = fields.map(f => {
             const n = data[`nota_${f.k}`] || 0;
-            const p = data[`porque_${f.k}`] || "";
-            // Cores ajustadas para nota máxima 5
+            const p = data[`porque_${f.k}`] || "Sem justificativa detalhada.";
             const c = n >= 4 ? 'text-emerald-500' : n >= 3 ? 'text-blue-600' : 'text-red-500';
+            
+            // Codificando o texto para não quebrar o HTML na hora de passar para a função
+            const safeText = encodeURIComponent(p);
+
             return `
-                <div class="glass-card p-3 flex flex-col items-center text-center justify-center">
-                    <span class="text-[7.5px] font-black text-slate-400 uppercase mb-1 tracking-widest leading-tight">${f.l}</span>
+                <div onclick="openModal('${f.l}', ${n}, '${c}', '${safeText}')" class="glass-card p-3 flex flex-col items-center text-center justify-center cursor-pointer hover:-translate-y-1 hover:border-blue-300 transition-all group relative">
+                    <i data-lucide="zoom-in" class="absolute top-2 right-2 w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors"></i>
+                    <span class="text-[7.5px] font-black text-slate-400 uppercase mb-1 tracking-widest leading-tight mt-1">${f.l}</span>
                     <div class="text-xl font-black ${c} mb-1 leading-none">${n}</div>
-                    <p class="text-[7.5px] text-slate-500 italic leading-tight font-medium max-w-[95%] truncate" title="${p}">${p}</p>
+                    <p class="text-[7.5px] text-slate-500 italic leading-tight font-medium max-w-[95%] truncate">${p}</p>
                 </div>
             `;
         }).join('');
@@ -320,7 +339,7 @@
                 scales: { 
                     r: { 
                         min: 0, 
-                        max: 5, // Limite máximo alterado para 5
+                        max: 5, 
                         ticks: { stepSize: 1, display: false }, 
                         grid: { color: '#e2e8f0' }, 
                         angleLines: { color: '#e2e8f0' }, 
@@ -332,6 +351,48 @@
             }
         });
     }
+
+    // --- FUNÇÕES DO MODAL ---
+    function openModal(title, score, colorClass, encodedText) {
+        const modal = document.getElementById('justification-modal');
+        const modalBox = document.getElementById('modal-content-box');
+        
+        document.getElementById('modal-title').textContent = title;
+        
+        const scoreEl = document.getElementById('modal-score');
+        scoreEl.textContent = score;
+        scoreEl.className = `text-5xl font-black leading-none ${colorClass}`;
+        
+        document.getElementById('modal-text').textContent = decodeURIComponent(encodedText);
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalBox.classList.remove('scale-95');
+            modalBox.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('justification-modal');
+        const modalBox = document.getElementById('modal-content-box');
+        
+        modal.classList.add('opacity-0');
+        modalBox.classList.remove('scale-100');
+        modalBox.classList.add('scale-95');
+        
+        setTimeout(() => {
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    // Fechar modal ao clicar fora da caixinha branca
+    document.getElementById('justification-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
 
     analyzeBtn.addEventListener('click', handleAnalysis);
     </script>
