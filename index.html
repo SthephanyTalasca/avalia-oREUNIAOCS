@@ -138,6 +138,7 @@
         </div>
     </main>
 
+    <!-- Modal -->
     <div id="justification-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
         <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col" id="modal-content-box">
             <div class="flex justify-between items-start mb-6">
@@ -154,21 +155,25 @@
             
             <div class="mb-5">
                 <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest block mb-2">Justificativa da Nota</span>
-                <p id="modal-text" class="text-[13px] text-slate-600 font-medium leading-relaxed">Texto completo aqui.</p>
+                <p id="modal-text" class="text-[13px] text-slate-600 font-medium leading-relaxed"></p>
             </div>
 
-            <div id="modal-improvement-container" class="bg-amber-50 rounded-2xl p-4 border border-amber-100 mt-2">
+            <div id="modal-improvement-container" class="rounded-2xl p-4 border mt-2">
                 <div class="flex items-center gap-2 mb-2">
-                    <i data-lucide="target" class="w-4 h-4 text-amber-600"></i>
-                    <span class="text-[9px] font-bold uppercase text-amber-700 tracking-widest block">O que faltou para o 5?</span>
+                    <i id="modal-improvement-icon" data-lucide="target" class="w-4 h-4"></i>
+                    <span id="modal-improvement-label" class="text-[9px] font-bold uppercase tracking-widest block">O que faltou para o 5?</span>
                 </div>
-                <p id="modal-improvement-text" class="text-[12px] text-amber-900 leading-relaxed font-medium">Melhoria aqui.</p>
+                <p id="modal-improvement-text" class="text-[12px] leading-relaxed font-medium"></p>
             </div>
         </div>
     </div>
 
     <script>
     lucide.createIcons();
+
+    // ── DATA STORE para o modal (evita quebrar strings no onclick) ──────────
+    const pillarStore = {};
+
     const analyzeBtn = document.getElementById('analyze-btn');
     const transcriptInput = document.getElementById('transcript-input');
     const resultsSection = document.getElementById('results-section');
@@ -178,28 +183,28 @@
     let radarChartInstance = null;
 
     const fields = [
-        { l: 'Consultividade', k: 'consultividade' },
-        { l: 'Escuta Ativa', k: 'escuta_ativa' },
-        { l: 'Jornada', k: 'jornada_cliente' },
-        { l: 'Encantamento', k: 'encantamento' },
-        { l: 'Objeções/Bugs', k: 'objecoes' },
-        { l: 'Rapport', k: 'rapport' },
-        { l: 'Autoridade', k: 'autoridade' },
-        { l: 'Postura', k: 'postura' },
+        { l: 'Consultividade',  k: 'consultividade' },
+        { l: 'Escuta Ativa',    k: 'escuta_ativa' },
+        { l: 'Jornada',         k: 'jornada_cliente' },
+        { l: 'Encantamento',    k: 'encantamento' },
+        { l: 'Objeções/Bugs',   k: 'objecoes' },
+        { l: 'Rapport',         k: 'rapport' },
+        { l: 'Autoridade',      k: 'autoridade' },
+        { l: 'Postura',         k: 'postura' },
         { l: 'Gestão de Tempo', k: 'gestao_tempo' },
-        { l: 'Contextualização', k: 'contextualizacao' },
-        { l: 'Clareza', k: 'clareza' },
-        { l: 'Objetividade', k: 'objetividade' },
-        { l: 'Flexibilidade', k: 'flexibilidade' },
+        { l: 'Contextualização',k: 'contextualizacao' },
+        { l: 'Clareza',         k: 'clareza' },
+        { l: 'Objetividade',    k: 'objetividade' },
+        { l: 'Flexibilidade',   k: 'flexibilidade' },
         { l: 'Domínio Produto', k: 'dominio_produto' },
         { l: 'Domínio Negócio', k: 'dominio_negocio' },
-        { l: 'Ecossistema', k: 'ecossistema_nibo' },
-        { l: 'Univ. Contábil', k: 'universo_contabil' }
+        { l: 'Ecossistema',     k: 'ecossistema_nibo' },
+        { l: 'Univ. Contábil',  k: 'universo_contabil' }
     ];
 
     async function handleAnalysis() {
         const prompt = transcriptInput.value.trim();
-        if(!prompt) return;
+        if (!prompt) return;
         
         resultsSection.classList.remove('hidden');
         loadingSpinner.classList.remove('hidden');
@@ -224,7 +229,7 @@
                 throw new Error("Erro de comunicação com o servidor.");
             }
 
-            if(data.error) throw new Error(data.error);
+            if (data.error) throw new Error(data.error);
             renderDashboard(data);
             
         } catch (err) {
@@ -254,30 +259,30 @@
         `).join('');
 
         const status = document.getElementById('status-tag');
-        if(media >= 4.5) { 
-            status.textContent = "Elite CS"; 
-            status.className = "px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg"; 
-        } else if(media >= 3.5) { 
-            status.textContent = "Alta Performance"; 
-            status.className = "px-5 py-2 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-700"; 
-        } else { 
-            status.textContent = "Acompanhamento"; 
-            status.className = "px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700"; 
+        if (media >= 4.5) {
+            status.textContent = "Elite CS";
+            status.className = "px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg";
+        } else if (media >= 3.5) {
+            status.textContent = "Alta Performance";
+            status.className = "px-5 py-2 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-700";
+        } else {
+            status.textContent = "Acompanhamento";
+            status.className = "px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700";
         }
 
+        // Preenche o pillarStore e monta os cards — sem nenhuma string no onclick
         const gridElement = document.getElementById('notas-grid');
-        gridElement.innerHTML = fields.map(f => {
-            const n = data[`nota_${f.k}`] || 0;
-            const p = data[`porque_${f.k}`] || "Sem justificativa detalhada.";
-            const m = data[`melhoria_${f.k}`] || "Critério de excelência atingido.";
-            const c = n >= 4 ? 'text-emerald-500' : n >= 3 ? 'text-blue-600' : 'text-red-500';
-            
-            // Encode both strings so they don't break the onclick function HTML
-            const safeText = encodeURIComponent(p);
-            const safeMelhoria = encodeURIComponent(m);
+        gridElement.innerHTML = fields.map((f, idx) => {
+            const n    = data[`nota_${f.k}`]     || 0;
+            const p    = data[`porque_${f.k}`]   || "Sem justificativa detalhada.";
+            const m    = data[`melhoria_${f.k}`] || "Critério de excelência atingido.";
+            const c    = n >= 4 ? 'text-emerald-500' : n >= 3 ? 'text-blue-600' : 'text-red-500';
+
+            // Salva no store indexado pela chave do pilar
+            pillarStore[f.k] = { label: f.l, score: n, colorClass: c, porque: p, melhoria: m };
 
             return `
-                <div onclick="openModal('${f.l}', ${n}, '${c}', '${safeText}', '${safeMelhoria}')" class="glass-card p-3 flex flex-col items-center text-center justify-center cursor-pointer hover:-translate-y-1 hover:border-blue-300 transition-all group relative">
+                <div data-pillar="${f.k}" class="pillar-card glass-card p-3 flex flex-col items-center text-center justify-center cursor-pointer hover:-translate-y-1 hover:border-blue-300 transition-all group relative">
                     <i data-lucide="zoom-in" class="absolute top-2 right-2 w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors"></i>
                     <span class="text-[7.5px] font-black text-slate-400 uppercase mb-1 tracking-widest leading-tight mt-1">${f.l}</span>
                     <div class="text-xl font-black ${c} mb-1 leading-none">${n}</div>
@@ -286,13 +291,21 @@
             `;
         }).join('');
 
-        const tempoConsultorNum = parseFloat(data.tempo_fala_cs || 0);
+        // Delegação de eventos no grid — sem onclick inline
+        gridElement.addEventListener('click', function(e) {
+            const card = e.target.closest('.pillar-card');
+            if (!card) return;
+            const key = card.dataset.pillar;
+            if (pillarStore[key]) openModal(pillarStore[key]);
+        });
+
+        const tempoCSNum     = parseFloat(data.tempo_fala_cs     || 0);
         const tempoClienteNum = parseFloat(data.tempo_fala_cliente || 0);
         
         document.getElementById('talk-time-container').innerHTML = `
             <div>
                 <div class="flex justify-between text-[11px] font-bold mb-2"><span>Analista CS</span><span class="text-blue-600">${data.tempo_fala_cs || '0%'}</span></div>
-                <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-600 transition-all duration-1000 shadow-[0_0_10px_rgba(37,99,235,0.4)]" style="width: ${tempoConsultorNum}%"></div></div>
+                <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-600 transition-all duration-1000 shadow-[0_0_10px_rgba(37,99,235,0.4)]" style="width: ${tempoCSNum}%"></div></div>
             </div>
             <div>
                 <div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente</span><span class="text-emerald-500">${data.tempo_fala_cliente || '0%'}</span></div>
@@ -302,12 +315,12 @@
 
         const ck = data.checklist_cs || {};
         const ckLabels = {
-            definiu_prazo_implementacao: "Prazo de Implantação",
-            alinhou_dever_de_casa: "Dever de Casa Alinhado",
-            validou_certificado_digital: "Certificado A1 / Acesso",
-            agendou_proximo_passo: "Próxima Reunião Agendada",
-            conectou_com_dor_vendas: "Retomou Dor de Vendas",
-            explicou_canal_suporte: "Explicou Canal de Suporte"
+            definiu_prazo_implementacao:    "Prazo de Implantação",
+            alinhou_dever_de_casa:          "Dever de Casa Alinhado",
+            validou_certificado_digital:    "Certificado A1 / Acesso",
+            agendou_proximo_passo:          "Próxima Reunião Agendada",
+            conectou_com_dor_vendas:        "Retomou Dor de Vendas",
+            explicou_canal_suporte:         "Explicou Canal de Suporte"
         };
         
         document.getElementById('checklist-container').innerHTML = Object.entries(ckLabels).map(([key, label]) => `
@@ -319,7 +332,7 @@
             </div>
         `).join('');
 
-        document.getElementById('lista-fortes').innerHTML = (data.pontos_fortes || []).map(i => `<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
+        document.getElementById('lista-fortes').innerHTML  = (data.pontos_fortes  || []).map(i => `<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
         document.getElementById('lista-atencao').innerHTML = (data.pontos_atencao || []).map(i => `<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
         document.getElementById('markdown-body').innerHTML = marked.parse(data.justificativa_detalhada || "");
         
@@ -329,18 +342,15 @@
 
     function renderRadar(data) {
         const ctx = document.getElementById('radarChart').getContext('2d');
-        if(radarChartInstance) radarChartInstance.destroy();
+        if (radarChartInstance) radarChartInstance.destroy();
         
-        const radarLabels = fields.map(f => f.l);
-        const radarData = fields.map(f => data[`nota_${f.k}`] || 0);
-
         radarChartInstance = new Chart(ctx, {
             type: 'radar',
             data: {
-                labels: radarLabels, 
+                labels: fields.map(f => f.l),
                 datasets: [{
                     label: 'Nota de CS',
-                    data: radarData,
+                    data: fields.map(f => data[`nota_${f.k}`] || 0),
                     backgroundColor: 'rgba(37, 99, 235, 0.15)',
                     borderColor: '#2563eb',
                     borderWidth: 1.5,
@@ -348,74 +358,75 @@
                     pointBackgroundColor: '#1e3a8a'
                 }]
             },
-            options: { 
-                scales: { 
-                    r: { 
-                        min: 0, 
-                        max: 5, 
-                        ticks: { stepSize: 1, display: false }, 
-                        grid: { color: '#e2e8f0' }, 
-                        angleLines: { color: '#e2e8f0' }, 
-                        pointLabels: { font: { size: 8, weight: '700' }, color: '#475569' } 
-                    } 
-                }, 
-                plugins: { legend: { display: false } }, 
-                maintainAspectRatio: false 
+            options: {
+                scales: {
+                    r: {
+                        min: 0, max: 5,
+                        ticks: { stepSize: 1, display: false },
+                        grid: { color: '#e2e8f0' },
+                        angleLines: { color: '#e2e8f0' },
+                        pointLabels: { font: { size: 8, weight: '700' }, color: '#475569' }
+                    }
+                },
+                plugins: { legend: { display: false } },
+                maintainAspectRatio: false
             }
         });
     }
 
-    function openModal(title, score, colorClass, encodedText, encodedImprovement) {
-        const modal = document.getElementById('justification-modal');
-        const modalBox = document.getElementById('modal-content-box');
-        
-        document.getElementById('modal-title').textContent = title;
-        
+    // ── Modal — recebe objeto, sem problema de encoding ─────────────────────
+    function openModal({ label, score, colorClass, porque, melhoria }) {
+        document.getElementById('modal-title').textContent = label;
+
         const scoreEl = document.getElementById('modal-score');
         scoreEl.textContent = score;
         scoreEl.className = `text-5xl font-black leading-none ${colorClass}`;
-        
-        document.getElementById('modal-text').textContent = decodeURIComponent(encodedText);
-        
-        // Trata a caixa amarela de melhoria
-        const improvementContainer = document.getElementById('modal-improvement-container');
-        const improvementText = document.getElementById('modal-improvement-text');
-        
-        const decodedImprovement = decodeURIComponent(encodedImprovement);
-        
-        if (score < 5) {
-            improvementContainer.classList.remove('hidden');
-            improvementText.textContent = decodedImprovement;
-            improvementContainer.className = "bg-amber-50 rounded-2xl p-4 border border-amber-100 mt-2";
-            improvementContainer.querySelector('span').textContent = "O que faltou para o 5?";
-            improvementContainer.querySelector('i').className = "w-4 h-4 text-amber-600";
+
+        document.getElementById('modal-text').textContent = porque;
+
+        const container = document.getElementById('modal-improvement-container');
+        const labelEl   = document.getElementById('modal-improvement-label');
+        const iconEl    = document.getElementById('modal-improvement-icon');
+        const textEl    = document.getElementById('modal-improvement-text');
+
+        textEl.textContent = melhoria;
+
+        if (score >= 5) {
+            container.className = "rounded-2xl p-4 border border-emerald-100 bg-emerald-50 mt-2";
+            labelEl.textContent = "Excelente!";
+            labelEl.className   = "text-[9px] font-bold uppercase tracking-widest block text-emerald-700";
+            textEl.className    = "text-[12px] leading-relaxed font-medium text-emerald-900";
+            iconEl.setAttribute('data-lucide', 'check-circle');
         } else {
-            // Se já for 5, a caixa fica verdinha parabenizando
-            improvementContainer.classList.remove('hidden');
-            improvementText.textContent = decodedImprovement;
-            improvementContainer.className = "bg-emerald-50 rounded-2xl p-4 border border-emerald-100 mt-2";
-            improvementContainer.querySelector('span').textContent = "Excelente!";
-            improvementContainer.querySelector('i').className = "w-4 h-4 text-emerald-600";
+            container.className = "rounded-2xl p-4 border border-amber-100 bg-amber-50 mt-2";
+            labelEl.textContent = "O que faltou para o 5?";
+            labelEl.className   = "text-[9px] font-bold uppercase tracking-widest block text-amber-700";
+            textEl.className    = "text-[12px] leading-relaxed font-medium text-amber-900";
+            iconEl.setAttribute('data-lucide', 'target');
         }
+
+        const modal    = document.getElementById('justification-modal');
+        const modalBox = document.getElementById('modal-content-box');
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         setTimeout(() => {
             modal.classList.remove('opacity-0');
             modalBox.classList.remove('scale-95');
             modalBox.classList.add('scale-100');
+            lucide.createIcons(); // reconstrói ícone do modal
         }, 10);
     }
 
     function closeModal() {
-        const modal = document.getElementById('justification-modal');
+        const modal    = document.getElementById('justification-modal');
         const modalBox = document.getElementById('modal-content-box');
-        
+
         modal.classList.add('opacity-0');
         modalBox.classList.remove('scale-100');
         modalBox.classList.add('scale-95');
-        
+
         setTimeout(() => {
             modal.classList.remove('flex');
             modal.classList.add('hidden');
