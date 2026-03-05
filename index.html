@@ -406,23 +406,25 @@ function renderDashboard(data) {
     // Pillar cards
     const grid = document.getElementById('notas-grid');
     grid.innerHTML = fields.map(f => {
-        const n = data[`nota_${f.k}`]     || 0;
-        const p = data[`porque_${f.k}`]   || 'Sem justificativa.';
+        const raw = data[`nota_${f.k}`];
+        const hasScore = raw !== null && raw !== undefined;
+        const n = hasScore ? raw : null;
+        const p = data[`porque_${f.k}`]   || (hasScore ? 'Sem justificativa.' : 'Sem evidência na transcrição.');
         const m = data[`melhoria_${f.k}`] || 'Critério de excelência atingido.';
-        const c = n >= 4 ? 'text-emerald-500' : n >= 3 ? 'text-blue-600' : 'text-red-500';
-        pillarStore[f.k] = { label: f.l, score: n, colorClass: c, porque: p, melhoria: m };
+        const c = !hasScore ? 'text-slate-300' : n >= 4 ? 'text-emerald-500' : n >= 3 ? 'text-blue-600' : 'text-red-500';
+        pillarStore[f.k] = { label: f.l, score: n, hasScore, colorClass: c, porque: p, melhoria: m };
         return `
-            <div data-pillar="${f.k}" class="pillar-card glass-card p-3 flex flex-col items-center text-center justify-center cursor-pointer hover:-translate-y-1 hover:border-blue-300 transition-all group relative">
-                <i data-lucide="zoom-in" class="absolute top-2 right-2 w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors"></i>
+            <div data-pillar="${f.k}" class="pillar-card glass-card p-3 flex flex-col items-center text-center justify-center ${hasScore ? 'cursor-pointer hover:-translate-y-1 hover:border-blue-300' : 'opacity-50 cursor-default'} transition-all group relative">
+                ${hasScore ? '<i data-lucide="zoom-in" class="absolute top-2 right-2 w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors"></i>' : '<i data-lucide="minus" class="absolute top-2 right-2 w-3 h-3 text-slate-300"></i>'}
                 <span class="text-[7.5px] font-black text-slate-400 uppercase mb-1 tracking-widest leading-tight mt-1">${f.l}</span>
-                <div class="text-xl font-black ${c} mb-1 leading-none">${n}</div>
+                <div class="text-xl font-black ${c} mb-1 leading-none">${hasScore ? n : '—'}</div>
                 <p class="text-[7.5px] text-slate-500 italic leading-tight font-medium max-w-[95%] truncate">${p}</p>
             </div>`;
     }).join('');
 
     grid.addEventListener('click', e => {
         const card = e.target.closest('.pillar-card');
-        if (card && pillarStore[card.dataset.pillar]) openModal(pillarStore[card.dataset.pillar]);
+        if (card && pillarStore[card.dataset.pillar]?.hasScore) openModal(pillarStore[card.dataset.pillar]);
     });
 
     // Talk time
@@ -471,7 +473,7 @@ function renderRadar(data) {
         type: 'radar',
         data: {
             labels: fields.map(f => f.l),
-            datasets: [{ label: 'Nota de CS', data: fields.map(f => data[`nota_${f.k}`] || 0),
+            datasets: [{ label: 'Nota de CS', data: fields.map(f => data[`nota_${f.k}`] ?? 0),
                 backgroundColor: 'rgba(37,99,235,0.15)', borderColor: '#2563eb',
                 borderWidth: 1.5, pointRadius: 2, pointBackgroundColor: '#1e3a8a' }]
         },
