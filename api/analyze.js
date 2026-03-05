@@ -20,7 +20,7 @@ Rapport | Autoridade | Postura | Gestão de Tempo | Contextualização | Clareza
 Flexibilidade | Domínio de Produto | Domínio de Negócio | Ecossistema Nibo | Universo Contábil
 
 Formato: uma seção por pilar com 1–3 evidências diretas ou parafraseadas.
-Ao final, acrescente: sistemas/ferramentas citados, % estimado de fala CS vs cliente,
+Ao final: sistemas citados, % estimado de fala CS vs cliente,
 e se houve: prazo definido, dever de casa, validação de acesso, próxima reunião agendada,
 retomada da dor de vendas, explicação do canal de suporte. Máximo 2000 palavras.`
         }
@@ -111,24 +111,59 @@ Se nota for 5 escreva "Critério de excelência atingido." em melhoria. Seja ext
     return JSON.parse(res.text);
 }
 
-// ─── CHAMADA B: Relatório markdown — chamada separada, output livre ────────────
+// ─── CHAMADA B: Relatório focado no analista de CS — para o coordenador ───────
 async function getReport(content, scores) {
-    // Passa o resumo estruturado das notas + o conteúdo para o relatório ser coerente
-    const scoresSummary = Object.entries(scores)
-        .filter(([k]) => k.startsWith('nota_'))
-        .map(([k, v]) => `${k.replace('nota_', '')}: ${v}`)
-        .join(', ');
+    // Monta um resumo das notas para dar contexto ao relatório
+    const pillarNames = {
+        consultividade: 'Consultividade', escuta_ativa: 'Escuta Ativa', jornada_cliente: 'Jornada do Cliente',
+        encantamento: 'Encantamento', objecoes: 'Objeções/Bugs', rapport: 'Rapport',
+        autoridade: 'Autoridade', postura: 'Postura', gestao_tempo: 'Gestão de Tempo',
+        contextualizacao: 'Contextualização', clareza: 'Clareza', objetividade: 'Objetividade',
+        flexibilidade: 'Flexibilidade', dominio_produto: 'Domínio de Produto',
+        dominio_negocio: 'Domínio de Negócio', ecossistema_nibo: 'Ecossistema Nibo',
+        universo_contabil: 'Universo Contábil'
+    };
 
-    const prompt = `Com base no conteúdo abaixo e nas notas já atribuídas (${scoresSummary}),
-escreva um relatório detalhado de auditoria de CS em Markdown.
+    const scoresBlock = Object.entries(pillarNames)
+        .map(([k, label]) => {
+            const nota = scores[`nota_${k}`] ?? '?';
+            const pq   = scores[`porque_${k}`] ?? '';
+            const ml   = scores[`melhoria_${k}`] ?? '';
+            return `- **${label}**: ${nota}/5 — ${pq}${ml && ml !== 'Critério de excelência atingido.' ? ` | Melhoria: ${ml}` : ''}`;
+        })
+        .join('\n');
 
-Estrutura obrigatória:
-## Visão Geral
-## Análise por Pilar (comente os destaques positivos e negativos)
-## Pontos Críticos de Atenção
-## Plano de Ação Recomendado
+    const prompt = `Você é um coordenador experiente de Customer Success do Nibo analisando a performance do seu analista de CS nesta reunião de Onboarding.
 
-Seja específico, cite comportamentos observados. Escreva para um gestor de CS.
+Abaixo estão as notas e justificativas já atribuídas para cada pilar:
+${scoresBlock}
+
+Média final: ${scores.media_final ?? '?'}/5
+Saúde do cliente: ${scores.saude_cliente ?? ''}
+Risco de churn: ${scores.risco_churn ?? ''}
+
+Com base no conteúdo da reunião e nas notas acima, escreva um relatório em Markdown direcionado ao COORDENADOR de CS, com linguagem direta e prática. O relatório deve:
+
+1. Falar SOBRE o analista — o que ele fez bem, o que deixou a desejar, como ele se comportou com o cliente
+2. Trazer falas ou momentos CONCRETOS da reunião como evidência (cite trechos ou situações reais)
+3. Indicar EXATAMENTE o que o coordenador deve falar com o analista no próximo 1:1 — frases prontas que o coordenador pode usar
+4. Propor um plano de ação INDIVIDUAL para o analista com no máximo 3 prioridades, cada uma com ação concreta, prazo e como medir
+
+Use esta estrutura obrigatória em Markdown:
+
+## O que o analista fez bem
+(cite comportamentos e momentos específicos da reunião — seja concreto, não genérico)
+
+## O que precisa melhorar
+(cite os pilares com nota abaixo de 4 — explique o impacto no cliente e na retenção)
+
+## O que falar no 1:1
+(escreva como se fosse o coordenador falando diretamente — frases reais, sem rodeios)
+
+## Plano de ação individual
+(3 prioridades no máximo — ação, prazo e métrica)
+
+Seja direto, humano e orientado a resultado. Nada de linguagem genérica ou acadêmica.
 
 CONTEÚDO DA REUNIÃO:
 ${content}`;
@@ -138,7 +173,9 @@ ${content}`;
         contents: prompt,
         config: {
             maxOutputTokens: 4096,
-            systemInstruction: `Você é auditor sênior de CS do Nibo. Escreva apenas o relatório em Markdown puro, sem JSON.`
+            systemInstruction: `Você é coordenador sênior de CS do Nibo escrevendo feedback acionável sobre seu analista. 
+Escreva apenas o relatório em Markdown puro. Sem introduções, sem JSON, sem meta-comentários sobre a análise.
+Use evidências concretas da reunião. Seja direto como um bom líder seria num 1:1.`
         }
     });
     return res.text;
@@ -160,13 +197,12 @@ export default async function handler(req, res) {
         const isLong = prompt.length > 12000;
         const content = isLong ? await compressTranscript(prompt) : prompt;
 
-        // Passos 2A e 2B — executam em PARALELO para ganhar tempo
-        const [scores, report] = await Promise.all([
-            getScores(content),
-            getReport(content, {}) // scores ainda não disponíveis, passa vazio no paralelo
-        ]);
+        // Passo 2A — notas e scores (JSON)
+        const scores = await getScores(content);
 
-        // Monta resposta final
+        // Passo 2B — relatório do coordenador (markdown), usa as notas do 2A para ser coerente
+        const report = await getReport(content, scores);
+
         return res.status(200).json({
             ...scores,
             justificativa_detalhada: report,
@@ -175,8 +211,6 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('Erro na API:', error);
-
-        // Mensagem de erro amigável por tipo de falha
         if (error.message?.includes('parse') || error.message?.includes('JSON')) {
             return res.status(500).json({ error: 'Erro ao interpretar resposta da IA. Tente novamente.' });
         }
