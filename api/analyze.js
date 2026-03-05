@@ -18,7 +18,7 @@ async function getNumbers(transcript) {
         contents: transcript,
         config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 2048, // 17 notas + 6 booleans + 3 números = menos de 300 tokens
+            maxOutputTokens: 8192,
             systemInstruction: `Você é auditor de CS do Nibo. Leia a transcrição e retorne APENAS números e booleanos.
 
 Para cada pilar, retorne a nota de 1 a 5. Se não houver NENHUMA evidência observável do pilar na transcrição, retorne -1 (significa "sem evidência").
@@ -54,17 +54,12 @@ tempo_fala_cs e tempo_fala_cliente = inteiro de 0 a 100 (percentual).`,
                     nota_ecossistema_nibo:  { type: Type.NUMBER },
                     nota_universo_contabil: { type: Type.NUMBER },
 
-                    checklist_cs: {
-                        type: Type.OBJECT,
-                        properties: {
-                            definiu_prazo_implementacao:   { type: Type.BOOLEAN },
-                            alinhou_dever_de_casa:         { type: Type.BOOLEAN },
-                            validou_certificado_digital:   { type: Type.BOOLEAN },
-                            agendou_proximo_passo:         { type: Type.BOOLEAN },
-                            conectou_com_dor_vendas:       { type: Type.BOOLEAN },
-                            explicou_canal_suporte:        { type: Type.BOOLEAN }
-                        }
-                    }
+                    ck_prazo:         { type: Type.BOOLEAN },
+                    ck_dever_casa:    { type: Type.BOOLEAN },
+                    ck_certificado:   { type: Type.BOOLEAN },
+                    ck_proximo_passo: { type: Type.BOOLEAN },
+                    ck_dor_vendas:    { type: Type.BOOLEAN },
+                    ck_suporte:       { type: Type.BOOLEAN }
                 },
                 required: [
                     "media_final","tempo_fala_cs_pct","tempo_fala_cliente_pct",
@@ -73,7 +68,7 @@ tempo_fala_cs e tempo_fala_cliente = inteiro de 0 a 100 (percentual).`,
                     "nota_postura","nota_gestao_tempo","nota_contextualizacao","nota_clareza",
                     "nota_objetividade","nota_flexibilidade","nota_dominio_produto",
                     "nota_dominio_negocio","nota_ecossistema_nibo","nota_universo_contabil",
-                    "checklist_cs"
+                    "ck_prazo","ck_dever_casa","ck_certificado","ck_proximo_passo","ck_dor_vendas","ck_suporte"
                 ]
             }
         }
@@ -101,6 +96,16 @@ tempo_fala_cs e tempo_fala_cliente = inteiro de 0 a 100 (percentual).`,
     // Formata percentuais como string
     parsed.tempo_fala_cs      = `${parsed.tempo_fala_cs_pct ?? 50}%`;
     parsed.tempo_fala_cliente = `${parsed.tempo_fala_cliente_pct ?? 50}%`;
+
+    // Reconstrói checklist no formato que o frontend espera
+    parsed.checklist_cs = {
+        definiu_prazo_implementacao:   parsed.ck_prazo         ?? false,
+        alinhou_dever_de_casa:         parsed.ck_dever_casa    ?? false,
+        validou_certificado_digital:   parsed.ck_certificado   ?? false,
+        agendou_proximo_passo:         parsed.ck_proximo_passo ?? false,
+        conectou_com_dor_vendas:       parsed.ck_dor_vendas    ?? false,
+        explicou_canal_suporte:        parsed.ck_suporte       ?? false
+    };
 
     return parsed;
 }
