@@ -10,51 +10,96 @@ export const config = {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const PILLAR_KEYS = [
-    ['consultividade',   'Consultividade'],
-    ['escuta_ativa',     'Escuta Ativa'],
-    ['jornada_cliente',  'Jornada do Cliente'],
-    ['encantamento',     'Encantamento'],
-    ['objecoes',         'Objeções/Bugs'],
-    ['rapport',          'Rapport'],
-    ['autoridade',       'Autoridade'],
-    ['postura',          'Postura'],
-    ['gestao_tempo',     'Gestão de Tempo'],
-    ['contextualizacao', 'Contextualização'],
-    ['clareza',          'Clareza'],
-    ['objetividade',     'Objetividade'],
-    ['flexibilidade',    'Flexibilidade'],
-    ['dominio_produto',  'Domínio de Produto'],
-    ['dominio_negocio',  'Domínio de Negócio'],
-    ['ecossistema_nibo', 'Ecossistema Nibo'],
-    ['universo_contabil','Universo Contábil'],
+const ALL_PILLARS = [
+    ['consultividade',    'Consultividade'],
+    ['escuta_ativa',      'Escuta Ativa'],
+    ['jornada_cliente',   'Jornada do Cliente'],
+    ['encantamento',      'Encantamento'],
+    ['objecoes',          'Objeções/Bugs'],
+    ['rapport',           'Rapport'],
+    ['autoridade',        'Autoridade'],
+    ['postura',           'Postura'],
+    ['gestao_tempo',      'Gestão de Tempo'],
+    ['contextualizacao',  'Contextualização'],
+    ['clareza',           'Clareza'],
+    ['objetividade',      'Objetividade'],
+    ['flexibilidade',     'Flexibilidade'],
+    ['dominio_produto',   'Domínio de Produto'],
+    ['dominio_negocio',   'Domínio de Negócio'],
+    ['ecossistema_nibo',  'Ecossistema Nibo'],
+    ['universo_contabil', 'Universo Contábil'],
 ];
 
 // ─── Repara JSON truncado fechando estruturas abertas ─────────────────────────
-function repairJson(text) {
-    let s = text.trimEnd();
+function repairJson(raw) {
+    let s = (raw || '').trimEnd();
     s = s.replace(/,\s*$/, '');
     s = s.replace(/"[^"]*$/, '');
     s = s.replace(/:\s*$/, '');
     s = s.replace(/,\s*$/, '');
-    let braces = 0, brackets = 0, inStr = false, escape = false;
+    let braces = 0, brackets = 0, inStr = false, esc = false;
     for (let i = 0; i < s.length; i++) {
         const ch = s[i];
-        if (escape) { escape = false; continue; }
-        if (ch === '\\' && inStr) { escape = true; continue; }
-        if (ch === '"') { inStr = !inStr; continue; }
-        if (inStr) continue;
-        if (ch === '{') braces++;
-        else if (ch === '}') braces--;
-        else if (ch === '[') brackets++;
-        else if (ch === ']') brackets--;
+        if (esc)              { esc = false; continue; }
+        if (ch === '\\' && inStr) { esc = true;  continue; }
+        if (ch === '"')       { inStr = !inStr; continue; }
+        if (inStr)            continue;
+        if      (ch === '{')  braces++;
+        else if (ch === '}')  braces--;
+        else if (ch === '[')  brackets++;
+        else if (ch === ']')  brackets--;
     }
     while (brackets > 0) { s += ']'; brackets--; }
-    while (braces > 0)   { s += '}'; braces--; }
+    while (braces  > 0)  { s += '}'; braces--;  }
     return s;
 }
 
-// ─── CHAMADA 1: apenas números e booleanos (JSON tamanho fixo, nunca trunca) ──
+function safeParse(text, label) {
+    try { return JSON.parse(text); } catch (_) {
+        try {
+            const r = JSON.parse(repairJson(text));
+            console.log(label + ' reparado OK');
+            return r;
+        } catch (e2) {
+            console.error(label + ' falhou mesmo após repair:', (text || '').slice(-80));
+            throw new Error('JSON_FAIL_' + label);
+        }
+    }
+}
+
+// ─── Monta schema de justificativas para N pilares ────────────────────────────
+function makeTextSchema(pairs) {
+    const props = {};
+    const req   = [];
+    pairs.forEach(function(p) {
+        const k = p[0];
+        props['porque_'   + k] = { type: Type.STRING };
+        props['melhoria_' + k] = { type: Type.STRING };
+        req.push('porque_' + k, 'melhoria_' + k);
+    });
+    return { type: Type.OBJECT, properties: props, required: req };
+}
+
+
+// ─── Retry automático para chamadas à API ─────────────────────────────────────
+async function withRetry(fn, label, attempts) {
+    attempts = attempts || 3;
+    let lastErr;
+    for (let i = 0; i < attempts; i++) {
+        try {
+            return await fn();
+        } catch (e) {
+            lastErr = e;
+            console.error(label + ' tentativa ' + (i + 1) + ' falhou:', e.message);
+            if (i < attempts - 1) {
+                await new Promise(function(r) { setTimeout(r, 1000 * (i + 1)); });
+            }
+        }
+    }
+    throw lastErr;
+}
+
+// ─── CHAMADA 1: notas numéricas + checklist (JSON fixo, ~300 tokens) ──────────
 async function getNumbers(transcript) {
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -62,14 +107,11 @@ async function getNumbers(transcript) {
         config: {
             responseMimeType: 'application/json',
             maxOutputTokens: 8192,
-            systemInstruction: [
-                'Você é auditor de CS do Nibo.',
-                'Leia a transcrição e retorne APENAS números e booleanos.',
-                'Para cada pilar, retorne nota 1-5.',
-                'Se não houver evidência observável do pilar, retorne -1.',
-                'media_final = média apenas das notas que NÃO sejam -1.',
-                'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0 a 100.',
-            ].join(' '),
+            systemInstruction:
+                'Auditor de CS do Nibo. Leia a transcrição. ' +
+                'Para cada pilar retorne nota 1-5. Sem evidência = -1. ' +
+                'media_final = média das notas diferentes de -1. ' +
+                'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100.',
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -114,25 +156,10 @@ async function getNumbers(transcript) {
         },
     });
 
-    let parsed;
-    try {
-        parsed = JSON.parse(res.text);
-    } catch (e) {
-        console.error('getNumbers JSON truncado, tentando reparar...');
-        const repaired = repairJson(res.text || '');
-        try {
-            parsed = JSON.parse(repaired);
-            console.log('JSON reparado com sucesso');
-        } catch (e2) {
-            console.error('Falha ao reparar JSON:', res.text && res.text.slice(-120));
-            throw new Error('TRUNCATED_NUMBERS');
-        }
-    }
+    const parsed = safeParse(res.text, 'getNumbers');
 
-    // -1 vira null (sem evidência)
-    PILLAR_KEYS.forEach(function(pair) {
-        const k = pair[0];
-        if (parsed['nota_' + k] === -1) parsed['nota_' + k] = null;
+    ALL_PILLARS.forEach(function(p) {
+        if (parsed['nota_' + p[0]] === -1) parsed['nota_' + p[0]] = null;
     });
 
     parsed.tempo_fala_cs      = (parsed.tempo_fala_cs_pct      || 50) + '%';
@@ -150,127 +177,135 @@ async function getNumbers(transcript) {
     return parsed;
 }
 
-// ─── CHAMADA 2A: justificativas curtas (texto livre com separadores simples) ──
-async function getJustificativas(transcript, numbers) {
-    const comNota = PILLAR_KEYS.filter(function(pair) {
-        return numbers['nota_' + pair[0]] !== null;
-    });
-
-    const notasBloco = comNota.map(function(pair) {
-        return pair[1] + ': ' + numbers['nota_' + pair[0]] + '/5';
-    }).join(', ');
-
-    const pillarLines = comNota.map(function(pair) {
-        return '###' + pair[0].toUpperCase() + '### Porque (1 frase): ... | Melhoria (1 frase): ...';
-    }).join('\n');
-
-    const instruction = 'Auditor de CS do Nibo. Notas calculadas: ' + notasBloco + '.\n\n'
-        + 'Produza exatamente os campos abaixo, cada um em UMA linha, sem texto extra:\n\n'
-        + '###RESUMO### (1 frase resumindo a reunião)\n'
-        + '###SAUDE### (1 frase sobre saúde do cliente)\n'
-        + '###CHURN### (1 frase sobre risco de churn)\n'
-        + '###SISTEMAS### (sistemas citados separados por vírgula, ou: nenhum)\n'
-        + '###FORTES### (até 4 pontos fortes, um por linha, começando com -)\n'
-        + '###ATENCAO### (até 4 pontos de atenção, um por linha, começando com -)\n\n'
-        + pillarLines + '\n\nSeja MUITO CONCISO.';
+// ─── CHAMADA 2: meta-textos (resumo, saúde, sistemas, pontos) ─────────────────
+async function getMeta(transcript, numbers) {
+    const notasStr = ALL_PILLARS
+        .filter(function(p) { return numbers['nota_' + p[0]] !== null; })
+        .map(function(p)    { return p[1] + ': ' + numbers['nota_' + p[0]] + '/5'; })
+        .join(', ');
 
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
         config: {
-            maxOutputTokens: 4096,
-            systemInstruction: instruction,
+            responseMimeType: 'application/json',
+            maxOutputTokens: 2048,
+            systemInstruction:
+                'Auditor de CS do Nibo. Notas: ' + notasStr + '. ' +
+                'Retorne os campos solicitados em JSON. ' +
+                'pontos_fortes e pontos_atencao: máx 4 itens cada, frases curtas. ' +
+                'sistemas_citados: ferramentas/sistemas mencionados pelo cliente. ' +
+                'resumo_executivo: 1 frase. saude_cliente: 1 frase. risco_churn: 1 frase.',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    resumo_executivo: { type: Type.STRING },
+                    saude_cliente:    { type: Type.STRING },
+                    risco_churn:      { type: Type.STRING },
+                    sistemas_citados: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    pontos_fortes:    { type: Type.ARRAY, items: { type: Type.STRING } },
+                    pontos_atencao:   { type: Type.ARRAY, items: { type: Type.STRING } },
+                },
+                required: ['resumo_executivo', 'saude_cliente', 'risco_churn',
+                           'sistemas_citados', 'pontos_fortes', 'pontos_atencao'],
+            },
         },
     });
 
-    const raw = res.text || '';
-
-    function getLine(tag) {
-        const idx = raw.indexOf('###' + tag + '###');
-        if (idx === -1) return '';
-        const after = raw.slice(idx + tag.length + 6);
-        const end = after.indexOf('\n');
-        return (end === -1 ? after : after.slice(0, end)).trim();
-    }
-
-    function getBlock(tag) {
-        const idx = raw.indexOf('###' + tag + '###');
-        if (idx === -1) return '';
-        const after = raw.slice(idx + tag.length + 6);
-        const next = after.indexOf('###');
-        return (next === -1 ? after : after.slice(0, next)).trim();
-    }
-
-    const sistemas = getLine('SISTEMAS');
-    const result = {
-        resumo_executivo: getLine('RESUMO') || 'Reunião de onboarding avaliada.',
-        saude_cliente:    getLine('SAUDE')  || 'N/A',
-        risco_churn:      getLine('CHURN')  || 'N/A',
-        sistemas_citados: (!sistemas || sistemas.toLowerCase() === 'nenhum')
-            ? []
-            : sistemas.split(',').map(function(s) { return s.trim(); }).filter(Boolean),
-        pontos_fortes: getBlock('FORTES').split('\n')
-            .map(function(s) { return s.replace(/^-\s*/, '').trim(); }).filter(Boolean),
-        pontos_atencao: getBlock('ATENCAO').split('\n')
-            .map(function(s) { return s.replace(/^-\s*/, '').trim(); }).filter(Boolean),
-    };
-
-    PILLAR_KEYS.forEach(function(pair) {
-        const k = pair[0];
-        if (numbers['nota_' + k] === null) {
-            result['porque_' + k]   = 'Sem evidência na transcrição.';
-            result['melhoria_' + k] = null;
-            return;
-        }
-        const line = getLine(k.toUpperCase());
-        const pqMatch = line.match(/[Pp]orque[^:]*:\s*([^|]+)/);
-        const mlMatch = line.match(/[Mm]elhoria[^:]*:\s*(.+)/);
-        const pq = pqMatch ? pqMatch[1].trim() : '';
-        const ml = mlMatch ? mlMatch[1].trim() : '';
-        result['porque_' + k]   = (pq && pq !== '...') ? pq : 'Sem justificativa.';
-        result['melhoria_' + k] = (ml && ml !== '...') ? ml : 'Excelência atingida.';
-    });
-
-    return result;
+    return safeParse(res.text, 'getMeta');
 }
 
-// ─── CHAMADA 2B: relatório do coordenador (sem transcrição, só notas+textos) ──
-async function getRelatorio(numbers, texts) {
-    const linhas = PILLAR_KEYS.map(function(pair) {
-        const k = pair[0];
-        const label = pair[1];
-        const nota = numbers['nota_' + k];
-        if (nota === null) return null;
-        const pq = texts['porque_' + k] || '';
-        const ml = texts['melhoria_' + k] || '';
-        const sufixo = (ml && ml !== 'Excelência atingida.') ? ' | Melhoria: ' + ml : '';
-        return '- **' + label + '**: ' + nota + '/5 — ' + pq + sufixo;
-    }).filter(Boolean).join('\n');
+// ─── CHAMADA 3A: justificativas pilares 1-9 ───────────────────────────────────
+async function getTextsA(transcript, numbers) {
+    const group = ALL_PILLARS.slice(0, 9);
+    const notasStr = group
+        .filter(function(p) { return numbers['nota_' + p[0]] !== null; })
+        .map(function(p)    { return p[1] + ': ' + numbers['nota_' + p[0]] + '/5'; })
+        .join(', ');
 
-    const conteudo = 'Coordenador de CS do Nibo — escreva feedback sobre seu analista.\n\n'
-        + 'NOTAS:\n' + linhas + '\n\n'
-        + 'Média: ' + (numbers.media_final || '?') + '/5'
-        + ' | Saúde: ' + (texts.saude_cliente || '')
-        + ' | Churn: ' + (texts.risco_churn || '') + '\n'
-        + 'Fortes: ' + (texts.pontos_fortes || []).join('; ') + '\n'
-        + 'Atenção: ' + (texts.pontos_atencao || []).join('; ') + '\n\n'
-        + '## O que o analista fez bem\n'
-        + '## O que precisa melhorar\n'
-        + '## O que falar no 1:1\n'
-        + '## Plano de ação individual';
+    const instruction =
+        'Auditor de CS do Nibo. Notas dos pilares: ' + notasStr + '. ' +
+        'Para pilares SEM evidência retorne "Sem evidência na transcrição." no porque e "" no melhoria. ' +
+        'Para os demais: porque = 1 frase curta do que aconteceu; ' +
+        'melhoria = 1 frase do que faltou para nota 5 (se nota=5 escreva "Excelência atingida.").';
 
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: conteudo,
+        contents: transcript,
+        config: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 3000,
+            systemInstruction: instruction,
+            responseSchema: makeTextSchema(group),
+        },
+    });
+
+    return safeParse(res.text, 'getTextsA');
+}
+
+// ─── CHAMADA 3B: justificativas pilares 10-17 ────────────────────────────────
+async function getTextsB(transcript, numbers) {
+    const group = ALL_PILLARS.slice(9);
+    const notasStr = group
+        .filter(function(p) { return numbers['nota_' + p[0]] !== null; })
+        .map(function(p)    { return p[1] + ': ' + numbers['nota_' + p[0]] + '/5'; })
+        .join(', ');
+
+    const instruction =
+        'Auditor de CS do Nibo. Notas dos pilares: ' + notasStr + '. ' +
+        'Para pilares SEM evidência retorne "Sem evidência na transcrição." no porque e "" no melhoria. ' +
+        'Para os demais: porque = 1 frase curta do que aconteceu; ' +
+        'melhoria = 1 frase do que faltou para nota 5 (se nota=5 escreva "Excelência atingida.").';
+
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: transcript,
+        config: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 3000,
+            systemInstruction: instruction,
+            responseSchema: makeTextSchema(group),
+        },
+    });
+
+    return safeParse(res.text, 'getTextsB');
+}
+
+// ─── CHAMADA 4: relatório do coordenador (sem transcrição) ───────────────────
+async function getRelatorio(numbers, meta, texts) {
+    const linhas = ALL_PILLARS.map(function(p) {
+        const k    = p[0];
+        const nota = numbers['nota_' + k];
+        if (nota === null) return null;
+        const pq   = texts['porque_'   + k] || '';
+        const ml   = texts['melhoria_' + k] || '';
+        const suf  = (ml && ml !== 'Excelência atingida.') ? ' | Melhoria: ' + ml : '';
+        return '- **' + p[1] + '**: ' + nota + '/5 — ' + pq + suf;
+    }).filter(Boolean).join('\n');
+
+    const prompt =
+        'Coordenador de CS do Nibo — feedback sobre o analista desta reunião.\n\n' +
+        'NOTAS:\n' + linhas + '\n\n' +
+        'Média: ' + (numbers.media_final || '?') + '/5' +
+        ' | Saúde: ' + (meta.saude_cliente || '') +
+        ' | Churn: '  + (meta.risco_churn  || '') + '\n' +
+        'Fortes: '  + (meta.pontos_fortes  || []).join('; ') + '\n' +
+        'Atenção: ' + (meta.pontos_atencao || []).join('; ') + '\n\n' +
+        '## O que o analista fez bem\n' +
+        '## O que precisa melhorar\n' +
+        '## O que falar no 1:1\n' +
+        '## Plano de ação individual';
+
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
         config: {
             maxOutputTokens: 4096,
-            systemInstruction: [
-                'Coordenador sênior de CS do Nibo.',
-                'Markdown puro, linguagem direta e humana.',
-                '"O que falar no 1:1": frases prontas para usar literalmente.',
-                '"Plano de ação": máx 3 prioridades com ação + prazo + métrica.',
+            systemInstruction:
+                'Coordenador sênior de CS do Nibo. Markdown puro, linguagem direta e humana. ' +
+                '"O que falar no 1:1": frases prontas para usar literalmente. ' +
+                '"Plano de ação": máx 3 prioridades com ação + prazo + métrica. ' +
                 'Só mencione pilares com nota numérica.',
-            ].join(' '),
         },
     });
 
@@ -289,19 +324,51 @@ export default async function handler(req, res) {
     }
 
     try {
-        const numbers = await getNumbers(prompt);
-        const texts   = await getJustificativas(prompt, numbers);
-        const relatorio = await getRelatorio(numbers, texts);
+        // 1. Notas numéricas (com retry)
+        const numbers = await withRetry(function() { return getNumbers(prompt); }, 'getNumbers');
+
+        // 2. Meta-textos + justificativas A e B em paralelo (com retry individual)
+        const results = await Promise.all([
+            withRetry(function() { return getMeta(prompt, numbers);   }, 'getMeta'),
+            withRetry(function() { return getTextsA(prompt, numbers); }, 'getTextsA'),
+            withRetry(function() { return getTextsB(prompt, numbers); }, 'getTextsB'),
+        ]);
+        const meta   = results[0];
+        const textsA = results[1];
+        const textsB = results[2];
+        const texts  = Object.assign({}, textsA, textsB);
+
+        // Garante fallbacks para pilares sem evidência ou campos faltando
+        ALL_PILLARS.forEach(function(p) {
+            const k = p[0];
+            if (numbers['nota_' + k] === null) {
+                texts['porque_'   + k] = 'Sem evidência na transcrição.';
+                texts['melhoria_' + k] = null;
+            } else {
+                texts['porque_'   + k] = texts['porque_'   + k] || 'Sem justificativa disponível.';
+                texts['melhoria_' + k] = texts['melhoria_' + k] || 'Excelência atingida.';
+            }
+        });
+
+        // Fallbacks para meta
+        meta.resumo_executivo = meta.resumo_executivo || 'Reunião de onboarding realizada.';
+        meta.saude_cliente    = meta.saude_cliente    || 'Não avaliado.';
+        meta.risco_churn      = meta.risco_churn      || 'Não avaliado.';
+        meta.sistemas_citados = meta.sistemas_citados || [];
+        meta.pontos_fortes    = meta.pontos_fortes    || [];
+        meta.pontos_atencao   = meta.pontos_atencao   || [];
+
+        // 3. Relatório (com retry)
+        const justificativa_detalhada = await withRetry(
+            function() { return getRelatorio(numbers, meta, texts); }, 'getRelatorio'
+        );
 
         return res.status(200).json(
-            Object.assign({}, numbers, texts, { justificativa_detalhada: relatorio })
+            Object.assign({}, numbers, meta, texts, { justificativa_detalhada: justificativa_detalhada })
         );
 
     } catch (error) {
         console.error('Erro na API:', error);
-        if (error.message === 'TRUNCATED_NUMBERS') {
-            return res.status(500).json({ error: 'Erro ao calcular notas. Tente novamente.' });
-        }
         return res.status(500).json({ error: 'Erro: ' + error.message });
     }
 }
