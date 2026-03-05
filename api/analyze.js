@@ -110,9 +110,8 @@ tempo_fala_cs e tempo_fala_cliente = inteiro de 0 a 100 (percentual).`,
     return parsed;
 }
 
-// ─── CHAMADA 2: SÓ TEXTO LIVRE — sem schema, sem risco de truncar JSON ────────
-// Retorna todos os textos descritivos em formato simples que parseamos depois.
-async function getTexts(transcript, numbers) {
+// ─── CHAMADA 2A: Justificativas dos pilares (com transcrição, output curto) ────
+async function getJustificativas(transcript, numbers) {
     const pillarKeys = [
         ['consultividade','Consultividade'],['escuta_ativa','Escuta Ativa'],
         ['jornada_cliente','Jornada do Cliente'],['encantamento','Encantamento'],
@@ -124,86 +123,117 @@ async function getTexts(transcript, numbers) {
         ['ecossistema_nibo','Ecossistema Nibo'],['universo_contabil','Universo Contábil']
     ];
 
-    // Monta lista de pilares que têm nota para pedir texto só deles
     const comNota = pillarKeys.filter(([k]) => numbers[`nota_${k}`] !== null);
-    const notasBloco = comNota
-        .map(([k, label]) => `${label}: ${numbers[`nota_${k}`]}/5`)
-        .join(', ');
+    const notasBloco = comNota.map(([k, l]) => `${l}: ${numbers[`nota_${k}`]}/5`).join(', ');
 
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
         config: {
-            maxOutputTokens: 6000,
-            systemInstruction: `Você é auditor de CS do Nibo. Com base na transcrição e nas notas já calculadas (${notasBloco}), produza o seguinte em texto puro, usando exatamente os separadores indicados:
+            maxOutputTokens: 4096,
+            systemInstruction: `Auditor de CS do Nibo. Notas já calculadas: ${notasBloco}.
 
-###RESUMO###
-Uma frase resumindo a reunião.
+Para cada pilar listado abaixo, escreva exatamente no formato indicado (1 linha cada):
 
-###SAUDE###
-Uma frase sobre a saúde do cliente após a reunião.
+###RESUMO### Uma frase resumindo a reunião.
+###SAUDE### Uma frase sobre saúde do cliente.
+###CHURN### Uma frase sobre risco de churn.
+###SISTEMAS### sistemas citados separados por vírgula, ou: nenhum
+###FORTES### até 4 pontos fortes, um por linha começando com -
+###ATENCAO### até 4 pontos de atenção, um por linha começando com -
 
-###CHURN###
-Uma frase sobre o principal risco de churn identificado.
+${comNota.map(([k, label]) => `###${k.toUpperCase()}### Porque (máx 1 frase): ... | Melhoria (máx 1 frase): ...`).join('
+')}
 
-###SISTEMAS###
-Liste sistemas/ferramentas citados separados por vírgula. Se nenhum, escreva: nenhum
-
-###FORTES###
-Liste até 4 pontos fortes do analista, um por linha, começando com "-".
-
-###ATENCAO###
-Liste até 4 pontos de atenção, um por linha, começando com "-".
-
-${comNota.map(([k, label]) => `###PILAR_${k.toUpperCase()}###\nPorquê (máx 2 frases): [motivo da nota]\nMelhoria (máx 1 frase): [o que faltou para 5; se nota=5 escreva "Excelência atingida."]`).join('\n\n')}
-
-###RELATORIO###
-Escreva um relatório em Markdown para o COORDENADOR de CS sobre a performance do analista, com estas seções:
-## O que o analista fez bem
-## O que precisa melhorar
-## O que falar no 1:1
-## Plano de ação individual
-
-Use evidências concretas da transcrição. Linguagem direta como num bom 1:1.`
+Seja MUITO CONCISO. Cada campo em uma linha. Não escreva mais do que o solicitado.`
         }
     });
 
-    return parseTexts(res.text, pillarKeys, numbers);
-}
-
-// ─── Parser do texto livre ────────────────────────────────────────────────────
-function parseTexts(raw, pillarKeys, numbers) {
+    const raw = res.text ?? '';
     const get = (tag) => {
-        const re = new RegExp(`###${tag}###\\s*([\\s\\S]*?)(?=###|$)`, 'i');
+        const re = new RegExp(`###${tag}###\s*([^\n#][^\n]*)`, 'i');
+        return (raw.match(re)?.[1] ?? '').trim();
+    };
+    const getBlock = (tag) => {
+        const re = new RegExp(`###${tag}###\s*([\s\S]*?)(?=###|$)`, 'i');
         return (raw.match(re)?.[1] ?? '').trim();
     };
 
     const result = {
-        resumo_executivo: get('RESUMO'),
-        saude_cliente:    get('SAUDE'),
-        risco_churn:      get('CHURN'),
-        sistemas_citados: get('SISTEMAS').toLowerCase() === 'nenhum' ? [] :
-            get('SISTEMAS').split(',').map(s => s.trim()).filter(Boolean),
-        pontos_fortes:  get('FORTES').split('\n').map(s => s.replace(/^-\s*/,'')).filter(Boolean),
-        pontos_atencao: get('ATENCAO').split('\n').map(s => s.replace(/^-\s*/,'')).filter(Boolean),
-        justificativa_detalhada: get('RELATORIO')
+        resumo_executivo: get('RESUMO') || 'Reunião de onboarding avaliada.',
+        saude_cliente:    get('SAUDE')  || 'N/A',
+        risco_churn:      get('CHURN')  || 'N/A',
+        sistemas_citados: (() => {
+            const s = get('SISTEMAS');
+            return (!s || s.toLowerCase() === 'nenhum') ? [] : s.split(',').map(x=>x.trim()).filter(Boolean);
+        })(),
+        pontos_fortes:  getBlock('FORTES').split('\n').map(s=>s.replace(/^-\s*/,'')).filter(Boolean),
+        pontos_atencao: getBlock('ATENCAO').split('\n').map(s=>s.replace(/^-\s*/,'')).filter(Boolean),
     };
 
-    // Extrai porque/melhoria de cada pilar
+    // Parse porque/melhoria de cada pilar
     pillarKeys.forEach(([k]) => {
         if (numbers[`nota_${k}`] === null) {
             result[`porque_${k}`]   = 'Sem evidência na transcrição.';
             result[`melhoria_${k}`] = null;
             return;
         }
-        const bloco = get(`PILAR_${k.toUpperCase()}`);
-        const porqueMatch   = bloco.match(/[Pp]orqu[êe][^:]*:\s*(.+?)(?:\n|$)/);
-        const melhoriaMatch = bloco.match(/[Mm]elhoria[^:]*:\s*(.+?)(?:\n|$)/);
-        result[`porque_${k}`]   = porqueMatch?.[1]?.trim()   || 'Sem justificativa.';
-        result[`melhoria_${k}`] = melhoriaMatch?.[1]?.trim() || 'Excelência atingida.';
+        const line = get(k.toUpperCase());
+        const pq = line.match(/[Pp]orque[^:]*:\s*([^|]+)/)?.[1]?.trim() || 'Sem justificativa.';
+        const ml = line.match(/[Mm]elhoria[^:]*:\s*(.+)/)?.[1]?.trim()  || 'Excelência atingida.';
+        result[`porque_${k}`]   = pq.replace(/\.{3}$/, '').trim() || 'Sem justificativa.';
+        result[`melhoria_${k}`] = ml.replace(/\.{3}$/, '').trim() || 'Excelência atingida.';
     });
 
     return result;
+}
+
+// ─── CHAMADA 2B: Relatório do coordenador (só notas, sem transcrição) ─────────
+async function getRelatorio(numbers, texts) {
+    const pillarNames = {
+        consultividade:'Consultividade', escuta_ativa:'Escuta Ativa', jornada_cliente:'Jornada do Cliente',
+        encantamento:'Encantamento', objecoes:'Objeções/Bugs', rapport:'Rapport',
+        autoridade:'Autoridade', postura:'Postura', gestao_tempo:'Gestão de Tempo',
+        contextualizacao:'Contextualização', clareza:'Clareza', objetividade:'Objetividade',
+        flexibilidade:'Flexibilidade', dominio_produto:'Domínio de Produto',
+        dominio_negocio:'Domínio de Negócio', ecossistema_nibo:'Ecossistema Nibo',
+        universo_contabil:'Universo Contábil'
+    };
+
+    const scoresBlock = Object.entries(pillarNames)
+        .map(([k, label]) => {
+            const nota = numbers[`nota_${k}`];
+            if (nota === null) return null;
+            const pq = texts[`porque_${k}`] ?? '';
+            const ml = texts[`melhoria_${k}`] ?? '';
+            return `- **${label}**: ${nota}/5 — ${pq}${ml && ml !== 'Excelência atingida.' ? ` | Melhoria: ${ml}` : ''}`;
+        })
+        .filter(Boolean).join('\n');
+
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Coordenador de CS do Nibo — escreva feedback sobre seu analista.
+
+NOTAS:
+${scoresBlock}
+
+Média: ${numbers.media_final}/5 | Saúde: ${texts.saude_cliente} | Churn: ${texts.risco_churn}
+Fortes: ${(texts.pontos_fortes||[]).join('; ')}
+Atenção: ${(texts.pontos_atencao||[]).join('; ')}
+
+## O que o analista fez bem
+## O que precisa melhorar
+## O que falar no 1:1
+## Plano de ação individual`,
+        config: {
+            maxOutputTokens: 4096,
+            systemInstruction: `Coordenador sênior de CS do Nibo. Markdown puro, linguagem direta.
+"O que falar no 1:1": frases prontas para usar literalmente.
+"Plano de ação": máx 3 prioridades com ação + prazo + métrica.
+Só mencione pilares com nota numérica.`
+        }
+    });
+    return res.text ?? '';
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -217,18 +247,25 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Chamada 1: só números (JSON pequeno, nunca trunca)
+        // Passo 1: notas numéricas (JSON pequeno, fixo, nunca trunca)
         const numbers = await getNumbers(prompt);
 
-        // Chamada 2: todos os textos em texto livre (sem schema, sem risco)
-        const texts = await getTexts(prompt, numbers);
+        // Passo 2A: justificativas dos pilares
+        const texts = await getJustificativas(prompt, numbers);
 
-        return res.status(200).json({ ...numbers, ...texts });
+        // Passo 2B: relatório com as justificativas reais
+        const justificativa_detalhada = await getRelatorio(numbers, texts);
+
+        return res.status(200).json({
+            ...numbers,
+            ...texts,
+            justificativa_detalhada
+        });
 
     } catch (error) {
         console.error('Erro na API:', error);
         if (error.message === 'TRUNCATED_NUMBERS') {
-            return res.status(500).json({ error: 'Erro interno ao calcular notas. Tente novamente.' });
+            return res.status(500).json({ error: 'Erro ao calcular notas. Tente novamente.' });
         }
         return res.status(500).json({ error: 'Erro: ' + error.message });
     }
