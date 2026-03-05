@@ -151,11 +151,11 @@ Seja MUITO CONCISO. Cada campo em uma linha. Não escreva mais do que o solicita
 
     const raw = res.text ?? '';
     const get = (tag) => {
-        const re = new RegExp(`###${tag}###\s*([^\n#][^\n]*)`, 'i');
+        const re = new RegExp(`###${tag}###\\s*([^\\n#][^\\n]*)`, 'i');
         return (raw.match(re)?.[1] ?? '').trim();
     };
     const getBlock = (tag) => {
-        const re = new RegExp(`###${tag}###\s*([\s\S]*?)(?=###|$)`, 'i');
+        const re = new RegExp(`###${tag}###\\s*([\\s\\S]*?)(?=###|$)`, 'i');
         return (raw.match(re)?.[1] ?? '').trim();
     };
 
