@@ -139,7 +139,7 @@
     </main>
 
     <div id="justification-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
-        <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="modal-content-box">
+        <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col" id="modal-content-box">
             <div class="flex justify-between items-start mb-6">
                 <div>
                     <span id="modal-title" class="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-2 block">Pilar</span>
@@ -149,8 +149,21 @@
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
+            
             <div class="w-full h-px bg-slate-100 mb-6"></div>
-            <p id="modal-text" class="text-[13px] text-slate-600 font-medium leading-relaxed">Texto completo aqui.</p>
+            
+            <div class="mb-5">
+                <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest block mb-2">Justificativa da Nota</span>
+                <p id="modal-text" class="text-[13px] text-slate-600 font-medium leading-relaxed">Texto completo aqui.</p>
+            </div>
+
+            <div id="modal-improvement-container" class="bg-amber-50 rounded-2xl p-4 border border-amber-100 mt-2">
+                <div class="flex items-center gap-2 mb-2">
+                    <i data-lucide="target" class="w-4 h-4 text-amber-600"></i>
+                    <span class="text-[9px] font-bold uppercase text-amber-700 tracking-widest block">O que faltou para o 5?</span>
+                </div>
+                <p id="modal-improvement-text" class="text-[12px] text-amber-900 leading-relaxed font-medium">Melhoria aqui.</p>
+            </div>
         </div>
     </div>
 
@@ -164,7 +177,6 @@
     const btnText = document.getElementById('btn-text');
     let radarChartInstance = null;
 
-    // Os 17 Pilares de CS
     const fields = [
         { l: 'Consultividade', k: 'consultividade' },
         { l: 'Escuta Ativa', k: 'escuta_ativa' },
@@ -253,18 +265,19 @@
             status.className = "px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700"; 
         }
 
-        // Renderização dos 17 Cards com Botão Clicável e Hover
         const gridElement = document.getElementById('notas-grid');
         gridElement.innerHTML = fields.map(f => {
             const n = data[`nota_${f.k}`] || 0;
             const p = data[`porque_${f.k}`] || "Sem justificativa detalhada.";
+            const m = data[`melhoria_${f.k}`] || "Critério de excelência atingido.";
             const c = n >= 4 ? 'text-emerald-500' : n >= 3 ? 'text-blue-600' : 'text-red-500';
             
-            // Codificando o texto para não quebrar o HTML na hora de passar para a função
+            // Encode both strings so they don't break the onclick function HTML
             const safeText = encodeURIComponent(p);
+            const safeMelhoria = encodeURIComponent(m);
 
             return `
-                <div onclick="openModal('${f.l}', ${n}, '${c}', '${safeText}')" class="glass-card p-3 flex flex-col items-center text-center justify-center cursor-pointer hover:-translate-y-1 hover:border-blue-300 transition-all group relative">
+                <div onclick="openModal('${f.l}', ${n}, '${c}', '${safeText}', '${safeMelhoria}')" class="glass-card p-3 flex flex-col items-center text-center justify-center cursor-pointer hover:-translate-y-1 hover:border-blue-300 transition-all group relative">
                     <i data-lucide="zoom-in" class="absolute top-2 right-2 w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors"></i>
                     <span class="text-[7.5px] font-black text-slate-400 uppercase mb-1 tracking-widest leading-tight mt-1">${f.l}</span>
                     <div class="text-xl font-black ${c} mb-1 leading-none">${n}</div>
@@ -352,8 +365,7 @@
         });
     }
 
-    // --- FUNÇÕES DO MODAL ---
-    function openModal(title, score, colorClass, encodedText) {
+    function openModal(title, score, colorClass, encodedText, encodedImprovement) {
         const modal = document.getElementById('justification-modal');
         const modalBox = document.getElementById('modal-content-box');
         
@@ -365,6 +377,27 @@
         
         document.getElementById('modal-text').textContent = decodeURIComponent(encodedText);
         
+        // Trata a caixa amarela de melhoria
+        const improvementContainer = document.getElementById('modal-improvement-container');
+        const improvementText = document.getElementById('modal-improvement-text');
+        
+        const decodedImprovement = decodeURIComponent(encodedImprovement);
+        
+        if (score < 5) {
+            improvementContainer.classList.remove('hidden');
+            improvementText.textContent = decodedImprovement;
+            improvementContainer.className = "bg-amber-50 rounded-2xl p-4 border border-amber-100 mt-2";
+            improvementContainer.querySelector('span').textContent = "O que faltou para o 5?";
+            improvementContainer.querySelector('i').className = "w-4 h-4 text-amber-600";
+        } else {
+            // Se já for 5, a caixa fica verdinha parabenizando
+            improvementContainer.classList.remove('hidden');
+            improvementText.textContent = decodedImprovement;
+            improvementContainer.className = "bg-emerald-50 rounded-2xl p-4 border border-emerald-100 mt-2";
+            improvementContainer.querySelector('span').textContent = "Excelente!";
+            improvementContainer.querySelector('i').className = "w-4 h-4 text-emerald-600";
+        }
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         
@@ -389,7 +422,6 @@
         }, 300);
     }
 
-    // Fechar modal ao clicar fora da caixinha branca
     document.getElementById('justification-modal').addEventListener('click', function(e) {
         if (e.target === this) closeModal();
     });
