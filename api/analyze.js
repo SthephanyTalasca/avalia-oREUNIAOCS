@@ -2,7 +2,6 @@ import { GoogleGenAI, Type } from '@google/genai';
 
 export const maxDuration = 300;
 
-// ─── Aumenta o limite do body para 20MB (padrão Next.js é 1MB) ───────────────
 export const config = {
     api: {
         bodyParser: {
@@ -13,35 +12,31 @@ export const config = {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// ─── CHAMADA A: Lê a transcrição UMA VEZ — retorna notas + citações-chave ────
-// As citações são usadas pela Chamada B, evitando reenviar a transcrição inteira.
+// ─── CHAMADA A: Só as notas — JSON mínimo, sem texto longo ───────────────────
+// Cada campo de texto é 1 frase curta → output cabe folgado em 4000 tokens.
 async function getScores(transcript) {
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
         config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 7000,
-            systemInstruction: `Você é auditor sênior de CS do Nibo. Leia a transcrição completa e:
+            maxOutputTokens: 8192,
+            systemInstruction: `Você é auditor sênior de CS do Nibo. Leia a transcrição e avalie os 17 pilares.
 
-1. Dê notas de 1 a 5 para os 17 pilares abaixo.
-2. Extraia até 6 citações ou momentos concretos da reunião que melhor representam a performance do analista (campo "citacoes_chave"). Essas citações serão usadas para gerar o relatório de feedback — escolha momentos específicos, positivos E negativos.
+REGRA DE AUSÊNCIA: Se um pilar não tiver evidência observável, retorne nota = null,
+porque = "Sem evidência na transcrição." e melhoria = null. Nunca invente nota.
 
-REGRA CRÍTICA — AUSÊNCIA DE EVIDÊNCIA:
-Se um pilar NÃO tiver nenhuma evidência observável, retorne nota = null, porque = "Sem evidência na transcrição." e melhoria = null.
-NÃO invente nota. Nota null = "não avaliado", não "ruim".
+Para pilares COM evidência, dê nota 1-5 e escreva:
+- porque_X: UMA frase curta (máximo 15 palavras) — o que aconteceu
+- melhoria_X: UMA frase curta (máximo 15 palavras) — o que faltou para 5; se nota=5 escreva "Excelência atingida."
 
-Se houver evidência, dê nota de 1 a 5:
-- motivo em ATÉ 1 FRASE específica (cite o que aconteceu)
-- o que faltou para 5 em ATÉ 1 FRASE (se nota = 5: "Critério de excelência atingido.")
+SEJA EXTREMAMENTE CONCISO nos textos. O JSON não pode ser cortado.
 
-Pilares:
-1. Consultividade  2. Escuta Ativa  3. Jornada do Cliente  4. Encantamento  5. Objeções/Bugs
-6. Rapport  7. Autoridade  8. Postura  9. Gestão de Tempo  10. Contextualização
-11. Clareza  12. Objetividade  13. Flexibilidade  14. Domínio de Produto
-15. Domínio de Negócio  16. Ecossistema Nibo  17. Universo Contábil
+Pilares: consultividade, escuta_ativa, jornada_cliente, encantamento, objecoes,
+rapport, autoridade, postura, gestao_tempo, contextualizacao, clareza, objetividade,
+flexibilidade, dominio_produto, dominio_negocio, ecossistema_nibo, universo_contabil
 
-média final = média APENAS dos pilares com nota numérica (ignore nulls).`,
+media_final = média apenas dos pilares com nota numérica.`,
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -50,9 +45,6 @@ média final = média APENAS dos pilares com nota numérica (ignore nulls).`,
                     saude_cliente:    { type: Type.STRING },
                     risco_churn:      { type: Type.STRING },
                     sistemas_citados: { type: Type.ARRAY, items: { type: Type.STRING } },
-
-                    // Citações-chave extraídas para o relatório (evita reenviar transcrição)
-                    citacoes_chave: { type: Type.ARRAY, items: { type: Type.STRING } },
 
                     nota_consultividade:    { type: Type.NUMBER, nullable: true }, porque_consultividade:    { type: Type.STRING }, melhoria_consultividade:    { type: Type.STRING, nullable: true },
                     nota_escuta_ativa:      { type: Type.NUMBER, nullable: true }, porque_escuta_ativa:      { type: Type.STRING }, melhoria_escuta_ativa:      { type: Type.STRING, nullable: true },
@@ -91,7 +83,7 @@ média final = média APENAS dos pilares com nota numérica (ignore nulls).`,
                     pontos_atencao: { type: Type.ARRAY, items: { type: Type.STRING } }
                 },
                 required: [
-                    "media_final","resumo_executivo","saude_cliente","risco_churn","sistemas_citados","citacoes_chave",
+                    "media_final","resumo_executivo","saude_cliente","risco_churn","sistemas_citados",
                     "nota_consultividade","porque_consultividade","melhoria_consultividade",
                     "nota_escuta_ativa","porque_escuta_ativa","melhoria_escuta_ativa",
                     "nota_jornada_cliente","porque_jornada_cliente","melhoria_jornada_cliente",
@@ -114,10 +106,21 @@ média final = média APENAS dos pilares com nota numérica (ignore nulls).`,
             }
         }
     });
-    return JSON.parse(res.text);
+
+    // Se o JSON vier cortado, lança erro descritivo
+    let parsed;
+    try {
+        parsed = JSON.parse(res.text);
+    } catch (e) {
+        console.error('JSON cortado, tamanho da resposta:', res.text?.length, 'chars');
+        console.error('Trecho final:', res.text?.slice(-200));
+        throw new Error('TRUNCATED_JSON');
+    }
+    return parsed;
 }
 
-// ─── CHAMADA B: Relatório para o coordenador — usa scores + citações, SEM reenviar transcrição ──
+// ─── CHAMADA B: Relatório + citações — texto livre, sem schema JSON ───────────
+// Recebe apenas as notas (payload pequeno), sem reenviar a transcrição.
 async function getReport(scores) {
     const pillarNames = {
         consultividade: 'Consultividade', escuta_ativa: 'Escuta Ativa', jornada_cliente: 'Jornada do Cliente',
@@ -132,56 +135,39 @@ async function getReport(scores) {
     const scoresBlock = Object.entries(pillarNames)
         .map(([k, label]) => {
             const nota = scores[`nota_${k}`];
-            const pq   = scores[`porque_${k}`] ?? '';
-            const ml   = scores[`melhoria_${k}`] ?? '';
-            if (nota === null || nota === undefined) return null; // omite pilares sem evidência
-            return `- **${label}**: ${nota}/5 — ${pq}${ml && ml !== 'Critério de excelência atingido.' ? ` | Melhoria: ${ml}` : ''}`;
+            if (nota === null || nota === undefined) return null;
+            const pq = scores[`porque_${k}`] ?? '';
+            const ml = scores[`melhoria_${k}`] ?? '';
+            return `- **${label}**: ${nota}/5 — ${pq}${ml && ml !== 'Excelência atingida.' ? ` | Melhoria: ${ml}` : ''}`;
         })
         .filter(Boolean)
         .join('\n');
 
-    const citacoes = (scores.citacoes_chave || [])
-        .map((c, i) => `${i + 1}. "${c}"`)
-        .join('\n');
+    const prompt = `Coordenador de CS do Nibo — escreva feedback sobre o analista desta reunião.
 
-    const prompt = `Você é coordenador experiente de CS do Nibo. Com base nas notas e citações abaixo, escreva um relatório de feedback sobre o seu analista de CS.
-
-NOTAS POR PILAR (apenas avaliados):
+NOTAS (pilares avaliados):
 ${scoresBlock}
 
-Média final: ${scores.media_final ?? '?'}/5
-Saúde do cliente: ${scores.saude_cliente ?? ''}
-Risco de churn: ${scores.risco_churn ?? ''}
+Média: ${scores.media_final ?? '?'}/5 | Saúde: ${scores.saude_cliente ?? ''} | Churn: ${scores.risco_churn ?? ''}
+Fortes: ${(scores.pontos_fortes || []).join('; ')}
+Atenção: ${(scores.pontos_atencao || []).join('; ')}
 
-MOMENTOS CONCRETOS EXTRAÍDOS DA REUNIÃO:
-${citacoes || 'Nenhuma citação disponível.'}
-
-PONTOS FORTES IDENTIFICADOS: ${(scores.pontos_fortes || []).join(' | ')}
-PONTOS DE ATENÇÃO: ${(scores.pontos_atencao || []).join(' | ')}
-
-Escreva o relatório com esta estrutura obrigatória:
+Escreva em Markdown com estas 4 seções:
 
 ## O que o analista fez bem
-(use os momentos concretos acima como evidência — seja específico)
-
 ## O que precisa melhorar
-(foque nos pilares com nota abaixo de 4 — explique o impacto no cliente)
-
 ## O que falar no 1:1
-(frases prontas que o coordenador pode usar literalmente — direto ao ponto)
-
-## Plano de ação individual
-(máximo 3 prioridades — ação concreta + prazo + como medir)`;
+## Plano de ação individual`;
 
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
             maxOutputTokens: 4096,
-            systemInstruction: `Você é coordenador sênior de CS do Nibo escrevendo feedback acionável sobre seu analista.
-Markdown puro. Sem introduções, sem meta-comentários, sem JSON.
-Linguagem direta e humana — como um bom líder fala num 1:1.
-Só mencione pilares que foram avaliados com nota numérica.`
+            systemInstruction: `Coordenador sênior de CS do Nibo. Markdown puro, direto, sem rodeios.
+"O que falar no 1:1": frases prontas para o coordenador usar literalmente.
+"Plano de ação": máx 3 prioridades com ação + prazo + métrica.
+Só mencione pilares com nota numérica.`
         }
     });
     return res.text;
@@ -199,10 +185,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Passo 1: lê a transcrição inteira UMA VEZ e extrai notas + citações-chave
         const scores = await getScores(prompt);
-
-        // Passo 2: gera o relatório usando APENAS scores + citações (sem reenviar transcrição)
         const report = await getReport(scores);
 
         return res.status(200).json({
@@ -212,9 +195,15 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('Erro na API:', error);
+
+        if (error.message === 'TRUNCATED_JSON') {
+            return res.status(500).json({
+                error: 'A transcrição é muito longa para ser processada de uma vez. Tente dividir em partes de até 60 minutos.'
+            });
+        }
         if (error.message?.includes('parse') || error.message?.includes('JSON')) {
             return res.status(500).json({ error: 'Erro ao interpretar resposta da IA. Tente novamente.' });
         }
-        return res.status(500).json({ error: 'Erro do Google Gemini: ' + error.message });
+        return res.status(500).json({ error: 'Erro: ' + error.message });
     }
 }
