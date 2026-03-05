@@ -1,540 +1,232 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nibo AI - Auditoria de CS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #0f172a; }
-        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: all 0.3s ease; }
-        .glass-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulse-opacity { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .pulse-text { animation: pulse-opacity 1.8s ease-in-out infinite; }
-        .markdown-content h1, .markdown-content h2 { font-weight: 800; color: #1e3a8a; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1rem; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; }
-        .markdown-content p { margin-bottom: 1rem; color: #475569; line-height: 1.6; font-size: 0.9rem; }
-        .markdown-content ul { list-style-type: none; padding-left: 0; margin-bottom: 1.25rem; }
-        .markdown-content li { position: relative; padding-left: 1.5rem; margin-bottom: 0.4rem; color: #475569; font-size: 0.85rem; }
-        .markdown-content li::before { content: "•"; position: absolute; left: 0; color: #2563eb; font-weight: bold; }
-    </style>
-</head>
-<body class="pb-20 antialiased">
+import { GoogleGenAI, Type } from '@google/genai';
 
-<nav class="bg-[#002d72] text-white py-4 px-8 sticky top-0 z-50 shadow-xl border-b border-blue-400">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-        <div class="flex items-center gap-3">
-            <div class="bg-white p-2.5 rounded-2xl shadow-inner">
-                <i data-lucide="headset" class="text-[#002d72] w-6 h-6"></i>
-            </div>
-            <div>
-                <h1 class="font-extrabold text-lg uppercase tracking-tight">Nibo <span class="text-blue-400">Auditor de CS</span></h1>
-                <p class="text-[9px] text-blue-200 uppercase tracking-widest font-bold mt-1">Análise de Implementação e Onboarding</p>
-            </div>
-        </div>
-        <div class="relative">
-            <i data-lucide="user" class="absolute left-3 top-2.5 w-4 h-4 text-blue-300"></i>
-            <input type="text" id="cc-name-input" placeholder="Analista de CS"
-                class="pl-10 pr-5 py-2 rounded-xl bg-blue-900/40 border border-blue-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-blue-300 transition-all" />
-        </div>
-    </div>
-</nav>
+export const maxDuration = 300;
 
-<main class="max-w-7xl mx-auto px-4 mt-8">
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-    <!-- Input -->
-    <section class="mb-10">
-        <div class="glass-card p-8 md:p-10">
-            <div class="flex items-center gap-3 mb-6">
-                <i data-lucide="message-square" class="text-blue-600"></i>
-                <h2 class="font-bold text-slate-800 text-lg">Submeter Transcrição do Cliente</h2>
-            </div>
-            <textarea id="transcript-input" rows="6"
-                class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:ring-4 ring-blue-500/5 focus:outline-none transition-all text-sm resize-none"
-                placeholder="Cole aqui o diálogo da reunião de Onboarding..."></textarea>
-            <div class="flex items-center justify-between mt-3 mb-6 px-1">
-                <div id="char-warning" class="hidden items-center gap-2 text-[11px] font-bold text-amber-600">
-                    <i data-lucide="zap" class="w-3 h-3"></i>
-                    Transcrição longa — será comprimida automaticamente antes da análise.
-                </div>
-                <div class="ml-auto text-[11px] font-bold text-slate-400">
-                    <span id="char-count">0</span> caracteres
-                </div>
-            </div>
-            <div class="flex justify-end">
-                <button id="analyze-btn"
-                    class="flex items-center gap-3 bg-blue-600 hover:bg-[#002d72] text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span id="btn-text">Analisar Sucesso do Cliente</span>
-                    <i data-lucide="zap" class="w-4 h-4"></i>
-                </button>
-            </div>
-        </div>
-    </section>
+// ─── FASE 1: Comprime transcrições longas preservando evidências por pilar ────
+async function compressTranscript(transcript) {
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: transcript,
+        config: {
+            maxOutputTokens: 3000,
+            systemInstruction: `Você receberá uma transcrição longa de reunião de CS/Onboarding do Nibo.
+Extraia evidências concretas organizadas por cada um dos 17 pilares abaixo.
+NÃO resuma genericamente — cite comportamentos, falas e momentos específicos observados.
 
-    <!-- Results -->
-    <div id="results-section" class="hidden space-y-8">
+Pilares: Consultividade | Escuta Ativa | Jornada do Cliente | Encantamento | Objeções/Bugs |
+Rapport | Autoridade | Postura | Gestão de Tempo | Contextualização | Clareza | Objetividade |
+Flexibilidade | Domínio de Produto | Domínio de Negócio | Ecossistema Nibo | Universo Contábil
 
-        <!-- Loading -->
-        <div id="loading-spinner" class="glass-card p-12">
-            <div class="max-w-lg mx-auto space-y-6">
-                <!-- Step rows -->
-                <div id="step-compress" class="hidden flex items-center gap-4">
-                    <div id="step-compress-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="scissors" class="w-4 h-4 text-blue-500"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                            <span>Comprimindo transcrição longa</span>
-                            <span id="step-compress-pct">—</span>
-                        </div>
-                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div id="bar-compress" class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width:0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="step-scores" class="flex items-center gap-4 opacity-30 transition-opacity duration-500">
-                    <div id="step-scores-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-500"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                            <span>Avaliando os 17 pilares</span>
-                            <span id="step-scores-pct">—</span>
-                        </div>
-                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div id="bar-scores" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width:0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="step-report" class="flex items-center gap-4 opacity-30 transition-opacity duration-500">
-                    <div id="step-report-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="scroll-text" class="w-4 h-4 text-blue-500"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                            <span>Gerando relatório de auditoria</span>
-                            <span id="step-report-pct">—</span>
-                        </div>
-                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div id="bar-report" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width:0%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <p id="loading-label" class="text-center text-slate-400 font-bold text-xs uppercase tracking-widest mt-10 pulse-text">Iniciando...</p>
-        </div>
-
-        <!-- Analysis -->
-        <div id="analysis-content" class="hidden space-y-8">
-
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center border-b-[10px] border-blue-600">
-                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Média de CS (Máx 5)</span>
-                    <div id="media-final" class="text-7xl font-black text-[#002d72] mb-3">0.0</div>
-                    <div id="status-tag" class="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-3">---</div>
-                    <div id="compressed-badge" class="hidden px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-[9px] font-black uppercase tracking-widest items-center gap-1">
-                        <i data-lucide="zap" class="w-3 h-3 inline"></i> Análise em 3 etapas
-                    </div>
-                </div>
-                <div class="lg:col-span-3 glass-card p-10 bg-gradient-to-br from-blue-700 to-blue-900 text-white flex flex-col justify-center">
-                    <div id="concorrentes-tags" class="flex flex-wrap gap-2 mb-4"></div>
-                    <h3 class="font-bold text-blue-200 text-[10px] uppercase tracking-widest mb-4">Diagnóstico da Implementação</h3>
-                    <p id="resumo-text" class="text-xl md:text-2xl font-bold leading-tight mb-8"></p>
-                    <div class="flex gap-4">
-                        <div class="p-4 bg-white/10 rounded-2xl border border-white/20 flex-1">
-                            <span class="text-[9px] font-black text-blue-300 uppercase block mb-1 tracking-widest italic">Saúde do Cliente:</span>
-                            <p id="saude-text" class="text-base font-bold text-white"></p>
-                        </div>
-                        <div class="p-4 bg-red-500/20 rounded-2xl border border-red-400/30 flex-1">
-                            <span class="text-[9px] font-black text-red-300 uppercase block mb-1 tracking-widest italic">Risco de Churn:</span>
-                            <p id="churn-text" class="text-base font-bold text-white"></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="notas-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-4"></div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="glass-card p-8 min-h-[400px] flex items-center justify-center">
-                    <canvas id="radarChart"></canvas>
-                </div>
-                <div class="space-y-6">
-                    <div class="glass-card p-8">
-                        <h4 class="text-[10px] font-black uppercase text-slate-400 mb-8 tracking-widest">Tempo de Fala (Analista vs Cliente)</h4>
-                        <div id="talk-time-container" class="space-y-8"></div>
-                    </div>
-                    <div class="glass-card p-8">
-                        <h3 class="font-bold text-slate-800 text-[14px] mb-6 flex items-center gap-3">
-                            <i data-lucide="list-checks" class="text-blue-600 w-5 h-5"></i>
-                            Checklist de Onboarding
-                        </h3>
-                        <div id="checklist-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-emerald-50/60 p-8 rounded-[2rem] border border-emerald-100 shadow-sm">
-                    <h4 class="text-[10px] font-black text-emerald-700 mb-6 uppercase tracking-widest flex items-center gap-2">
-                        <i data-lucide="trending-up" class="w-4 h-4"></i> Pontos Fortes
-                    </h4>
-                    <ul id="lista-fortes" class="space-y-3 text-[12px] font-bold text-emerald-900"></ul>
-                </div>
-                <div class="bg-amber-50/60 p-8 rounded-[2rem] border border-amber-100 shadow-sm">
-                    <h4 class="text-[10px] font-black text-amber-700 mb-6 uppercase tracking-widest flex items-center gap-2">
-                        <i data-lucide="target" class="w-4 h-4"></i> Oportunidades de Melhoria
-                    </h4>
-                    <ul id="lista-atencao" class="space-y-3 text-[12px] font-bold text-amber-900"></ul>
-                </div>
-            </div>
-
-            <div class="glass-card p-12 md:p-16 shadow-2xl border-t-[10px] border-[#002d72]">
-                <h3 class="text-xl font-extrabold text-[#002d72] uppercase tracking-widest mb-10 border-b pb-6 flex items-center gap-4">
-                    <i data-lucide="scroll-text"></i>
-                    Relatório de Auditoria de CS
-                </h3>
-                <div id="markdown-body" class="markdown-content"></div>
-            </div>
-        </div>
-    </div>
-</main>
-
-<!-- Modal -->
-<div id="justification-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
-    <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col" id="modal-content-box">
-        <div class="flex justify-between items-start mb-6">
-            <div>
-                <span id="modal-title" class="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-2 block">Pilar</span>
-                <div id="modal-score" class="text-5xl font-black leading-none">0</div>
-            </div>
-            <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full text-slate-500 transition-colors">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
-        <div class="w-full h-px bg-slate-100 mb-6"></div>
-        <div class="mb-5">
-            <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest block mb-2">Justificativa da Nota</span>
-            <p id="modal-text" class="text-[13px] text-slate-600 font-medium leading-relaxed"></p>
-        </div>
-        <div id="modal-improvement-container" class="rounded-2xl p-4 border mt-2">
-            <div class="flex items-center gap-2 mb-2">
-                <i id="modal-improvement-icon" data-lucide="target" class="w-4 h-4"></i>
-                <span id="modal-improvement-label" class="text-[9px] font-bold uppercase tracking-widest block">O que faltou para o 5?</span>
-            </div>
-            <p id="modal-improvement-text" class="text-[12px] leading-relaxed font-medium"></p>
-        </div>
-    </div>
-</div>
-
-<script>
-lucide.createIcons();
-
-const pillarStore = {};
-let radarChartInstance = null;
-const COMPRESS_THRESHOLD = 12000;
-
-const fields = [
-    { l: 'Consultividade',  k: 'consultividade' },
-    { l: 'Escuta Ativa',    k: 'escuta_ativa' },
-    { l: 'Jornada',         k: 'jornada_cliente' },
-    { l: 'Encantamento',    k: 'encantamento' },
-    { l: 'Objeções/Bugs',   k: 'objecoes' },
-    { l: 'Rapport',         k: 'rapport' },
-    { l: 'Autoridade',      k: 'autoridade' },
-    { l: 'Postura',         k: 'postura' },
-    { l: 'Gestão de Tempo', k: 'gestao_tempo' },
-    { l: 'Contextualiz.',   k: 'contextualizacao' },
-    { l: 'Clareza',         k: 'clareza' },
-    { l: 'Objetividade',    k: 'objetividade' },
-    { l: 'Flexibilidade',   k: 'flexibilidade' },
-    { l: 'Dom. Produto',    k: 'dominio_produto' },
-    { l: 'Dom. Negócio',    k: 'dominio_negocio' },
-    { l: 'Ecossistema',     k: 'ecossistema_nibo' },
-    { l: 'Univ. Contábil',  k: 'universo_contabil' }
-];
-
-// ── Char counter ─────────────────────────────────────────────────────────────
-const transcriptInput = document.getElementById('transcript-input');
-transcriptInput.addEventListener('input', () => {
-    const len = transcriptInput.value.length;
-    document.getElementById('char-count').textContent = len.toLocaleString('pt-BR');
-    const w = document.getElementById('char-warning');
-    len > COMPRESS_THRESHOLD ? w.classList.replace('hidden','flex') : w.classList.replace('flex','hidden');
-    lucide.createIcons();
-});
-
-// ── Progress bar helper ──────────────────────────────────────────────────────
-function animateTo(barId, pctId, target, durationMs) {
-    return new Promise(resolve => {
-        const bar = document.getElementById(barId);
-        const pct = document.getElementById(pctId);
-        const start = parseFloat(bar.style.width) || 0;
-        const steps = 40;
-        const step = (target - start) / steps;
-        const delay = durationMs / steps;
-        let cur = start, i = 0;
-        const t = setInterval(() => {
-            cur = Math.min(cur + step, target);
-            bar.style.width = cur + '%';
-            if (pct) pct.textContent = Math.round(cur) + '%';
-            if (++i >= steps) { clearInterval(t); resolve(); }
-        }, delay);
+Formato: uma seção por pilar com 1–3 evidências diretas ou parafraseadas.
+Se um pilar não tiver nenhuma evidência observável na transcrição, escreva explicitamente: "Sem evidência."
+Ao final: sistemas citados, % estimado de fala CS vs cliente,
+e se houve: prazo definido, dever de casa, validação de acesso, próxima reunião agendada,
+retomada da dor de vendas, explicação do canal de suporte. Máximo 2000 palavras.`
+        }
     });
+    return res.text;
 }
 
-function markDone(iconId) {
-    const el = document.getElementById(iconId);
-    if (el) el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="3" class="w-4 h-4 text-emerald-500">
-        <polyline points="20 6 9 17 4 12"/></svg>`;
+// ─── CHAMADA A: Notas + justificativas curtas + meta-dados (JSON estruturado) ─
+async function getScores(content) {
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: content,
+        config: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 6000,
+            systemInstruction: `Você é auditor sênior de CS do Nibo. Avalie o conteúdo e dê notas de 1 a 5 para os 17 pilares.
+
+REGRA CRÍTICA — AUSÊNCIA DE EVIDÊNCIA:
+Se um pilar NÃO tiver nenhuma evidência observável na transcrição (o tema simplesmente não apareceu),
+retorne nota = null, porque = "Sem evidência na transcrição." e melhoria = null.
+NÃO invente nota, NÃO assuma comportamento, NÃO dê nota baixa por ausência.
+Nota null significa "não avaliado", não "ruim".
+
+Se houver evidência (mesmo parcial), aí sim dê uma nota de 1 a 5:
+- motivo em ATÉ 1 FRASE
+- o que faltou para 5 em ATÉ 1 FRASE (se nota = 5, escreva "Critério de excelência atingido.")
+
+A média final (media_final) deve ser calculada APENAS sobre os pilares que tiverem nota numérica — ignore os nulls.`,
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    media_final:      { type: Type.NUMBER },
+                    resumo_executivo: { type: Type.STRING },
+                    saude_cliente:    { type: Type.STRING },
+                    risco_churn:      { type: Type.STRING },
+                    sistemas_citados: { type: Type.ARRAY, items: { type: Type.STRING } },
+
+                    // Notas podem ser NUMBER ou null — schema aceita ambos via nullable
+                    nota_consultividade:    { type: Type.NUMBER, nullable: true }, porque_consultividade:    { type: Type.STRING }, melhoria_consultividade:    { type: Type.STRING, nullable: true },
+                    nota_escuta_ativa:      { type: Type.NUMBER, nullable: true }, porque_escuta_ativa:      { type: Type.STRING }, melhoria_escuta_ativa:      { type: Type.STRING, nullable: true },
+                    nota_jornada_cliente:   { type: Type.NUMBER, nullable: true }, porque_jornada_cliente:   { type: Type.STRING }, melhoria_jornada_cliente:   { type: Type.STRING, nullable: true },
+                    nota_encantamento:      { type: Type.NUMBER, nullable: true }, porque_encantamento:      { type: Type.STRING }, melhoria_encantamento:      { type: Type.STRING, nullable: true },
+                    nota_objecoes:          { type: Type.NUMBER, nullable: true }, porque_objecoes:          { type: Type.STRING }, melhoria_objecoes:          { type: Type.STRING, nullable: true },
+                    nota_rapport:           { type: Type.NUMBER, nullable: true }, porque_rapport:           { type: Type.STRING }, melhoria_rapport:           { type: Type.STRING, nullable: true },
+                    nota_autoridade:        { type: Type.NUMBER, nullable: true }, porque_autoridade:        { type: Type.STRING }, melhoria_autoridade:        { type: Type.STRING, nullable: true },
+                    nota_postura:           { type: Type.NUMBER, nullable: true }, porque_postura:           { type: Type.STRING }, melhoria_postura:           { type: Type.STRING, nullable: true },
+                    nota_gestao_tempo:      { type: Type.NUMBER, nullable: true }, porque_gestao_tempo:      { type: Type.STRING }, melhoria_gestao_tempo:      { type: Type.STRING, nullable: true },
+                    nota_contextualizacao:  { type: Type.NUMBER, nullable: true }, porque_contextualizacao:  { type: Type.STRING }, melhoria_contextualizacao:  { type: Type.STRING, nullable: true },
+                    nota_clareza:           { type: Type.NUMBER, nullable: true }, porque_clareza:           { type: Type.STRING }, melhoria_clareza:           { type: Type.STRING, nullable: true },
+                    nota_objetividade:      { type: Type.NUMBER, nullable: true }, porque_objetividade:      { type: Type.STRING }, melhoria_objetividade:      { type: Type.STRING, nullable: true },
+                    nota_flexibilidade:     { type: Type.NUMBER, nullable: true }, porque_flexibilidade:     { type: Type.STRING }, melhoria_flexibilidade:     { type: Type.STRING, nullable: true },
+                    nota_dominio_produto:   { type: Type.NUMBER, nullable: true }, porque_dominio_produto:   { type: Type.STRING }, melhoria_dominio_produto:   { type: Type.STRING, nullable: true },
+                    nota_dominio_negocio:   { type: Type.NUMBER, nullable: true }, porque_dominio_negocio:   { type: Type.STRING }, melhoria_dominio_negocio:   { type: Type.STRING, nullable: true },
+                    nota_ecossistema_nibo:  { type: Type.NUMBER, nullable: true }, porque_ecossistema_nibo:  { type: Type.STRING }, melhoria_ecossistema_nibo:  { type: Type.STRING, nullable: true },
+                    nota_universo_contabil: { type: Type.NUMBER, nullable: true }, porque_universo_contabil: { type: Type.STRING }, melhoria_universo_contabil: { type: Type.STRING, nullable: true },
+
+                    tempo_fala_cs:      { type: Type.STRING },
+                    tempo_fala_cliente: { type: Type.STRING },
+
+                    checklist_cs: {
+                        type: Type.OBJECT,
+                        properties: {
+                            definiu_prazo_implementacao:   { type: Type.BOOLEAN },
+                            alinhou_dever_de_casa:         { type: Type.BOOLEAN },
+                            validou_certificado_digital:   { type: Type.BOOLEAN },
+                            agendou_proximo_passo:         { type: Type.BOOLEAN },
+                            conectou_com_dor_vendas:       { type: Type.BOOLEAN },
+                            explicou_canal_suporte:        { type: Type.BOOLEAN }
+                        }
+                    },
+
+                    pontos_fortes:  { type: Type.ARRAY, items: { type: Type.STRING } },
+                    pontos_atencao: { type: Type.ARRAY, items: { type: Type.STRING } }
+                },
+                required: [
+                    "media_final","resumo_executivo","saude_cliente","risco_churn","sistemas_citados",
+                    "nota_consultividade","porque_consultividade","melhoria_consultividade",
+                    "nota_escuta_ativa","porque_escuta_ativa","melhoria_escuta_ativa",
+                    "nota_jornada_cliente","porque_jornada_cliente","melhoria_jornada_cliente",
+                    "nota_encantamento","porque_encantamento","melhoria_encantamento",
+                    "nota_objecoes","porque_objecoes","melhoria_objecoes",
+                    "nota_rapport","porque_rapport","melhoria_rapport",
+                    "nota_autoridade","porque_autoridade","melhoria_autoridade",
+                    "nota_postura","porque_postura","melhoria_postura",
+                    "nota_gestao_tempo","porque_gestao_tempo","melhoria_gestao_tempo",
+                    "nota_contextualizacao","porque_contextualizacao","melhoria_contextualizacao",
+                    "nota_clareza","porque_clareza","melhoria_clareza",
+                    "nota_objetividade","porque_objetividade","melhoria_objetividade",
+                    "nota_flexibilidade","porque_flexibilidade","melhoria_flexibilidade",
+                    "nota_dominio_produto","porque_dominio_produto","melhoria_dominio_produto",
+                    "nota_dominio_negocio","porque_dominio_negocio","melhoria_dominio_negocio",
+                    "nota_ecossistema_nibo","porque_ecossistema_nibo","melhoria_ecossistema_nibo",
+                    "nota_universo_contabil","porque_universo_contabil","melhoria_universo_contabil",
+                    "tempo_fala_cs","tempo_fala_cliente","checklist_cs","pontos_fortes","pontos_atencao"
+                ]
+            }
+        }
+    });
+    return JSON.parse(res.text);
 }
 
-function activate(rowId) {
-    document.getElementById(rowId)?.classList.remove('opacity-30');
+// ─── CHAMADA B: Relatório focado no analista de CS — para o coordenador ───────
+async function getReport(content, scores) {
+    const pillarNames = {
+        consultividade: 'Consultividade', escuta_ativa: 'Escuta Ativa', jornada_cliente: 'Jornada do Cliente',
+        encantamento: 'Encantamento', objecoes: 'Objeções/Bugs', rapport: 'Rapport',
+        autoridade: 'Autoridade', postura: 'Postura', gestao_tempo: 'Gestão de Tempo',
+        contextualizacao: 'Contextualização', clareza: 'Clareza', objetividade: 'Objetividade',
+        flexibilidade: 'Flexibilidade', dominio_produto: 'Domínio de Produto',
+        dominio_negocio: 'Domínio de Negócio', ecossistema_nibo: 'Ecossistema Nibo',
+        universo_contabil: 'Universo Contábil'
+    };
+
+    const scoresBlock = Object.entries(pillarNames)
+        .map(([k, label]) => {
+            const nota = scores[`nota_${k}`];
+            const pq   = scores[`porque_${k}`] ?? '';
+            const ml   = scores[`melhoria_${k}`] ?? '';
+            if (nota === null || nota === undefined) {
+                return `- **${label}**: Não avaliado (sem evidência na transcrição)`;
+            }
+            return `- **${label}**: ${nota}/5 — ${pq}${ml && ml !== 'Critério de excelência atingido.' ? ` | Melhoria: ${ml}` : ''}`;
+        })
+        .join('\n');
+
+    const prompt = `Você é um coordenador experiente de Customer Success do Nibo analisando a performance do seu analista de CS nesta reunião de Onboarding.
+
+Abaixo estão as notas e justificativas já atribuídas para cada pilar:
+${scoresBlock}
+
+Média final (apenas pilares avaliados): ${scores.media_final ?? '?'}/5
+Saúde do cliente: ${scores.saude_cliente ?? ''}
+Risco de churn: ${scores.risco_churn ?? ''}
+
+IMPORTANTE: Pilares marcados como "Não avaliado" não tiveram evidência na reunião — não os critique nem os elogie. Foque apenas nos que foram avaliados.
+
+Com base no conteúdo da reunião e nas notas acima, escreva um relatório em Markdown direcionado ao COORDENADOR de CS, com linguagem direta e prática. O relatório deve:
+
+1. Falar SOBRE o analista — o que ele fez bem, o que deixou a desejar, como ele se comportou com o cliente
+2. Trazer falas ou momentos CONCRETOS da reunião como evidência (cite trechos ou situações reais)
+3. Indicar EXATAMENTE o que o coordenador deve falar com o analista no próximo 1:1 — frases prontas que o coordenador pode usar
+4. Propor um plano de ação INDIVIDUAL para o analista com no máximo 3 prioridades, cada uma com ação concreta, prazo e como medir
+
+Use esta estrutura obrigatória em Markdown:
+
+## O que o analista fez bem
+(cite comportamentos e momentos específicos da reunião — seja concreto, não genérico)
+
+## O que precisa melhorar
+(cite os pilares com nota abaixo de 4 — explique o impacto no cliente e na retenção)
+
+## O que falar no 1:1
+(escreva como se fosse o coordenador falando diretamente — frases reais, sem rodeios)
+
+## Plano de ação individual
+(3 prioridades no máximo — ação, prazo e métrica)
+
+Seja direto, humano e orientado a resultado. Nada de linguagem genérica ou acadêmica.
+
+CONTEÚDO DA REUNIÃO:
+${content}`;
+
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+            maxOutputTokens: 4096,
+            systemInstruction: `Você é coordenador sênior de CS do Nibo escrevendo feedback acionável sobre seu analista.
+Escreva apenas o relatório em Markdown puro. Sem introduções, sem JSON, sem meta-comentários sobre a análise.
+Use evidências concretas da reunião. Seja direto como um bom líder seria num 1:1.
+Não mencione nem avalie pilares que não tiveram evidência na transcrição.`
+        }
+    });
+    return res.text;
 }
 
-function setLabel(text) {
-    document.getElementById('loading-label').textContent = text;
-}
-
-// ── Main ─────────────────────────────────────────────────────────────────────
-const analyzeBtn = document.getElementById('analyze-btn');
-
-async function handleAnalysis() {
-    const prompt = transcriptInput.value.trim();
-    if (!prompt) return;
-
-    const isLong = prompt.length > COMPRESS_THRESHOLD;
-
-    // Reset UI
-    document.getElementById('results-section').classList.remove('hidden');
-    document.getElementById('loading-spinner').classList.remove('hidden');
-    document.getElementById('analysis-content').classList.add('hidden');
-    ['bar-compress','bar-scores','bar-report'].forEach(id => document.getElementById(id).style.width = '0%');
-    ['step-scores','step-report'].forEach(id => document.getElementById(id).classList.add('opacity-30'));
-
-    if (isLong) {
-        document.getElementById('step-compress').classList.remove('hidden');
-    } else {
-        document.getElementById('step-compress').classList.add('hidden');
-        activate('step-scores');
+// ─── Handler principal ─────────────────────────────────────────────────────────
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Método não permitido.' });
     }
 
-    analyzeBtn.disabled = true;
-    document.getElementById('btn-text').textContent = 'Analisando...';
+    const { prompt } = req.body;
+    if (!prompt) {
+        return res.status(400).json({ error: 'Transcrição obrigatória.' });
+    }
 
     try {
-        // Animações indicativas enquanto a única requisição processa
-        if (isLong) {
-            setLabel('Lendo e comprimindo transcrição longa...');
-            animateTo('bar-compress', 'step-compress-pct', 90, 20000);
-        } else {
-            setLabel('Avaliando os 17 pilares...');
-            animateTo('bar-scores', 'step-scores-pct', 85, 15000);
-        }
+        const isLong = prompt.length > 12000;
+        const content = isLong ? await compressTranscript(prompt) : prompt;
 
-        const response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt })
+        const scores = await getScores(content);
+        const report = await getReport(content, scores);
+
+        return res.status(200).json({
+            ...scores,
+            justificativa_detalhada: report,
+            _compressed: isLong
         });
 
-        let data;
-        try {
-            data = await response.json();
-        } catch {
-            throw new Error('Erro de comunicação com o servidor.');
+    } catch (error) {
+        console.error('Erro na API:', error);
+        if (error.message?.includes('parse') || error.message?.includes('JSON')) {
+            return res.status(500).json({ error: 'Erro ao interpretar resposta da IA. Tente novamente.' });
         }
-        if (data.error) throw new Error(data.error);
-
-        // Completa animações rapidamente
-        if (isLong) {
-            await animateTo('bar-compress', 'step-compress-pct', 100, 300);
-            markDone('step-compress-icon');
-            activate('step-scores');
-        }
-        await animateTo('bar-scores', 'step-scores-pct', 100, 400);
-        markDone('step-scores-icon');
-        activate('step-report');
-        await animateTo('bar-report', 'step-report-pct', 100, 400);
-        markDone('step-report-icon');
-        setLabel('Análise concluída!');
-
-        await new Promise(r => setTimeout(r, 500));
-        renderDashboard(data);
-
-    } catch (err) {
-        alert('Erro na análise: ' + err.message);
-        document.getElementById('results-section').classList.add('hidden');
-    } finally {
-        analyzeBtn.disabled = false;
-        document.getElementById('btn-text').textContent = 'Analisar Sucesso do Cliente';
+        return res.status(500).json({ error: 'Erro do Google Gemini: ' + error.message });
     }
 }
-
-// ── Render dashboard ─────────────────────────────────────────────────────────
-function renderDashboard(data) {
-    document.getElementById('loading-spinner').classList.add('hidden');
-    document.getElementById('analysis-content').classList.remove('hidden');
-
-    const media = data.media_final || 0;
-    document.getElementById('media-final').textContent = media.toFixed(1);
-    document.getElementById('resumo-text').textContent = data.resumo_executivo || '—';
-    document.getElementById('saude-text').textContent  = data.saude_cliente    || 'N/A';
-    document.getElementById('churn-text').textContent  = data.risco_churn      || 'N/A';
-
-    if (data._compressed) document.getElementById('compressed-badge').classList.remove('hidden');
-
-    document.getElementById('concorrentes-tags').innerHTML = (data.sistemas_citados || []).map(c => `
-        <span class="px-3 py-1 bg-slate-800 text-blue-200 text-[9px] font-black rounded-lg shadow uppercase tracking-widest flex items-center gap-1.5">
-            <i data-lucide="cpu" class="w-3 h-3"></i> ${c}
-        </span>`).join('');
-
-    const status = document.getElementById('status-tag');
-    if (media >= 4.5)      { status.textContent = 'Elite CS';         status.className = 'px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg'; }
-    else if (media >= 3.5) { status.textContent = 'Alta Performance'; status.className = 'px-5 py-2 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-700'; }
-    else                   { status.textContent = 'Acompanhamento';   status.className = 'px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700'; }
-
-    // Pillar cards
-    const grid = document.getElementById('notas-grid');
-    grid.innerHTML = fields.map(f => {
-        const raw = data[`nota_${f.k}`];
-        const hasScore = raw !== null && raw !== undefined;
-        const n = hasScore ? raw : null;
-        const p = data[`porque_${f.k}`]   || (hasScore ? 'Sem justificativa.' : 'Sem evidência na transcrição.');
-        const m = data[`melhoria_${f.k}`] || 'Critério de excelência atingido.';
-        const c = !hasScore ? 'text-slate-300' : n >= 4 ? 'text-emerald-500' : n >= 3 ? 'text-blue-600' : 'text-red-500';
-        pillarStore[f.k] = { label: f.l, score: n, hasScore, colorClass: c, porque: p, melhoria: m };
-        return `
-            <div data-pillar="${f.k}" class="pillar-card glass-card p-3 flex flex-col items-center text-center justify-center ${hasScore ? 'cursor-pointer hover:-translate-y-1 hover:border-blue-300' : 'opacity-50 cursor-default'} transition-all group relative">
-                ${hasScore ? '<i data-lucide="zoom-in" class="absolute top-2 right-2 w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors"></i>' : '<i data-lucide="minus" class="absolute top-2 right-2 w-3 h-3 text-slate-300"></i>'}
-                <span class="text-[7.5px] font-black text-slate-400 uppercase mb-1 tracking-widest leading-tight mt-1">${f.l}</span>
-                <div class="text-xl font-black ${c} mb-1 leading-none">${hasScore ? n : '—'}</div>
-                <p class="text-[7.5px] text-slate-500 italic leading-tight font-medium max-w-[95%] truncate">${p}</p>
-            </div>`;
-    }).join('');
-
-    grid.addEventListener('click', e => {
-        const card = e.target.closest('.pillar-card');
-        if (card && pillarStore[card.dataset.pillar]?.hasScore) openModal(pillarStore[card.dataset.pillar]);
-    });
-
-    // Talk time
-    const tCS  = parseFloat(data.tempo_fala_cs     || 0);
-    const tCli = parseFloat(data.tempo_fala_cliente || 0);
-    document.getElementById('talk-time-container').innerHTML = `
-        <div>
-            <div class="flex justify-between text-[11px] font-bold mb-2"><span>Analista CS</span><span class="text-blue-600">${data.tempo_fala_cs || '0%'}</span></div>
-            <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-600 transition-all duration-1000" style="width:${tCS}%"></div></div>
-        </div>
-        <div>
-            <div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente</span><span class="text-emerald-500">${data.tempo_fala_cliente || '0%'}</span></div>
-            <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 transition-all duration-1000" style="width:${tCli}%"></div></div>
-        </div>`;
-
-    // Checklist
-    const ck = data.checklist_cs || {};
-    const ckLabels = {
-        definiu_prazo_implementacao:   'Prazo de Implantação',
-        alinhou_dever_de_casa:         'Dever de Casa Alinhado',
-        validou_certificado_digital:   'Certificado A1 / Acesso',
-        agendou_proximo_passo:         'Próxima Reunião Agendada',
-        conectou_com_dor_vendas:       'Retomou Dor de Vendas',
-        explicou_canal_suporte:        'Explicou Canal de Suporte'
-    };
-    document.getElementById('checklist-container').innerHTML = Object.entries(ckLabels).map(([key, label]) => `
-        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span class="text-[9px] font-bold text-slate-600 uppercase tracking-tight">${label}</span>
-            <div class="w-5 h-5 rounded-full flex items-center justify-center ${ck[key] ? 'bg-emerald-500' : 'bg-slate-300'}">
-                <i data-lucide="${ck[key] ? 'check' : 'minus'}" class="text-white w-3 h-3"></i>
-            </div>
-        </div>`).join('');
-
-    document.getElementById('lista-fortes').innerHTML  = (data.pontos_fortes  || []).map(i => `<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
-    document.getElementById('lista-atencao').innerHTML = (data.pontos_atencao || []).map(i => `<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
-    document.getElementById('markdown-body').innerHTML = marked.parse(data.justificativa_detalhada || '');
-
-    renderRadar(data);
-    lucide.createIcons();
-}
-
-function renderRadar(data) {
-    const ctx = document.getElementById('radarChart').getContext('2d');
-    if (radarChartInstance) radarChartInstance.destroy();
-    radarChartInstance = new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: fields.map(f => f.l),
-            datasets: [{ label: 'Nota de CS', data: fields.map(f => data[`nota_${f.k}`] ?? 0),
-                backgroundColor: 'rgba(37,99,235,0.15)', borderColor: '#2563eb',
-                borderWidth: 1.5, pointRadius: 2, pointBackgroundColor: '#1e3a8a' }]
-        },
-        options: {
-            scales: { r: { min:0, max:5, ticks:{stepSize:1,display:false},
-                grid:{color:'#e2e8f0'}, angleLines:{color:'#e2e8f0'},
-                pointLabels:{font:{size:8,weight:'700'},color:'#475569'} } },
-            plugins: { legend: { display: false } },
-            maintainAspectRatio: false
-        }
-    });
-}
-
-// ── Modal ────────────────────────────────────────────────────────────────────
-function openModal({ label, score, colorClass, porque, melhoria }) {
-    document.getElementById('modal-title').textContent = label;
-    const scoreEl = document.getElementById('modal-score');
-    scoreEl.textContent = score;
-    scoreEl.className = `text-5xl font-black leading-none ${colorClass}`;
-    document.getElementById('modal-text').textContent = porque;
-
-    const container = document.getElementById('modal-improvement-container');
-    const labelEl   = document.getElementById('modal-improvement-label');
-    const textEl    = document.getElementById('modal-improvement-text');
-    const iconEl    = document.getElementById('modal-improvement-icon');
-    textEl.textContent = melhoria;
-
-    if (score >= 5) {
-        container.className = 'rounded-2xl p-4 border border-emerald-100 bg-emerald-50 mt-2';
-        labelEl.className   = 'text-[9px] font-bold uppercase tracking-widest block text-emerald-700';
-        labelEl.textContent = 'Excelente!';
-        textEl.className    = 'text-[12px] leading-relaxed font-medium text-emerald-900';
-        iconEl.setAttribute('data-lucide', 'check-circle');
-    } else {
-        container.className = 'rounded-2xl p-4 border border-amber-100 bg-amber-50 mt-2';
-        labelEl.className   = 'text-[9px] font-bold uppercase tracking-widest block text-amber-700';
-        labelEl.textContent = 'O que faltou para o 5?';
-        textEl.className    = 'text-[12px] leading-relaxed font-medium text-amber-900';
-        iconEl.setAttribute('data-lucide', 'target');
-    }
-
-    const modal    = document.getElementById('justification-modal');
-    const modalBox = document.getElementById('modal-content-box');
-    modal.classList.replace('hidden', 'flex');
-    setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        modalBox.classList.replace('scale-95','scale-100');
-        lucide.createIcons();
-    }, 10);
-}
-
-function closeModal() {
-    const modal    = document.getElementById('justification-modal');
-    const modalBox = document.getElementById('modal-content-box');
-    modal.classList.add('opacity-0');
-    modalBox.classList.replace('scale-100','scale-95');
-    setTimeout(() => { modal.classList.replace('flex','hidden'); }, 300);
-}
-
-document.getElementById('justification-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
-analyzeBtn.addEventListener('click', handleAnalysis);
-</script>
-</body>
-</html>
