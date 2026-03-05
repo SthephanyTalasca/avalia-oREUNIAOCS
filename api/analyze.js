@@ -30,6 +30,30 @@ const PILLAR_KEYS = [
     ['universo_contabil','Universo Contábil'],
 ];
 
+// ─── Repara JSON truncado fechando estruturas abertas ─────────────────────────
+function repairJson(text) {
+    let s = text.trimEnd();
+    s = s.replace(/,\s*$/, '');
+    s = s.replace(/"[^"]*$/, '');
+    s = s.replace(/:\s*$/, '');
+    s = s.replace(/,\s*$/, '');
+    let braces = 0, brackets = 0, inStr = false, escape = false;
+    for (let i = 0; i < s.length; i++) {
+        const ch = s[i];
+        if (escape) { escape = false; continue; }
+        if (ch === '\\' && inStr) { escape = true; continue; }
+        if (ch === '"') { inStr = !inStr; continue; }
+        if (inStr) continue;
+        if (ch === '{') braces++;
+        else if (ch === '}') braces--;
+        else if (ch === '[') brackets++;
+        else if (ch === ']') brackets--;
+    }
+    while (brackets > 0) { s += ']'; brackets--; }
+    while (braces > 0)   { s += '}'; braces--; }
+    return s;
+}
+
 // ─── CHAMADA 1: apenas números e booleanos (JSON tamanho fixo, nunca trunca) ──
 async function getNumbers(transcript) {
     const res = await ai.models.generateContent({
@@ -94,8 +118,15 @@ async function getNumbers(transcript) {
     try {
         parsed = JSON.parse(res.text);
     } catch (e) {
-        console.error('getNumbers JSON truncado:', res.text && res.text.slice(-120));
-        throw new Error('TRUNCATED_NUMBERS');
+        console.error('getNumbers JSON truncado, tentando reparar...');
+        const repaired = repairJson(res.text || '');
+        try {
+            parsed = JSON.parse(repaired);
+            console.log('JSON reparado com sucesso');
+        } catch (e2) {
+            console.error('Falha ao reparar JSON:', res.text && res.text.slice(-120));
+            throw new Error('TRUNCATED_NUMBERS');
+        }
     }
 
     // -1 vira null (sem evidência)
