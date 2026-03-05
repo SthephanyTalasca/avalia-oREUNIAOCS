@@ -10,45 +10,50 @@ export const config = {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const SYSTEM_SCORES = `Você é auditor sênior de CS do Nibo.
-
-REGRA DE AUSÊNCIA: Se um pilar não tiver evidência observável, retorne nota = null,
-porque = "Sem evidência." e melhoria = null. Nunca invente nota.
-
-Para pilares COM evidência: nota 1-5, porque em até 12 palavras, melhoria em até 12 palavras.
-Se nota=5 em melhoria escreva: "Excelência atingida."
-SEJA CONCISO — os textos devem ser curtíssimos.`;
-
-function safeJson(text) {
-    try {
-        return JSON.parse(text);
-    } catch (e) {
-        console.error('JSON truncado, tamanho:', text?.length, '| fim:', text?.slice(-100));
-        throw new Error('TRUNCATED_JSON');
-    }
-}
-
-// ─── CHAMADA A1: Pilares 1–9 + meta-dados ────────────────────────────────────
-async function getScoresA(transcript) {
+// ─── CHAMADA 1: SÓ NÚMEROS E BOOLEANOS — JSON nunca trunca ───────────────────
+// Texto = caracteres variáveis que explodem o output. Números/booleanos = tamanho fixo.
+async function getNumbers(transcript) {
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
         config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 4096,
-            systemInstruction: SYSTEM_SCORES,
+            maxOutputTokens: 2048, // 17 notas + 6 booleans + 3 números = menos de 300 tokens
+            systemInstruction: `Você é auditor de CS do Nibo. Leia a transcrição e retorne APENAS números e booleanos.
+
+Para cada pilar, retorne a nota de 1 a 5. Se não houver NENHUMA evidência observável do pilar na transcrição, retorne -1 (significa "sem evidência").
+
+Pilares: consultividade, escuta_ativa, jornada_cliente, encantamento, objecoes, rapport,
+autoridade, postura, gestao_tempo, contextualizacao, clareza, objetividade, flexibilidade,
+dominio_produto, dominio_negocio, ecossistema_nibo, universo_contabil
+
+media_final = média apenas das notas que NÃO sejam -1.
+tempo_fala_cs e tempo_fala_cliente = inteiro de 0 a 100 (percentual).`,
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
-                    media_parcial_a:  { type: Type.NUMBER },
-                    resumo_executivo: { type: Type.STRING },
-                    saude_cliente:    { type: Type.STRING },
-                    risco_churn:      { type: Type.STRING },
-                    sistemas_citados: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    tempo_fala_cs:    { type: Type.STRING },
-                    tempo_fala_cliente: { type: Type.STRING },
-                    pontos_fortes:    { type: Type.ARRAY, items: { type: Type.STRING } },
-                    pontos_atencao:   { type: Type.ARRAY, items: { type: Type.STRING } },
+                    media_final:               { type: Type.NUMBER },
+                    tempo_fala_cs_pct:         { type: Type.NUMBER },
+                    tempo_fala_cliente_pct:    { type: Type.NUMBER },
+
+                    nota_consultividade:    { type: Type.NUMBER },
+                    nota_escuta_ativa:      { type: Type.NUMBER },
+                    nota_jornada_cliente:   { type: Type.NUMBER },
+                    nota_encantamento:      { type: Type.NUMBER },
+                    nota_objecoes:          { type: Type.NUMBER },
+                    nota_rapport:           { type: Type.NUMBER },
+                    nota_autoridade:        { type: Type.NUMBER },
+                    nota_postura:           { type: Type.NUMBER },
+                    nota_gestao_tempo:      { type: Type.NUMBER },
+                    nota_contextualizacao:  { type: Type.NUMBER },
+                    nota_clareza:           { type: Type.NUMBER },
+                    nota_objetividade:      { type: Type.NUMBER },
+                    nota_flexibilidade:     { type: Type.NUMBER },
+                    nota_dominio_produto:   { type: Type.NUMBER },
+                    nota_dominio_negocio:   { type: Type.NUMBER },
+                    nota_ecossistema_nibo:  { type: Type.NUMBER },
+                    nota_universo_contabil: { type: Type.NUMBER },
+
                     checklist_cs: {
                         type: Type.OBJECT,
                         properties: {
@@ -59,137 +64,141 @@ async function getScoresA(transcript) {
                             conectou_com_dor_vendas:       { type: Type.BOOLEAN },
                             explicou_canal_suporte:        { type: Type.BOOLEAN }
                         }
-                    },
-                    // Pilares 1–9
-                    nota_consultividade:   { type: Type.NUMBER, nullable: true }, porque_consultividade:   { type: Type.STRING }, melhoria_consultividade:   { type: Type.STRING, nullable: true },
-                    nota_escuta_ativa:     { type: Type.NUMBER, nullable: true }, porque_escuta_ativa:     { type: Type.STRING }, melhoria_escuta_ativa:     { type: Type.STRING, nullable: true },
-                    nota_jornada_cliente:  { type: Type.NUMBER, nullable: true }, porque_jornada_cliente:  { type: Type.STRING }, melhoria_jornada_cliente:  { type: Type.STRING, nullable: true },
-                    nota_encantamento:     { type: Type.NUMBER, nullable: true }, porque_encantamento:     { type: Type.STRING }, melhoria_encantamento:     { type: Type.STRING, nullable: true },
-                    nota_objecoes:         { type: Type.NUMBER, nullable: true }, porque_objecoes:         { type: Type.STRING }, melhoria_objecoes:         { type: Type.STRING, nullable: true },
-                    nota_rapport:          { type: Type.NUMBER, nullable: true }, porque_rapport:          { type: Type.STRING }, melhoria_rapport:          { type: Type.STRING, nullable: true },
-                    nota_autoridade:       { type: Type.NUMBER, nullable: true }, porque_autoridade:       { type: Type.STRING }, melhoria_autoridade:       { type: Type.STRING, nullable: true },
-                    nota_postura:          { type: Type.NUMBER, nullable: true }, porque_postura:          { type: Type.STRING }, melhoria_postura:          { type: Type.STRING, nullable: true },
-                    nota_gestao_tempo:     { type: Type.NUMBER, nullable: true }, porque_gestao_tempo:     { type: Type.STRING }, melhoria_gestao_tempo:     { type: Type.STRING, nullable: true },
+                    }
                 },
                 required: [
-                    "media_parcial_a","resumo_executivo","saude_cliente","risco_churn","sistemas_citados",
-                    "tempo_fala_cs","tempo_fala_cliente","pontos_fortes","pontos_atencao","checklist_cs",
-                    "nota_consultividade","porque_consultividade","melhoria_consultividade",
-                    "nota_escuta_ativa","porque_escuta_ativa","melhoria_escuta_ativa",
-                    "nota_jornada_cliente","porque_jornada_cliente","melhoria_jornada_cliente",
-                    "nota_encantamento","porque_encantamento","melhoria_encantamento",
-                    "nota_objecoes","porque_objecoes","melhoria_objecoes",
-                    "nota_rapport","porque_rapport","melhoria_rapport",
-                    "nota_autoridade","porque_autoridade","melhoria_autoridade",
-                    "nota_postura","porque_postura","melhoria_postura",
-                    "nota_gestao_tempo","porque_gestao_tempo","melhoria_gestao_tempo",
+                    "media_final","tempo_fala_cs_pct","tempo_fala_cliente_pct",
+                    "nota_consultividade","nota_escuta_ativa","nota_jornada_cliente",
+                    "nota_encantamento","nota_objecoes","nota_rapport","nota_autoridade",
+                    "nota_postura","nota_gestao_tempo","nota_contextualizacao","nota_clareza",
+                    "nota_objetividade","nota_flexibilidade","nota_dominio_produto",
+                    "nota_dominio_negocio","nota_ecossistema_nibo","nota_universo_contabil",
+                    "checklist_cs"
                 ]
             }
         }
     });
-    return safeJson(res.text);
-}
 
-// ─── CHAMADA A2: Pilares 10–17 ────────────────────────────────────────────────
-async function getScoresB(transcript) {
-    const res = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: transcript,
-        config: {
-            responseMimeType: 'application/json',
-            maxOutputTokens: 4096,
-            systemInstruction: SYSTEM_SCORES,
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    media_parcial_b: { type: Type.NUMBER },
-                    // Pilares 10–17
-                    nota_contextualizacao:  { type: Type.NUMBER, nullable: true }, porque_contextualizacao:  { type: Type.STRING }, melhoria_contextualizacao:  { type: Type.STRING, nullable: true },
-                    nota_clareza:           { type: Type.NUMBER, nullable: true }, porque_clareza:           { type: Type.STRING }, melhoria_clareza:           { type: Type.STRING, nullable: true },
-                    nota_objetividade:      { type: Type.NUMBER, nullable: true }, porque_objetividade:      { type: Type.STRING }, melhoria_objetividade:      { type: Type.STRING, nullable: true },
-                    nota_flexibilidade:     { type: Type.NUMBER, nullable: true }, porque_flexibilidade:     { type: Type.STRING }, melhoria_flexibilidade:     { type: Type.STRING, nullable: true },
-                    nota_dominio_produto:   { type: Type.NUMBER, nullable: true }, porque_dominio_produto:   { type: Type.STRING }, melhoria_dominio_produto:   { type: Type.STRING, nullable: true },
-                    nota_dominio_negocio:   { type: Type.NUMBER, nullable: true }, porque_dominio_negocio:   { type: Type.STRING }, melhoria_dominio_negocio:   { type: Type.STRING, nullable: true },
-                    nota_ecossistema_nibo:  { type: Type.NUMBER, nullable: true }, porque_ecossistema_nibo:  { type: Type.STRING }, melhoria_ecossistema_nibo:  { type: Type.STRING, nullable: true },
-                    nota_universo_contabil: { type: Type.NUMBER, nullable: true }, porque_universo_contabil: { type: Type.STRING }, melhoria_universo_contabil: { type: Type.STRING, nullable: true },
-                },
-                required: [
-                    "media_parcial_b",
-                    "nota_contextualizacao","porque_contextualizacao","melhoria_contextualizacao",
-                    "nota_clareza","porque_clareza","melhoria_clareza",
-                    "nota_objetividade","porque_objetividade","melhoria_objetividade",
-                    "nota_flexibilidade","porque_flexibilidade","melhoria_flexibilidade",
-                    "nota_dominio_produto","porque_dominio_produto","melhoria_dominio_produto",
-                    "nota_dominio_negocio","porque_dominio_negocio","melhoria_dominio_negocio",
-                    "nota_ecossistema_nibo","porque_ecossistema_nibo","melhoria_ecossistema_nibo",
-                    "nota_universo_contabil","porque_universo_contabil","melhoria_universo_contabil",
-                ]
-            }
-        }
-    });
-    return safeJson(res.text);
-}
+    let parsed;
+    try {
+        parsed = JSON.parse(res.text);
+    } catch(e) {
+        console.error('Números JSON truncado:', res.text?.slice(-100));
+        throw new Error('TRUNCATED_NUMBERS');
+    }
 
-// ─── Calcula média final ignorando nulls ──────────────────────────────────────
-function calcMedia(merged) {
+    // Converte -1 para null (sem evidência)
     const keys = [
         'consultividade','escuta_ativa','jornada_cliente','encantamento','objecoes',
         'rapport','autoridade','postura','gestao_tempo','contextualizacao','clareza',
         'objetividade','flexibilidade','dominio_produto','dominio_negocio',
         'ecossistema_nibo','universo_contabil'
     ];
-    const notas = keys.map(k => merged[`nota_${k}`]).filter(n => n !== null && n !== undefined);
-    if (!notas.length) return 0;
-    return Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10;
+    keys.forEach(k => {
+        if (parsed[`nota_${k}`] === -1) parsed[`nota_${k}`] = null;
+    });
+
+    // Formata percentuais como string
+    parsed.tempo_fala_cs      = `${parsed.tempo_fala_cs_pct ?? 50}%`;
+    parsed.tempo_fala_cliente = `${parsed.tempo_fala_cliente_pct ?? 50}%`;
+
+    return parsed;
 }
 
-// ─── CHAMADA B: Relatório para o coordenador — recebe só scores (payload mínimo) ──
-async function getReport(scores) {
-    const pillarNames = {
-        consultividade: 'Consultividade', escuta_ativa: 'Escuta Ativa', jornada_cliente: 'Jornada do Cliente',
-        encantamento: 'Encantamento', objecoes: 'Objeções/Bugs', rapport: 'Rapport',
-        autoridade: 'Autoridade', postura: 'Postura', gestao_tempo: 'Gestão de Tempo',
-        contextualizacao: 'Contextualização', clareza: 'Clareza', objetividade: 'Objetividade',
-        flexibilidade: 'Flexibilidade', dominio_produto: 'Domínio de Produto',
-        dominio_negocio: 'Domínio de Negócio', ecossistema_nibo: 'Ecossistema Nibo',
-        universo_contabil: 'Universo Contábil'
-    };
+// ─── CHAMADA 2: SÓ TEXTO LIVRE — sem schema, sem risco de truncar JSON ────────
+// Retorna todos os textos descritivos em formato simples que parseamos depois.
+async function getTexts(transcript, numbers) {
+    const pillarKeys = [
+        ['consultividade','Consultividade'],['escuta_ativa','Escuta Ativa'],
+        ['jornada_cliente','Jornada do Cliente'],['encantamento','Encantamento'],
+        ['objecoes','Objeções/Bugs'],['rapport','Rapport'],['autoridade','Autoridade'],
+        ['postura','Postura'],['gestao_tempo','Gestão de Tempo'],
+        ['contextualizacao','Contextualização'],['clareza','Clareza'],
+        ['objetividade','Objetividade'],['flexibilidade','Flexibilidade'],
+        ['dominio_produto','Domínio de Produto'],['dominio_negocio','Domínio de Negócio'],
+        ['ecossistema_nibo','Ecossistema Nibo'],['universo_contabil','Universo Contábil']
+    ];
 
-    const scoresBlock = Object.entries(pillarNames)
-        .map(([k, label]) => {
-            const nota = scores[`nota_${k}`];
-            if (nota === null || nota === undefined) return null;
-            const pq = scores[`porque_${k}`] ?? '';
-            const ml = scores[`melhoria_${k}`] ?? '';
-            return `- **${label}**: ${nota}/5 — ${pq}${ml && ml !== 'Excelência atingida.' ? ` | Melhoria: ${ml}` : ''}`;
-        })
-        .filter(Boolean)
-        .join('\n');
+    // Monta lista de pilares que têm nota para pedir texto só deles
+    const comNota = pillarKeys.filter(([k]) => numbers[`nota_${k}`] !== null);
+    const notasBloco = comNota
+        .map(([k, label]) => `${label}: ${numbers[`nota_${k}`]}/5`)
+        .join(', ');
 
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Coordenador de CS do Nibo — escreva feedback sobre o analista.
+        contents: transcript,
+        config: {
+            maxOutputTokens: 6000,
+            systemInstruction: `Você é auditor de CS do Nibo. Com base na transcrição e nas notas já calculadas (${notasBloco}), produza o seguinte em texto puro, usando exatamente os separadores indicados:
 
-NOTAS:
-${scoresBlock}
+###RESUMO###
+Uma frase resumindo a reunião.
 
-Média: ${scores.media_final}/5 | Saúde: ${scores.saude_cliente ?? ''} | Churn: ${scores.risco_churn ?? ''}
-Fortes: ${(scores.pontos_fortes || []).join('; ')}
-Atenção: ${(scores.pontos_atencao || []).join('; ')}
+###SAUDE###
+Uma frase sobre a saúde do cliente após a reunião.
 
+###CHURN###
+Uma frase sobre o principal risco de churn identificado.
+
+###SISTEMAS###
+Liste sistemas/ferramentas citados separados por vírgula. Se nenhum, escreva: nenhum
+
+###FORTES###
+Liste até 4 pontos fortes do analista, um por linha, começando com "-".
+
+###ATENCAO###
+Liste até 4 pontos de atenção, um por linha, começando com "-".
+
+${comNota.map(([k, label]) => `###PILAR_${k.toUpperCase()}###\nPorquê (máx 2 frases): [motivo da nota]\nMelhoria (máx 1 frase): [o que faltou para 5; se nota=5 escreva "Excelência atingida."]`).join('\n\n')}
+
+###RELATORIO###
+Escreva um relatório em Markdown para o COORDENADOR de CS sobre a performance do analista, com estas seções:
 ## O que o analista fez bem
 ## O que precisa melhorar
 ## O que falar no 1:1
-## Plano de ação individual`,
-        config: {
-            maxOutputTokens: 4096,
-            systemInstruction: `Coordenador sênior de CS do Nibo. Markdown puro, direto, sem rodeios.
-"O que falar no 1:1": frases prontas para usar literalmente.
-"Plano de ação": máx 3 prioridades com ação + prazo + métrica.
-Só mencione pilares com nota numérica.`
+## Plano de ação individual
+
+Use evidências concretas da transcrição. Linguagem direta como num bom 1:1.`
         }
     });
-    return res.text;
+
+    return parseTexts(res.text, pillarKeys, numbers);
+}
+
+// ─── Parser do texto livre ────────────────────────────────────────────────────
+function parseTexts(raw, pillarKeys, numbers) {
+    const get = (tag) => {
+        const re = new RegExp(`###${tag}###\\s*([\\s\\S]*?)(?=###|$)`, 'i');
+        return (raw.match(re)?.[1] ?? '').trim();
+    };
+
+    const result = {
+        resumo_executivo: get('RESUMO'),
+        saude_cliente:    get('SAUDE'),
+        risco_churn:      get('CHURN'),
+        sistemas_citados: get('SISTEMAS').toLowerCase() === 'nenhum' ? [] :
+            get('SISTEMAS').split(',').map(s => s.trim()).filter(Boolean),
+        pontos_fortes:  get('FORTES').split('\n').map(s => s.replace(/^-\s*/,'')).filter(Boolean),
+        pontos_atencao: get('ATENCAO').split('\n').map(s => s.replace(/^-\s*/,'')).filter(Boolean),
+        justificativa_detalhada: get('RELATORIO')
+    };
+
+    // Extrai porque/melhoria de cada pilar
+    pillarKeys.forEach(([k]) => {
+        if (numbers[`nota_${k}`] === null) {
+            result[`porque_${k}`]   = 'Sem evidência na transcrição.';
+            result[`melhoria_${k}`] = null;
+            return;
+        }
+        const bloco = get(`PILAR_${k.toUpperCase()}`);
+        const porqueMatch   = bloco.match(/[Pp]orqu[êe][^:]*:\s*(.+?)(?:\n|$)/);
+        const melhoriaMatch = bloco.match(/[Mm]elhoria[^:]*:\s*(.+?)(?:\n|$)/);
+        result[`porque_${k}`]   = porqueMatch?.[1]?.trim()   || 'Sem justificativa.';
+        result[`melhoria_${k}`] = melhoriaMatch?.[1]?.trim() || 'Excelência atingida.';
+    });
+
+    return result;
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -197,38 +206,24 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Método não permitido.' });
     }
-
     const { prompt } = req.body;
     if (!prompt) {
         return res.status(400).json({ error: 'Transcrição obrigatória.' });
     }
 
     try {
-        // Pilares 1-9 e 10-17 em paralelo — cada chamada tem output pequeno e não trunca
-        const [scoresA, scoresB] = await Promise.all([
-            getScoresA(prompt),
-            getScoresB(prompt)
-        ]);
+        // Chamada 1: só números (JSON pequeno, nunca trunca)
+        const numbers = await getNumbers(prompt);
 
-        // Mescla os dois resultados
-        const merged = { ...scoresA, ...scoresB };
-        merged.media_final = calcMedia(merged);
+        // Chamada 2: todos os textos em texto livre (sem schema, sem risco)
+        const texts = await getTexts(prompt, numbers);
 
-        // Relatório usa só os scores (sem reenviar transcrição)
-        const report = await getReport(merged);
-
-        return res.status(200).json({
-            ...merged,
-            justificativa_detalhada: report
-        });
+        return res.status(200).json({ ...numbers, ...texts });
 
     } catch (error) {
         console.error('Erro na API:', error);
-        if (error.message === 'TRUNCATED_JSON') {
-            return res.status(500).json({ error: 'Erro ao gerar análise. Tente novamente.' });
-        }
-        if (error.message?.includes('parse') || error.message?.includes('JSON')) {
-            return res.status(500).json({ error: 'Erro ao interpretar resposta da IA. Tente novamente.' });
+        if (error.message === 'TRUNCATED_NUMBERS') {
+            return res.status(500).json({ error: 'Erro interno ao calcular notas. Tente novamente.' });
         }
         return res.status(500).json({ error: 'Erro: ' + error.message });
     }
