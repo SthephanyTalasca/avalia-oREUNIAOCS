@@ -1,5 +1,8 @@
 import { GoogleGenAI, Type } from '@google/genai';
 
+// Aumenta o tempo limite da Vercel
+export const maxDuration = 60;
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: "Método não permitido. Use POST." });
@@ -16,30 +19,30 @@ export default async function handler(req, res) {
         
         const systemInstruction = `Você é um auditor sênior de Customer Success (Sucesso do Cliente) do Nibo. Avalie a transcrição de implementação/onboarding e dê notas de 1 a 5 para os seguintes 17 pilares:
 
-        1. Consultividade: Age como parceiro estratégico, sugerindo melhorias e explicando valor.
-        2. Escuta Ativa: Ouve necessidades e adapta a conversa ao contexto (ex: BPO, 3º setor).
-        3. Jornada do Cliente: Estabelece prazos (ex: 60 dias), próximos passos e deveres de casa.
-        4. Encantamento: Entrega valor, materiais e cria momentos "uau".
-        5. Objeções: Lida com problemas (bugs, falta de certificado A1) com calma e solução.
+        1. Consultividade: Age como parceiro estratégico.
+        2. Escuta Ativa: Ouve necessidades e adapta a conversa.
+        3. Jornada do Cliente: Estabelece prazos e próximos passos.
+        4. Encantamento: Entrega valor e cria momentos "uau".
+        5. Objeções: Lida com problemas (bugs, falta de certificado) com calma e solução.
         6. Rapport: Conexão humana, empatia e tom amigável.
         7. Autoridade: Confiança, ritmo diretivo e segurança técnica.
-        8. Postura: Profissionalismo e resiliência diante de bugs ou problemas do cliente.
-        9. Gestão de Tempo: Cobre a pauta adequadamente sem perder o ritmo.
-        10. Contextualização: Explica o "porquê" de cada função na prática contábil.
-        11. Clareza: Comunicação didática para clientes de diferentes níveis tecnológicos.
+        8. Postura: Profissionalismo e resiliência diante de bugs.
+        9. Gestão de Tempo: Cobre a pauta adequadamente.
+        10. Contextualização: Explica o "porquê" de cada função.
+        11. Clareza: Comunicação didática para diferentes níveis.
         12. Objetividade: Respostas assertivas e diretas.
-        13. Flexibilidade: Adapta o roteiro caso o cliente trave em alguma etapa.
-        14. Domínio de Produto: Navegação fluida no Nibo, robôs e configurações.
+        13. Flexibilidade: Adapta o roteiro caso o cliente trave.
+        14. Domínio de Produto: Navegação fluida no Nibo.
         15. Domínio do Negócio: Entende os modelos contábeis e conecta com o Nibo.
         16. Compreensão do Ecossistema Nibo: Diferencia Obrigações, Financeiro, BPO, etc.
-        17. Universo da Contabilidade: Usa linguagem contábil (DAS, eCAC, Domínio, Dexon) com naturalidade.
+        17. Universo da Contabilidade: Usa linguagem contábil com naturalidade.
 
         Para CADA PILAR, forneça:
         1. A nota de 1 a 5.
-        2. O motivo da nota ("porque_...").
-        3. O que faltou para a nota máxima 5 ("melhoria_..."). Se a nota for 5, escreva "Critério de excelência atingido."
+        2. O motivo da nota ("porque_..."). Seja conciso (máximo 2 frases).
+        3. O que faltou para a nota 5 ("melhoria_..."). Se a nota for 5, escreva "Critério de excelência atingido." Seja conciso.
         
-        Indique também o Risco de Churn, a Saúde do Cliente e gere um relatório estruturado em Markdown.`;
+        Indique também o Risco de Churn, a Saúde do Cliente e gere um relatório estruturado em Markdown. É vital que a resposta não seja cortada, mantenha os textos diretos e objetivos.`;
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -47,6 +50,7 @@ export default async function handler(req, res) {
             config: {
                 systemInstruction: systemInstruction,
                 responseMimeType: "application/json",
+                maxOutputTokens: 8192, // <--- AQUI ESTÁ A SOLUÇÃO DO CORTE DE TEXTO
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -116,11 +120,18 @@ export default async function handler(req, res) {
             }
         });
 
-        const analysisData = JSON.parse(response.text);
+        let analysisData;
+        try {
+            analysisData = JSON.parse(response.text);
+        } catch (parseError) {
+            console.error("Erro ao fazer parse do JSON (Texto cortado?):", response.text);
+            return res.status(500).json({ error: "A IA gerou um texto muito longo e foi cortada. Tente com uma transcrição um pouco menor." });
+        }
+        
         return res.status(200).json(analysisData);
 
     } catch (error) {
         console.error("Erro na API:", error);
-        return res.status(500).json({ error: "Falha ao analisar a transcrição." });
+        return res.status(500).json({ error: "Erro do Google Gemini: " + error.message });
     }
 }
