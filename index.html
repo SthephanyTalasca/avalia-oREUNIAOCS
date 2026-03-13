@@ -154,20 +154,45 @@
         <div id="analysis-content" class="hidden space-y-8">
 
             <!-- Analista banner -->
-            <div id="analista-banner" class="hidden bg-white border border-slate-200 rounded-[2rem] p-5 flex items-center gap-4 shadow-sm">
-                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-600 text-lg flex-shrink-0" id="analista-avatar">?</div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Analista identificado pela IA</p>
-                    <p id="analista-nome-display" class="font-black text-slate-800 text-base truncate"></p>
+            <div id="analista-banner" class="hidden bg-white border border-slate-200 rounded-[2rem] p-5 shadow-sm">
+                <div class="flex items-center gap-4 flex-wrap">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-600 text-lg flex-shrink-0" id="analista-avatar">?</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">CS identificado pela IA</p>
+                        <p id="analista-nome-display" class="font-black text-slate-800 text-base truncate"></p>
+                        <p id="analista-coord-display" class="text-[10px] text-slate-400 font-bold mt-0.5"></p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 flex-shrink-0">
+                        <select id="analista-corrigir-sel" class="text-xs font-bold border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 ring-blue-300">
+                            <option value="">— Corrigir CS —</option>
+                        </select>
+                        <button id="analista-corrigir-btn" class="hidden items-center gap-1.5 bg-blue-600 hover:bg-[#002d72] text-white px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all">
+                            <i data-lucide="check" class="w-3 h-3"></i> Salvar
+                        </button>
+                        <span id="analista-salvo-tag" class="hidden px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black">✅ Salvo</span>
+                        <button onclick="abrirModalCadastroCS()" class="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200 px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all">
+                            <i data-lucide="user-plus" class="w-3 h-3"></i> Novo CS
+                        </button>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    <select id="analista-corrigir-sel" class="text-xs font-bold border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 ring-blue-300 max-w-[180px]">
-                        <option value="">— Corrigir analista —</option>
-                    </select>
-                    <button id="analista-corrigir-btn" class="hidden flex items-center gap-1.5 bg-blue-600 hover:bg-[#002d72] text-white px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all">
-                        <i data-lucide="check" class="w-3 h-3"></i> Salvar
+                <!-- Alerta CS não cadastrado -->
+                <div id="alerta-cs-nao-cadastrado" class="hidden mt-4 flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-2xl">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500 flex-shrink-0"></i>
+                    <p class="text-[11px] font-bold text-amber-700 flex-1">Este CS não está cadastrado. Cadastre-o para vincular ao coordenador e aparecer nos relatórios.</p>
+                    <button onclick="abrirModalCadastroCSComNome()" class="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                        <i data-lucide="user-plus" class="w-3 h-3"></i> Cadastrar agora
                     </button>
-                    <span id="analista-salvo-tag" class="hidden px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black">✅ Salvo</span>
+                </div>
+                <!-- Selector de coordenador inline -->
+                <div id="banner-coord-section" class="hidden mt-4 flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-2xl flex-wrap">
+                    <i data-lucide="link" class="w-4 h-4 text-blue-500 flex-shrink-0"></i>
+                    <span class="text-[11px] font-bold text-blue-700">Coordenador:</span>
+                    <select id="banner-coord-sel" class="text-xs font-bold border border-blue-200 rounded-xl px-3 py-1.5 bg-white focus:outline-none focus:ring-2 ring-blue-300 flex-1">
+                        <option value="">— Selecionar coordenador —</option>
+                    </select>
+                    <button onclick="salvarCoordBanner()" class="flex items-center gap-1 bg-blue-600 hover:bg-[#002d72] text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                        <i data-lucide="check" class="w-3 h-3"></i> Vincular
+                    </button>
                 </div>
             </div>
 
@@ -495,7 +520,10 @@ async function handleAnalysis() {
         await new Promise(r => setTimeout(r,500));
 
         renderDashboard(data);
-        saveAnalysis(data).then(id => { window._currentReuniaoId = id; });
+        // Get coordinator from detected CS
+        const csObj = ANALYSTS_CACHE.find(a => a.nome?.toLowerCase() === (data.analista_nome||'').toLowerCase());
+        const coord = csObj?.coordenador || null;
+        saveAnalysis(data, coord).then(id => { window._currentReuniaoId = id; });
     } catch (err) {
         alert('Erro na análise: ' + err.message);
         document.getElementById('results-section').classList.add('hidden');
@@ -633,47 +661,110 @@ document.addEventListener('keydown', e => { if (e.key==='Escape') closeModal(); 
 
 // ─── Analista banner ──────────────────────────────────────────────────────────
 async function renderAnalistaBanner(data) {
-    const banner   = document.getElementById('analista-banner');
-    const display  = document.getElementById('analista-nome-display');
-    const avatar   = document.getElementById('analista-avatar');
-    const sel      = document.getElementById('analista-corrigir-sel');
-    const btn      = document.getElementById('analista-corrigir-btn');
-    const salvoTag = document.getElementById('analista-salvo-tag');
+    if (!ANALYSTS_CACHE.length) await loadAnalystsCache();
+
+    const banner      = document.getElementById('analista-banner');
+    const display     = document.getElementById('analista-nome-display');
+    const coordDisp   = document.getElementById('analista-coord-display');
+    const avatar      = document.getElementById('analista-avatar');
+    const sel         = document.getElementById('analista-corrigir-sel');
+    const btn         = document.getElementById('analista-corrigir-btn');
+    const salvoTag    = document.getElementById('analista-salvo-tag');
+    const alertaDiv   = document.getElementById('alerta-cs-nao-cadastrado');
+    const coordSec    = document.getElementById('banner-coord-section');
+    const coordSel    = document.getElementById('banner-coord-sel');
+
     const nome = data.analista_nome || 'Não identificado';
-    display.textContent = nome; avatar.textContent = nome.charAt(0).toUpperCase();
+    window._bannerNomeAtual = nome;
+    display.textContent = nome;
+    avatar.textContent = nome.charAt(0).toUpperCase();
     const media = data.media_final || 0;
     avatar.className = 'w-10 h-10 rounded-full flex items-center justify-center font-black text-lg flex-shrink-0 ' +
         (media>=4?'bg-emerald-100 text-emerald-700':media>=3?'bg-blue-100 text-blue-600':'bg-red-100 text-red-600');
-    sel.innerHTML = '<option value="">— Corrigir analista —</option>';
-    if (!ANALYSTS_CACHE.length) await loadAnalystsCache();
+
+    // Verifica se CS está cadastrado
+    const csRegistrado = ANALYSTS_CACHE.find(a => a.nome?.toLowerCase() === nome.toLowerCase() && a.ativo !== false);
+    if (csRegistrado) {
+        alertaDiv.classList.add('hidden');
+        const coord = csRegistrado.coordenador || '';
+        coordDisp.textContent = coord ? '📋 ' + coord : '';
+        // Mostra seção de coordenador para vincular/alterar
+        coordSec.classList.remove('hidden');
+        coordSel.innerHTML = '<option value="">— Selecionar coordenador —</option>';
+        COORDS_CACHE.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.nome; o.textContent = c.nome;
+            if (c.nome === coord) o.selected = true;
+            coordSel.appendChild(o);
+        });
+    } else if (nome !== 'Não identificado') {
+        alertaDiv.classList.remove('hidden');
+        coordSec.classList.add('hidden');
+        coordDisp.textContent = '';
+    } else {
+        alertaDiv.classList.add('hidden');
+        coordSec.classList.add('hidden');
+    }
+
+    // Dropdown corrigir CS
+    sel.innerHTML = '<option value="">— Corrigir CS —</option>';
     ANALYSTS_CACHE.filter(a=>a.ativo!==false).forEach(a => {
         const o = document.createElement('option'); o.value = a.nome; o.textContent = a.nome;
         if (a.nome === nome) o.selected = true; sel.appendChild(o);
     });
-    sel.onchange = () => { const changed = sel.value && sel.value !== nome; btn.classList.toggle('hidden',!changed); salvoTag.classList.add('hidden'); };
+    sel.onchange = () => {
+        const changed = sel.value && sel.value !== nome;
+        btn.classList.toggle('hidden', !changed);
+        btn.classList.toggle('flex', changed);
+        salvoTag.classList.add('hidden');
+    };
     btn.onclick = async () => {
         const novoNome = sel.value; if (!novoNome) return;
         btn.disabled = true; btn.textContent = 'Salvando...';
         try {
             let attempts = 0;
             while (!window._currentReuniaoId && attempts < 20) { await new Promise(r=>setTimeout(r,300)); attempts++; }
-            if (!window._currentReuniaoId) throw new Error('ID da análise não disponível.');
+            if (!window._currentReuniaoId) throw new Error('ID não disponível.');
             const res = await fetch('/api/reassign', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ reuniao_id:window._currentReuniaoId, analista_nome:novoNome }) });
             const d = await res.json(); if (!d.ok) throw new Error(d.error);
             display.textContent = novoNome; avatar.textContent = novoNome.charAt(0).toUpperCase();
-            btn.classList.add('hidden'); salvoTag.classList.remove('hidden');
+            btn.classList.add('hidden'); btn.classList.remove('flex'); salvoTag.classList.remove('hidden');
         } catch(err) {
-            alert('Erro ao corrigir: ' + err.message);
+            alert('Erro: ' + err.message);
             btn.disabled = false; btn.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i> Salvar'; lucide.createIcons();
         }
     };
     banner.classList.remove('hidden'); lucide.createIcons();
 }
 
-// ─── Save analysis ────────────────────────────────────────────────────────────
-async function saveAnalysis(analise) {
+async function salvarCoordBanner() {
+    const nome = window._bannerNomeAtual;
+    const coordNome = document.getElementById('banner-coord-sel').value;
+    if (!nome || nome === 'Não identificado') return;
+    const cs = ANALYSTS_CACHE.find(a => a.nome?.toLowerCase() === nome.toLowerCase());
+    if (!cs) { alert('CS não cadastrado. Cadastre-o primeiro.'); return; }
     try {
-        const res = await fetch('/api/save', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ analise }) });
+        const res = await fetch('/api/analysts', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id:cs.id, coordenador:coordNome||null }) });
+        const d = await res.json();
+        if (!d.ok) throw new Error(d.error);
+        // Atualiza reunião com coordenador
+        if (window._currentReuniaoId && coordNome) {
+            await fetch(`${location.origin}/api/reassign`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ reuniao_id:window._currentReuniaoId, analista_nome:nome, coordenador:coordNome }) });
+        }
+        document.getElementById('analista-coord-display').textContent = coordNome ? '📋 ' + coordNome : '';
+        await loadAnalystsCache();
+        alert('✅ Coordenador vinculado!');
+    } catch(err) { alert('Erro: ' + err.message); }
+}
+
+function abrirModalCadastroCSComNome() {
+    abrirModalCadastroCS(window._bannerNomeAtual);
+}
+
+// ─── Save analysis ────────────────────────────────────────────────────────────
+async function saveAnalysis(analise, coordenador) {
+    try {
+        const res = await fetch('/api/save', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ analise, coordenador: coordenador||null }) });
         const d = await res.json();
         if (d.ok) { console.log('Salvo:', d.id); return d.id; }
         console.warn('Erro ao salvar:', d.error); return null;
@@ -681,9 +772,14 @@ async function saveAnalysis(analise) {
 }
 
 // ─── Analysts cache ───────────────────────────────────────────────────────────
+let COORDS_CACHE = [];
+
 async function loadAnalystsCache() {
-    try { const res = await fetch('/api/analysts'); ANALYSTS_CACHE = await res.json(); }
-    catch { ANALYSTS_CACHE = []; }
+    try {
+        const [aRes, cRes] = await Promise.all([fetch('/api/analysts'), fetch('/api/coordinators')]);
+        ANALYSTS_CACHE = await aRes.json();
+        COORDS_CACHE   = await cRes.json();
+    } catch { ANALYSTS_CACHE = []; COORDS_CACHE = []; }
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -979,151 +1075,208 @@ function renderAnalistaDash(nome, { reunioes, stats }) {
 
 // ─── Gestão de analistas ──────────────────────────────────────────────────────
 let _vendMap = {};
+let _coordMap = {};
 
 async function loadGestaoPanel() {
     const content = document.getElementById('dash-content');
     content.innerHTML = '<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando...</p></div>';
     try {
-        const [aRes, rRes] = await Promise.all([fetch('/api/analysts?incluir_inativos=1'), fetch('/api/dashboard?periodo=todos&analista=todos')]);
-        const analistas = await aRes.json(); const { reunioes } = await rRes.json();
+        const [aRes, rRes, cRes] = await Promise.all([
+            fetch('/api/analysts?incluir_inativos=1'),
+            fetch('/api/dashboard?periodo=todos&analista=todos'),
+            fetch('/api/coordinators?incluir_inativos=1')
+        ]);
+        const analistas = await aRes.json();
+        const { reunioes } = await rRes.json();
+        const coordenadores = await cRes.json();
         ANALYSTS_CACHE = analistas.filter(a=>a.ativo);
+        COORDS_CACHE   = coordenadores.filter(c=>c.ativo);
         _vendMap = {}; analistas.forEach(a=>{ _vendMap[a.id]=a; });
-        renderGestaoPanel(analistas, reunioes||[]);
+        _coordMap = {}; coordenadores.forEach(c=>{ _coordMap[c.id]=c; });
+        renderGestaoPanel(analistas, coordenadores, reunioes||[]);
     } catch(err) {
         document.getElementById('dash-content').innerHTML = `<div class="text-center py-20 text-red-400 font-bold">${err.message}</div>`;
     }
 }
 
-function renderGestaoPanel(analistas, reunioes) {
-    const content = document.getElementById('dash-content');
-    const ativos   = analistas.filter(a=>a.ativo);
-    const inativos = analistas.filter(a=>!a.ativo);
-    const sc = n => n>=4?'text-emerald-600':n>=3?'text-blue-600':'text-red-500';
+async function cadastrarCoordenador() {
+    const nome = document.getElementById('novo-coord-nome')?.value.trim();
+    const msg  = document.getElementById('coord-msg');
+    if (!nome) { if(msg){msg.className='text-[11px] font-bold text-red-500';msg.textContent='⚠️ Digite o nome.';msg.classList.remove('hidden');} return; }
+    try {
+        const res = await fetch('/api/coordinators', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome}) });
+        const d = await res.json();
+        if (!d.ok && !d.reativado) throw new Error(d.error||'Erro');
+        if(msg){msg.className='text-[11px] font-bold text-emerald-600';msg.textContent=(d.reativado?'♻️ Reativado: ':'✅ Cadastrado: ')+nome;msg.classList.remove('hidden');}
+        const inp = document.getElementById('novo-coord-nome'); if(inp) inp.value='';
+        await loadAnalystsCache();
+        setTimeout(()=>loadGestaoPanel(),1000);
+    } catch(err) { if(msg){msg.className='text-[11px] font-bold text-red-500';msg.textContent='❌ '+err.message;msg.classList.remove('hidden');} }
+}
 
-    const analistaRows = [ativos].map(lista => {
-        const rows = lista.map(a => {
-            const count = reunioes.filter(r=>r.analista_nome&&r.analista_nome.toLowerCase().includes(a.nome.split(' ')[0].toLowerCase())).length;
-            return `<div class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-500 text-sm">${a.nome.charAt(0)}</div>
-                    <div><p class="font-bold text-sm text-slate-800">${a.nome}</p>
-                    <button onclick="abrirAnalysesAnalista('${a.nome.replace(/'/g,"\\'")}');" class="text-[10px] text-blue-500 hover:text-blue-700 font-black underline underline-offset-2">${count} análise(s) →</button></div>
-                </div>
-                <div class="flex gap-2">
-                    <button data-action="editar" data-id="${a.id}" class="p-2 bg-blue-50 hover:bg-blue-600 text-blue-500 hover:text-white border border-blue-200 rounded-xl transition-all" title="Editar"><i data-lucide="pencil" class="w-3 h-3"></i></button>
-                    <button data-action="del-registros" data-id="${a.id}" class="p-2 bg-amber-50 hover:bg-amber-600 text-amber-600 hover:text-white border border-amber-200 rounded-xl transition-all" title="Excluir análises"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
-                    <button data-action="desativar" data-id="${a.id}" class="p-2 bg-red-50 hover:bg-red-600 text-red-500 hover:text-white border border-red-200 rounded-xl transition-all" title="Desativar"><i data-lucide="user-minus" class="w-3 h-3"></i></button>
-                </div>
-            </div>`;
-        }).join('');
-        return `<div class="glass-card p-6"><div class="space-y-2">${rows}</div></div>`;
-    }).join('');
+function confirmarExcluirCoord(id, nome) {
+    if (!confirm('Excluir coordenador "'+nome+'"?\nOs CS vinculados não serão afetados.')) return;
+    fetch('/api/coordinators', { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id}) })
+        .then(r=>r.json()).then(d=>{ if(d.ok) loadGestaoPanel(); else alert('Erro: '+d.error); });
+}
 
-    content.innerHTML = `
-    <div class="glass-card p-6 border border-red-200 bg-red-50 flex items-center justify-between gap-4">
-        <div><p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Registros não identificados</p><p class="text-xs text-red-400">Análises onde a IA não identificou o analista.</p></div>
-        <button onclick="excluirNaoId()" class="flex items-center gap-2 bg-red-500 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all"><i data-lucide="trash-2" class="w-3 h-3"></i> Excluir todos</button>
-    </div>
-    <div class="glass-card p-8 border-t-4 border-emerald-500">
-        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4 text-emerald-500"></i> Cadastrar Analista</h4>
-        <div class="flex flex-wrap gap-3 items-end">
-            <div class="flex-1 min-w-[200px]"><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nome Completo</label><input id="novo-an-nome" type="text" placeholder="Ex: Ana Silva" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 ring-blue-300" /></div>
-
-            <button onclick="cadastrarAnalista()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-md"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar</button>
-        </div>
-        <p id="novo-an-msg" class="text-[11px] font-bold mt-3 hidden"></p>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">${analistaRows}</div>
-    ${inativos.length?`<div class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${inativos.length} analista(s) desativado(s)</p><button onclick="abrirModalInativos()" class="text-[10px] font-black text-blue-500 hover:text-blue-700 uppercase tracking-widest">Ver / Reativar →</button></div>`:''}`;
-
-    content.addEventListener('click', gestaoClick);
-    lucide.createIcons();
+async function cadastrarAnalista() {
+    const nome = document.getElementById('novo-an-nome')?.value.trim();
+    const coordenador = document.getElementById('novo-an-coord')?.value||null;
+    const msg = document.getElementById('novo-an-msg');
+    if (!nome) { if(msg){msg.className='text-[11px] font-bold mt-3 text-red-500';msg.textContent='⚠️ Preencha o nome.';msg.classList.remove('hidden');} return; }
+    try {
+        const res = await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,coordenador})});
+        const d = await res.json();
+        if(!d.ok&&!d.reativado) throw new Error(d.error);
+        if(msg){msg.className='text-[11px] font-bold mt-3 text-emerald-600';msg.textContent=(d.reativado?'♻️ Reativado: ':'✅ Cadastrado: ')+nome;msg.classList.remove('hidden');}
+        const inp = document.getElementById('novo-an-nome'); if(inp) inp.value='';
+        setTimeout(()=>loadGestaoPanel(),1000);
+    } catch(err) { if(msg){msg.className='text-[11px] font-bold mt-3 text-red-500';msg.textContent='❌ '+err.message;msg.classList.remove('hidden');} }
 }
 
 function gestaoClick(e) {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
-    const action=btn.dataset.action, id=btn.dataset.id, a=_vendMap[id];
-    if (action==='desativar' && a) confirmarDesativar(a.id, a.nome);
+    const action=btn.dataset.action, id=btn.dataset.id;
+    const a=_vendMap[id], c=_coordMap[id];
+    if (action==='desativar' && a) {
+        if(!confirm('Excluir CS "'+a.nome+'"?\nO histórico será mantido.')) return;
+        fetch('/api/analysts',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:a.id})})
+            .then(r=>r.json()).then(d=>{if(d.ok)loadGestaoPanel();else alert('Erro: '+d.error);});
+    }
     else if (action==='editar' && a) abrirModalEditarAnalista(a);
     else if (action==='del-registros' && a) excluirRegistrosAnalista(a.nome);
-}
-
-async function cadastrarAnalista() {
-    const nome=document.getElementById('novo-an-nome').value.trim();
-    const msg=document.getElementById('novo-an-msg');
-    if (!nome) { msg.className='text-[11px] font-bold mt-3 text-red-500'; msg.textContent='⚠️ Preencha o nome.'; msg.classList.remove('hidden'); return; }
-    try {
-        const res=await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome})});
-        const d=await res.json(); if(!d.ok) throw new Error(d.error);
-        msg.className='text-[11px] font-bold mt-3 text-emerald-600'; msg.textContent=(d.reativado?'♻️ Reativado: ':'✅ Cadastrado: ')+nome; msg.classList.remove('hidden');
-        document.getElementById('novo-an-nome').value=''; document.getElementById('novo-an-coord').value='';
-        setTimeout(()=>loadGestaoPanel(),1000);
-    } catch(err) { msg.className='text-[11px] font-bold mt-3 text-red-500'; msg.textContent='❌ '+err.message; msg.classList.remove('hidden'); }
-}
-
-function confirmarDesativar(id,nome) {
-    if (!confirm(`Desativar ${nome}?\nO histórico de análises será mantido.`)) return;
-    fetch('/api/analysts',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})})
-        .then(r=>r.json()).then(d=>{ if(d.ok) loadGestaoPanel(); else alert('Erro: '+d.error); }).catch(err=>alert(err.message));
+    else if (action==='del-coord' && c) confirmarExcluirCoord(c.id, c.nome);
 }
 
 async function excluirNaoId() {
     if (!confirm('Excluir TODOS os registros não identificados?\nEsta ação não pode ser desfeita.')) return;
     const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({modo:'nao_id'})});
-    const d=await res.json(); if(d.ok) { alert(d.count+' registro(s) excluído(s).'); loadGestaoPanel(); } else alert('Erro: '+d.error);
+    const d=await res.json(); if(d.ok){alert(d.count+' registro(s) excluído(s).');loadGestaoPanel();}else alert('Erro: '+d.error);
 }
 
 async function excluirRegistrosAnalista(nome) {
-    if (!nome||!confirm(`Excluir TODAS as análises de "${nome}"?\nO cadastro do analista será mantido.`)) return;
+    if(!nome||!confirm('Excluir TODAS as análises de "'+nome+'"?\nO cadastro será mantido.')) return;
     const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({modo:'analista',nome})});
-    const d=await res.json(); if(d.ok) { alert(d.count+' análise(s) excluída(s).'); loadGestaoPanel(); } else alert('Erro: '+d.error);
-}
-
-function abrirModalEditarAnalista(a) {
-    const old=document.getElementById('edit-analista-modal'); if(old) old.remove();
-    const modal=document.createElement('div'); modal.id='edit-analista-modal';
-    modal.className='fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4';
-    modal.innerHTML=`<div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl">
-        <div class="flex justify-between items-center mb-6"><h3 class="font-black text-slate-800 text-lg">Editar Analista</h3>
-        <button id="eam-close" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button></div>
-        <div class="space-y-4">
-            <div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nome</label><input id="edit-an-nome" type="text" value="${a.nome.replace(/"/g,'&quot;')}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 ring-blue-300" /></div>
-
-            <p id="edit-an-msg" class="text-[11px] font-bold hidden"></p>
-            <button id="eam-save" class="w-full bg-blue-600 hover:bg-[#002d72] text-white py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all">Salvar</button>
-        </div></div>`;
-    document.body.appendChild(modal); lucide.createIcons();
-    document.getElementById('eam-close').addEventListener('click',()=>modal.remove());
-    modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
-    document.getElementById('eam-save').addEventListener('click', async ()=>{
-        const nome=document.getElementById('edit-an-nome').value.trim(), msg=document.getElementById('edit-an-msg');
-        if(!nome){msg.className='text-[11px] font-bold text-red-500';msg.textContent='⚠️ Nome obrigatório.';msg.classList.remove('hidden');return;}
-        try{const res=await fetch('/api/analysts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:a.id,nome})});const d=await res.json();if(!d.ok)throw new Error(d.error);msg.className='text-[11px] font-bold text-emerald-600';msg.textContent='✅ Atualizado!';msg.classList.remove('hidden');setTimeout(()=>{modal.remove();loadGestaoPanel();},800);}catch(err){msg.className='text-[11px] font-bold text-red-500';msg.textContent='❌ '+err.message;msg.classList.remove('hidden');}
-    });
+    const d=await res.json(); if(d.ok){alert(d.count+' análise(s) excluída(s).');loadGestaoPanel();}else alert('Erro: '+d.error);
 }
 
 function abrirModalInativos() {
-    const inativos=Object.values(_vendMap).filter(a=>!a.ativo); if(!inativos.length){alert('Nenhum analista desativado.');return;}
+    const inativos=Object.values(_vendMap).filter(a=>!a.ativo); if(!inativos.length){alert('Nenhum CS desativado.');return;}
     const old=document.getElementById('modal-inativos'); if(old) old.remove();
     const rows=inativos.map(a=>`<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
         <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-black text-slate-400 text-sm">${a.nome.charAt(0)}</div>
-        <div><p class="font-bold text-sm text-slate-500 line-through">${a.nome}</p></div></div>
+        <p class="font-bold text-sm text-slate-500 line-through">${a.nome}</p></div>
         <button data-action="reativar" data-id="${a.id}" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"><i data-lucide="user-plus" class="w-3 h-3"></i> Reativar</button>
     </div>`).join('');
     const modal=document.createElement('div'); modal.id='modal-inativos'; modal.className='fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4';
-    modal.innerHTML=`<div class="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl"><div class="flex justify-between items-center mb-6"><h3 class="font-black text-slate-800">Analistas Desativados</h3><button id="mi-close" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button></div><div class="space-y-2">${rows}</div></div>`;
+    modal.innerHTML=`<div class="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl"><div class="flex justify-between items-center mb-6"><h3 class="font-black text-slate-800">CS Desativados</h3><button id="mi-close" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button></div><div class="space-y-2">${rows}</div></div>`;
     document.body.appendChild(modal); lucide.createIcons();
     document.getElementById('mi-close').addEventListener('click',()=>modal.remove());
     modal.addEventListener('click',async e=>{
-        const btn=e.target.closest('[data-action="reativar"]'); if(!btn) { if(e.target===modal)modal.remove(); return; }
-        const a=_vendMap[btn.dataset.id]; if(!a||!confirm(`Reativar ${a.nome}?`)) return;
+        const btn=e.target.closest('[data-action="reativar"]'); if(!btn){if(e.target===modal)modal.remove();return;}
+        const a=_vendMap[btn.dataset.id]; if(!a||!confirm('Reativar '+a.nome+'?'))return;
         try{const res=await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:a.nome})});const d=await res.json();if(!d.ok)throw new Error(d.error);modal.remove();loadGestaoPanel();}catch(err){alert('Erro: '+err.message);}
     });
 }
 
-// ─── Histórico ────────────────────────────────────────────────────────────────
-let _histPage=0; const HIST_LIMIT=15; let _histAtivos=[];
+
+function renderGestaoPanel(analistas, coordenadores, reunioes) {
+    const content=document.getElementById('dash-content');
+    const ativos   = analistas.filter(a=>a.ativo);
+    const inativos = analistas.filter(a=>!a.ativo);
+    const coordAtivos   = coordenadores.filter(c=>c.ativo);
+    const coordInativos = coordenadores.filter(c=>!c.ativo);
+    const coordOptions  = coordAtivos.map(c=>`<option value="${c.nome}">${c.nome}</option>`).join('');
+
+    const csRows = ativos.map(a => {
+        const count = reunioes.filter(r=>r.analista_nome&&r.analista_nome.toLowerCase().includes(a.nome.split(' ')[0].toLowerCase())).length;
+        return `<div class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-500 text-sm">${a.nome.charAt(0)}</div>
+                <div>
+                    <p class="font-bold text-sm text-slate-800">${a.nome}</p>
+                    <p class="text-[10px] text-slate-400">${a.coordenador||'Sem coordenador'} · <button onclick="abrirAnalysesAnalista('${a.nome.replace(/'/g,"\\'")}');" class="text-blue-500 hover:text-blue-700 font-black underline underline-offset-2">${count} análise(s) →</button></p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button data-action="editar" data-id="${a.id}" class="p-2 bg-blue-50 hover:bg-blue-600 text-blue-500 hover:text-white border border-blue-200 rounded-xl transition-all" title="Editar"><i data-lucide="pencil" class="w-3 h-3"></i></button>
+                <button data-action="del-registros" data-id="${a.id}" class="p-2 bg-amber-50 hover:bg-amber-600 text-amber-600 hover:text-white border border-amber-200 rounded-xl transition-all" title="Excluir análises"><i data-lucide="file-x" class="w-3 h-3"></i></button>
+                <button data-action="desativar" data-id="${a.id}" class="p-2 bg-red-50 hover:bg-red-600 text-red-500 hover:text-white border border-red-200 rounded-xl transition-all" title="Excluir CS"><i data-lucide="user-minus" class="w-3 h-3"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+
+    const coordRows = coordAtivos.map(c => `
+        <div class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center font-black text-violet-600 text-sm">${c.nome.charAt(0)}</div>
+                <p class="font-bold text-sm text-slate-800">${c.nome}</p>
+            </div>
+            <button data-action="del-coord" data-id="${c.id}" class="p-2 bg-red-50 hover:bg-red-600 text-red-500 hover:text-white border border-red-200 rounded-xl transition-all" title="Excluir coordenador"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+        </div>`).join('');
+
+    content.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Cadastrar Coordenador -->
+        <div class="glass-card p-6 border-t-4 border-violet-500">
+            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-4 h-4 text-violet-500"></i> Coordenadores
+            </h4>
+            <div class="flex gap-2 mb-4">
+                <input id="novo-coord-nome" type="text" placeholder="Nome do coordenador"
+                    class="flex-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 ring-violet-300" />
+                <button onclick="cadastrarCoordenador()" class="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Cadastrar
+                </button>
+            </div>
+            <p id="coord-msg" class="text-[11px] font-bold mb-3 hidden"></p>
+            <div class="space-y-2">${coordRows||'<p class="text-slate-300 text-xs text-center py-4">Nenhum coordenador cadastrado.</p>'}</div>
+            ${coordInativos.length?`<p class="text-[10px] text-slate-400 mt-3">${coordInativos.length} desativado(s)</p>`:''}
+        </div>
+
+        <!-- Cadastrar CS -->
+        <div class="glass-card p-6 border-t-4 border-emerald-500">
+            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <i data-lucide="users" class="w-4 h-4 text-emerald-500"></i> Analistas CS
+            </h4>
+            <div class="space-y-2 mb-4">
+                <input id="novo-an-nome" type="text" placeholder="Nome completo do CS"
+                    class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 ring-emerald-300" />
+                <div class="flex gap-2">
+                    <select id="novo-an-coord" class="flex-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold bg-white focus:outline-none focus:ring-2 ring-emerald-300">
+                        <option value="">— Coordenador (opcional) —</option>
+                        ${coordOptions}
+                    </select>
+                    <button onclick="cadastrarAnalista()" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all">
+                        <i data-lucide="plus" class="w-3 h-3"></i> Cadastrar
+                    </button>
+                </div>
+            </div>
+            <p id="novo-an-msg" class="text-[11px] font-bold mb-3 hidden"></p>
+            <div class="space-y-2">${csRows||'<p class="text-slate-300 text-xs text-center py-4">Nenhum CS cadastrado.</p>'}</div>
+            ${inativos.length?`<button onclick="abrirModalInativos()" class="mt-3 text-[10px] font-black text-blue-500 hover:text-blue-700 uppercase tracking-widest">${inativos.length} desativado(s) — Ver/Reativar →</button>`:''}
+        </div>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="glass-card p-6 border border-red-200 bg-red-50">
+        <h4 class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i> Zona de exclusão
+        </h4>
+        <div class="flex flex-wrap gap-3">
+            <button onclick="excluirNaoId()" class="flex items-center gap-2 bg-red-500 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all">
+                <i data-lucide="trash-2" class="w-3 h-3"></i> Excluir não identificados
+            </button>
+        </div>
+    </div>`;
+
+    content.addEventListener('click', gestaoClick);
+    lucide.createIcons();
+}
+
 
 async function loadHistorico(page) {
     if (page!==undefined) _histPage=page;
@@ -1161,7 +1314,8 @@ function renderHistorico(reunioes) {
                 <select data-reassign-id="${r.id}" class="hist-reassign-sel text-xs font-bold border border-slate-200 rounded-xl px-2 py-1.5 bg-slate-50 focus:outline-none max-w-[140px]">${vOpts(r.id)}</select>
                 <button data-action="hist-reassign" data-id="${r.id}" class="p-2 bg-blue-50 hover:bg-blue-600 text-blue-500 hover:text-white border border-blue-200 rounded-xl transition-all" title="Salvar"><i data-lucide="check" class="w-3 h-3"></i></button>
                 <button data-action="hist-view" data-id="${r.id}" class="p-2 bg-slate-50 hover:bg-slate-600 text-slate-400 hover:text-white border border-slate-200 rounded-xl transition-all" title="Ver análise"><i data-lucide="eye" class="w-3 h-3"></i></button>
-                <button data-action="hist-delete" data-id="${r.id}" class="p-2 bg-red-50 hover:bg-red-600 text-red-400 hover:text-white border border-red-200 rounded-xl transition-all" title="Excluir"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+                <button data-action="hist-pdf" data-id="${r.id}" class="p-2 bg-red-50 hover:bg-red-600 text-red-400 hover:text-white border border-red-200 rounded-xl transition-all" title="Exportar PDF"><i data-lucide="file-down" class="w-3 h-3"></i></button>
+                <button data-action="hist-delete" data-id="${r.id}" class="p-2 bg-red-50 hover:bg-red-600 text-red-400 hover:text-white border border-red-200 rounded-xl transition-all" title="Excluir registro"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
             </div>
         </div>`).join('');
     const pagination=pages>1?`<div class="flex items-center justify-center gap-3 pt-2">
@@ -1187,6 +1341,7 @@ function renderHistorico(reunioes) {
         if(action==='hist-delete'){if(!confirm('Excluir este registro?'))return;try{const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({modo:'single',id})});const d=await res.json();if(d.ok)btn.closest('.flex').remove();else alert(d.error);}catch(err){alert(err.message);}}
         if(action==='hist-reassign'){const sel=document.querySelector(`[data-reassign-id="${id}"]`);const nome=sel?.value;if(!nome){alert('Selecione o analista.');return;}try{const res=await fetch('/api/reassign',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({reuniao_id:id,analista_nome:nome})});const d=await res.json();if(d.ok){btn.innerHTML='✅';btn.className='p-2 bg-emerald-100 text-emerald-600 rounded-xl';}else alert(d.error);}catch(err){alert(err.message);}}
         if(action==='hist-view') abrirAnaliseCompleta(id);
+        if(action==='hist-pdf') exportarPDFById(id);
     });
 }
 
@@ -1326,6 +1481,16 @@ function renderAnaliseModal(data, reuniao) {
     }
 }
 
+async function exportarPDFById(reuniaoId) {
+    try {
+        const res = await fetch('/api/dashboard?periodo=todos&analista=todos');
+        const data = await res.json();
+        const r = (data.reunioes||[]).find(x=>x.id==reuniaoId);
+        if (!r) { alert('Reunião não encontrada.'); return; }
+        await exportarPDF(r);
+    } catch(err) { alert('Erro: '+err.message); }
+}
+
 async function exportarPDF(reuniao) {
     const btn=document.getElementById('maf-pdf'); btn.textContent='Gerando PDF...'; btn.disabled=true;
     try {
@@ -1336,8 +1501,131 @@ async function exportarPDF(reuniao) {
     finally { btn.innerHTML='<i data-lucide="file-down" class="w-4 h-4"></i> Exportar PDF'; btn.disabled=false; lucide.createIcons(); }
 }
 
+
+// ─── Modal cadastro CS ───────────────────────────────────────────────────────
+function abrirModalCadastroCS(nomePreenchido) {
+    const old = document.getElementById('modal-cadastro-cs'); if (old) old.remove();
+    const coordOptions = COORDS_CACHE.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+    const modal = document.createElement('div');
+    modal.id = 'modal-cadastro-cs';
+    modal.className = 'fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4';
+    modal.innerHTML = `<div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="font-black text-slate-800 text-lg flex items-center gap-2">
+                <i data-lucide="user-plus" class="w-5 h-5 text-emerald-500"></i> Cadastrar CS
+            </h3>
+            <button id="mcs-close" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nome completo</label>
+                <input id="mcs-nome" type="text" placeholder="Ex: Ana Silva" value="${nomePreenchido||''}"
+                    class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 ring-emerald-300" />
+            </div>
+            <div>
+                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Coordenador (opcional)</label>
+                <select id="mcs-coord" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold bg-white focus:outline-none focus:ring-2 ring-emerald-300">
+                    <option value="">— Sem coordenador —</option>
+                    ${coordOptions}
+                </select>
+            </div>
+            <p id="mcs-msg" class="text-[11px] font-bold hidden"></p>
+            <button id="mcs-salvar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2">
+                <i data-lucide="check" class="w-4 h-4"></i> Cadastrar
+            </button>
+        </div>
+    </div>`;
+    document.body.appendChild(modal);
+    lucide.createIcons();
+
+    const input = document.getElementById('mcs-nome');
+    const msg   = document.getElementById('mcs-msg');
+    if (!nomePreenchido) input.focus();
+
+    document.getElementById('mcs-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+    document.getElementById('mcs-salvar').addEventListener('click', async () => {
+        const nome = input.value.trim();
+        const coordenador = document.getElementById('mcs-coord').value || null;
+        if (!nome) { msg.className='text-[11px] font-bold text-red-500'; msg.textContent='⚠️ Digite o nome.'; msg.classList.remove('hidden'); return; }
+        const btn = document.getElementById('mcs-salvar');
+        btn.disabled = true; btn.textContent = 'Salvando...';
+        try {
+            const res = await fetch('/api/analysts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nome, coordenador }) });
+            const d = await res.json();
+            if (!d.ok && !d.reativado) throw new Error(d.error || 'Erro desconhecido');
+            msg.className = 'text-[11px] font-bold text-emerald-600';
+            msg.textContent = (d.reativado ? '♻️ Reativado: ' : '✅ Cadastrado: ') + nome;
+            msg.classList.remove('hidden');
+            await loadAnalystsCache();
+            // Refresh banner if same name
+            if (window._bannerNomeAtual === nome) {
+                document.getElementById('alerta-cs-nao-cadastrado').classList.add('hidden');
+                if (coordenador) {
+                    document.getElementById('analista-coord-display').textContent = '📋 ' + coordenador;
+                    document.getElementById('banner-coord-section').classList.remove('hidden');
+                }
+            }
+            setTimeout(() => modal.remove(), 1200);
+        } catch(err) {
+            msg.className = 'text-[11px] font-bold text-red-500';
+            msg.textContent = '❌ ' + err.message;
+            msg.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Cadastrar';
+            lucide.createIcons();
+        }
+    });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('mcs-salvar').click(); });
+}
+
 analyzeBtn.addEventListener('click', handleAnalysis);
 </script>
 </div><!-- /#app-screen -->
 </body>
-</html>
+</html>async function cadastrarAnalista() {
+    const nome=document.getElementById('novo-an-nome')?.value.trim();
+    const coordenador=document.getElementById('novo-an-coord')?.value||null;
+    const msg=document.getElementById('novo-an-msg');
+    if(!nome){if(msg){msg.className='text-[11px] font-bold mt-3 text-red-500';msg.textContent='⚠️ Preencha o nome.';msg.classList.remove('hidden');}return;}
+    try{
+        const res=await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,coordenador})});
+        const d=await res.json();
+        if(!d.ok&&!d.reativado)throw new Error(d.error);
+        if(msg){msg.className='text-[11px] font-bold mt-3 text-emerald-600';msg.textContent=(d.reativado?'♻️ Reativado: ':'✅ Cadastrado: ')+nome;msg.classList.remove('hidden');}
+        document.getElementById('novo-an-nome').value='';
+        setTimeout(()=>loadGestaoPanel(),1000);
+    }catch(err){if(msg){msg.className='text-[11px] font-bold mt-3 text-red-500';msg.textContent='❌ '+err.message;msg.classList.remove('hidden');}}
+}
+
+function abrirModalEditarAnalista(a) {
+    const coordOptions = COORDS_CACHE.map(c=>`<option value="${c.nome}"${a.coordenador===c.nome?' selected':''}>${c.nome}</option>`).join('');
+    const old=document.getElementById('edit-analista-modal'); if(old) old.remove();
+    const modal=document.createElement('div'); modal.id='edit-analista-modal';
+    modal.className='fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4';
+    modal.innerHTML=`<div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl">
+        <div class="flex justify-between items-center mb-6"><h3 class="font-black text-slate-800 text-lg">Editar CS</h3>
+        <button id="eam-close" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button></div>
+        <div class="space-y-4">
+            <div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nome</label><input id="edit-an-nome" type="text" value="${a.nome.replace(/"/g,'&quot;')}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 ring-blue-300" /></div>
+            <div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Coordenador</label>
+            <select id="edit-an-coord" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold bg-white focus:outline-none focus:ring-2 ring-blue-300"><option value="">— Sem coordenador —</option>${coordOptions}</select></div>
+            <p id="edit-an-msg" class="text-[11px] font-bold hidden"></p>
+            <button id="eam-save" class="w-full bg-blue-600 hover:bg-[#002d72] text-white py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all">Salvar</button>
+        </div></div>`;
+    document.body.appendChild(modal); lucide.createIcons();
+    document.getElementById('eam-close').addEventListener('click',()=>modal.remove());
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+    document.getElementById('eam-save').addEventListener('click',async()=>{
+        const nome=document.getElementById('edit-an-nome').value.trim();
+        const coordenador=document.getElementById('edit-an-coord').value||null;
+        const msg=document.getElementById('edit-an-msg');
+        if(!nome){msg.className='text-[11px] font-bold text-red-500';msg.textContent='⚠️ Nome obrigatório.';msg.classList.remove('hidden');return;}
+        try{const res=await fetch('/api/analysts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:a.id,nome,coordenador})});
+        const d=await res.json();if(!d.ok)throw new Error(d.error);
+        msg.className='text-[11px] font-bold text-emerald-600';msg.textContent='✅ Atualizado!';msg.classList.remove('hidden');
+        setTimeout(()=>{modal.remove();loadGestaoPanel();},800);}
+        catch(err){msg.className='text-[11px] font-bold text-red-500';msg.textContent='❌ '+err.message;msg.classList.remove('hidden');}
+    });
+}
