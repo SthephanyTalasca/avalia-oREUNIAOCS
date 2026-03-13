@@ -22,7 +22,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'reuniao_id e analista_nome obrigatórios' });
 
     try {
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/reunioes_cs?id=eq.${reuniao_id}`, {
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/cs_reunioes?id=eq.${reuniao_id}`, {
             method: 'PATCH',
             headers: { 'Content-Type':'application/json',apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,Prefer:'return=representation' },
             body: JSON.stringify({ analista_nome: analista_nome.trim() })
