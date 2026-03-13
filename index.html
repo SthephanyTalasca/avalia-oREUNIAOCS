@@ -1581,10 +1581,8 @@ function abrirModalCadastroCS(nomePreenchido) {
 }
 
 analyzeBtn.addEventListener('click', handleAnalysis);
-</script>
-</div><!-- /#app-screen -->
-</body>
-</html>async function cadastrarAnalista() {
+
+async function cadastrarAnalista() {
     const nome=document.getElementById('novo-an-nome')?.value.trim();
     const coordenador=document.getElementById('novo-an-coord')?.value||null;
     const msg=document.getElementById('novo-an-msg');
@@ -1629,3 +1627,10 @@ function abrirModalEditarAnalista(a) {
         catch(err){msg.className='text-[11px] font-bold text-red-500';msg.textContent='❌ '+err.message;msg.classList.remove('hidden');}
     });
 }
+
+
+
+</script>
+</div><!-- /#app-screen -->
+</body>
+</html>
