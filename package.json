@@ -1,11 +1,8 @@
 {
   "name": "nibo-cs-auditor",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
-  "scripts": {
-    "build": "echo 'Nenhum build necessario'"
-  },
-  "dependencies": {
-    "@google/genai": "latest"
-  }
+  "scripts": { "build": "echo 'Nenhum build necessario'" },
+  "dependencies": { "@google/genai": "latest" }
 }
+
