@@ -20,11 +20,11 @@ export default async function handler(req, res) {
     const { modo, id, nome } = req.body || {};
     let url;
     if (modo === 'nao_id') {
-        url = `${SUPABASE_URL}/rest/v1/reunioes_cs?analista_nome=ilike.*identificado*`;
+        url = `${SUPABASE_URL}/rest/v1/cs_reunioes?analista_nome=ilike.*identificado*`;
     } else if (modo === 'analista' && nome?.trim()) {
-        url = `${SUPABASE_URL}/rest/v1/reunioes_cs?analista_nome=eq.${encodeURIComponent(nome.trim())}`;
+        url = `${SUPABASE_URL}/rest/v1/cs_reunioes?analista_nome=eq.${encodeURIComponent(nome.trim())}`;
     } else if (modo === 'single' && id) {
-        url = `${SUPABASE_URL}/rest/v1/reunioes_cs?id=eq.${id}`;
+        url = `${SUPABASE_URL}/rest/v1/cs_reunioes?id=eq.${id}`;
     } else {
         return res.status(400).json({ error: 'Parâmetros inválidos.' });
     }
