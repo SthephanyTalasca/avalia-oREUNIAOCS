@@ -17,11 +17,14 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
     if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
 
-    const { analise } = req.body;
-    if (!analise) return res.status(400).json({ error: 'Análise obrigatória' });
+    const { coordenador, analise } = req.body;
+    if (!coordenador || !analise) return res.status(400).json({ error: 'Coordenador e análise obrigatórios' });
+    if (!['Simone Rangel', 'Jonathan Dornelas'].includes(coordenador))
+        return res.status(400).json({ error: 'Coordenador inválido' });
 
     try {
         const row = {
+            coordenador,
             analista_nome:       analise.analista_nome       || 'Não identificado',
             media_final:         analise.media_final         || null,
             saude_cliente:       analise.saude_cliente       || null,
@@ -48,7 +51,7 @@ export default async function handler(req, res) {
             analise_json: analise
         };
 
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/reunioes_cs`, {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/cs_reunioes`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
