@@ -97,11 +97,11 @@ function calcStats(reunioes) {
         return res;
     }).sort((a,b) => b.media - a.media);
 
-    // ── Médias por pilar ─────────────────────────────────────────────────
-    const mediasPilares = {};
+    // ── Médias por pilar (frontend usa stats.pilaresTime) ────────────────
+    const pilaresTime = {};
     PILLARS.forEach(p => {
         const vals = reunioes.map(r => r['nota_'+p]).filter(Boolean);
-        mediasPilares[p] = +avg(vals).toFixed(1);
+        pilaresTime[p] = +avg(vals).toFixed(1);
     });
 
     // ── Evolução semanal ─────────────────────────────────────────────────
