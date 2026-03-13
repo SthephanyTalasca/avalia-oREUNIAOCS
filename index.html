@@ -1308,7 +1308,7 @@ async function abrirAnaliseCompleta(reuniaoId) {
     document.getElementById('maf-back').addEventListener('click',()=>modal.remove());
     try {
         const res=await fetch('/api/dashboard?coordenador=todos&periodo=todos&analista=todos');
-        const data=await res.json(); const r=(data.reunioes||[]).find(x=>x.id===reuniaoId);
+        const data=await res.json(); const r=(data.reunioes||[]).find(x=>x.id==reuniaoId);
         if(!r) throw new Error('Análise não encontrada.');
         const analise=r.analise_json||{}; if(!analise.media_final) throw new Error('Dados incompletos.');
         document.getElementById('maf-title').textContent=(r.analista_nome||'—')+' · '+new Date(r.created_at).toLocaleDateString('pt-BR');
