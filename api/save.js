@@ -1,4 +1,4 @@
-// api/save.js — CS Auditor
+// api/save.js
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 
@@ -17,20 +17,18 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
     if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
 
-    const { coordenador, analise } = req.body;
-    if (!coordenador || !analise) return res.status(400).json({ error: 'Coordenador e análise obrigatórios' });
-    if (!['Simone Rangel', 'Jonathan Dornelas'].includes(coordenador))
-        return res.status(400).json({ error: 'Coordenador inválido' });
+    const { analise, coordenador } = req.body;
+    if (!analise) return res.status(400).json({ error: 'Análise obrigatória' });
 
     try {
         const row = {
-            coordenador,
-            analista_nome:       analise.analista_nome       || 'Não identificado',
-            media_final:         analise.media_final         || null,
-            saude_cliente:       analise.saude_cliente       || null,
-            risco_churn:         analise.risco_churn         || null,
-            tempo_fala_cs:       analise.tempo_fala_cs       || null,
-            tempo_fala_cliente:  analise.tempo_fala_cliente  || null,
+            coordenador:         coordenador || null,
+            analista_nome:       analise.analista_nome      || 'Não identificado',
+            media_final:         analise.media_final        || null,
+            saude_cliente:       analise.saude_cliente      || null,
+            risco_churn:         analise.risco_churn        || null,
+            tempo_fala_cs:       analise.tempo_fala_cs      || null,
+            tempo_fala_cliente:  analise.tempo_fala_cliente || null,
             nota_consultividade:    analise.nota_consultividade    || null,
             nota_escuta_ativa:      analise.nota_escuta_ativa      || null,
             nota_jornada_cliente:   analise.nota_jornada_cliente   || null,
@@ -51,26 +49,16 @@ export default async function handler(req, res) {
             analise_json: analise
         };
 
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/cs_reunioes`, {
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/cs_reunioes`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'Prefer': 'return=representation'
-            },
+            headers: { 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, Prefer:'return=representation' },
             body: JSON.stringify(row)
         });
 
-        if (!response.ok) {
-            const err = await response.text();
-            console.error('Supabase error:', err);
-            return res.status(500).json({ error: 'Erro ao salvar: ' + err });
-        }
-
-        const saved = await response.json();
+        if (!r.ok) { const err = await r.text(); console.error('Supabase:', err); return res.status(500).json({ error: err }); }
+        const saved = await r.json();
         return res.status(200).json({ ok: true, id: saved[0]?.id });
-    } catch (error) {
-        return res.status(500).json({ error: error.message });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
     }
 }
