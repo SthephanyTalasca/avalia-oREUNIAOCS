@@ -776,7 +776,7 @@ let COORDS_CACHE = [];
 
 async function loadAnalystsCache() {
     try {
-        const [aRes, cRes] = await Promise.all([fetch('/api/analysts'), fetch('/api/coordinators')]);
+        const [aRes, cRes] = await Promise.all([fetch('/api/team'), fetch('/api/coordinators')]);
         ANALYSTS_CACHE = await aRes.json();
         COORDS_CACHE   = await cRes.json();
     } catch { ANALYSTS_CACHE = []; COORDS_CACHE = []; }
@@ -1082,7 +1082,7 @@ async function loadGestaoPanel() {
     content.innerHTML = '<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando...</p></div>';
     try {
         const [aRes, rRes, cRes] = await Promise.all([
-            fetch('/api/analysts?incluir_inativos=1'),
+            fetch('/api/team?incluir_inativos=1'),
             fetch('/api/dashboard?periodo=todos&analista=todos'),
             fetch('/api/coordinators?incluir_inativos=1')
         ]);
@@ -1126,7 +1126,7 @@ async function cadastrarAnalista() {
     const msg = document.getElementById('novo-an-msg');
     if (!nome) { if(msg){msg.className='text-[11px] font-bold mt-3 text-red-500';msg.textContent='⚠️ Preencha o nome.';msg.classList.remove('hidden');} return; }
     try {
-        const res = await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,coordenador})});
+        const res = await fetch('/api/team',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,coordenador})});
         const d = await res.json();
         if(!d.ok&&!d.reativado) throw new Error(d.error);
         if(msg){msg.className='text-[11px] font-bold mt-3 text-emerald-600';msg.textContent=(d.reativado?'♻️ Reativado: ':'✅ Cadastrado: ')+nome;msg.classList.remove('hidden');}
@@ -1142,7 +1142,7 @@ function gestaoClick(e) {
     const a=_vendMap[id], c=_coordMap[id];
     if (action==='desativar' && a) {
         if(!confirm('Excluir CS "'+a.nome+'"?\nO histórico será mantido.')) return;
-        fetch('/api/analysts',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:a.id})})
+        fetch('/api/team',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:a.id})})
             .then(r=>r.json()).then(d=>{if(d.ok)loadGestaoPanel();else alert('Erro: '+d.error);});
     }
     else if (action==='editar' && a) abrirModalEditarAnalista(a);
@@ -1177,7 +1177,7 @@ function abrirModalInativos() {
     modal.addEventListener('click',async e=>{
         const btn=e.target.closest('[data-action="reativar"]'); if(!btn){if(e.target===modal)modal.remove();return;}
         const a=_vendMap[btn.dataset.id]; if(!a||!confirm('Reativar '+a.nome+'?'))return;
-        try{const res=await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:a.nome})});const d=await res.json();if(!d.ok)throw new Error(d.error);modal.remove();loadGestaoPanel();}catch(err){alert('Erro: '+err.message);}
+        try{const res=await fetch('/api/team',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:a.nome})});const d=await res.json();if(!d.ok)throw new Error(d.error);modal.remove();loadGestaoPanel();}catch(err){alert('Erro: '+err.message);}
     });
 }
 
@@ -1283,7 +1283,7 @@ async function loadHistorico(page) {
     const content=document.getElementById('dash-content');
     content.innerHTML='<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando histórico...</p></div>';
     try {
-        const [rRes,aRes]=await Promise.all([fetch('/api/dashboard?periodo=todos&analista=todos'),fetch('/api/analysts')]);
+        const [rRes,aRes]=await Promise.all([fetch('/api/dashboard?periodo=todos&analista=todos'),fetch('/api/team')]);
         const {reunioes}=await rRes.json(); _histAtivos=await aRes.json();
         renderHistorico(reunioes||[]);
     } catch(err) { document.getElementById('dash-content').innerHTML=`<div class="text-center py-20 text-red-400 font-bold">${err.message}</div>`; }
@@ -1552,7 +1552,7 @@ function abrirModalCadastroCS(nomePreenchido) {
         const btn = document.getElementById('mcs-salvar');
         btn.disabled = true; btn.textContent = 'Salvando...';
         try {
-            const res = await fetch('/api/analysts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nome, coordenador }) });
+            const res = await fetch('/api/team', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nome, coordenador }) });
             const d = await res.json();
             if (!d.ok && !d.reativado) throw new Error(d.error || 'Erro desconhecido');
             msg.className = 'text-[11px] font-bold text-emerald-600';
@@ -1588,7 +1588,7 @@ async function cadastrarAnalista() {
     const msg=document.getElementById('novo-an-msg');
     if(!nome){if(msg){msg.className='text-[11px] font-bold mt-3 text-red-500';msg.textContent='⚠️ Preencha o nome.';msg.classList.remove('hidden');}return;}
     try{
-        const res=await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,coordenador})});
+        const res=await fetch('/api/team',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,coordenador})});
         const d=await res.json();
         if(!d.ok&&!d.reativado)throw new Error(d.error);
         if(msg){msg.className='text-[11px] font-bold mt-3 text-emerald-600';msg.textContent=(d.reativado?'♻️ Reativado: ':'✅ Cadastrado: ')+nome;msg.classList.remove('hidden');}
@@ -1620,7 +1620,7 @@ function abrirModalEditarAnalista(a) {
         const coordenador=document.getElementById('edit-an-coord').value||null;
         const msg=document.getElementById('edit-an-msg');
         if(!nome){msg.className='text-[11px] font-bold text-red-500';msg.textContent='⚠️ Nome obrigatório.';msg.classList.remove('hidden');return;}
-        try{const res=await fetch('/api/analysts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:a.id,nome,coordenador})});
+        try{const res=await fetch('/api/team',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:a.id,nome,coordenador})});
         const d=await res.json();if(!d.ok)throw new Error(d.error);
         msg.className='text-[11px] font-bold text-emerald-600';msg.textContent='✅ Atualizado!';msg.classList.remove('hidden');
         setTimeout(()=>{modal.remove();loadGestaoPanel();},800);}
