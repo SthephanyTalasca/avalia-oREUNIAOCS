@@ -97,11 +97,11 @@ function calcStats(reunioes) {
         return res;
     }).sort((a,b) => b.media - a.media);
 
-    // ── Médias por pilar ─────────────────────────────────────────────────
-    const mediasPilares = {};
+    // ── Médias por pilar (frontend usa stats.pilaresTime) ────────────────
+    const pilaresTime = {};
     PILLARS.forEach(p => {
         const vals = reunioes.map(r => r['nota_'+p]).filter(Boolean);
-        mediasPilares[p] = +avg(vals).toFixed(1);
+        pilaresTime[p] = +avg(vals).toFixed(1);
     });
 
     // ── Evolução semanal ─────────────────────────────────────────────────
@@ -118,14 +118,32 @@ function calcStats(reunioes) {
         .map(s => ({ semana:s.semana, media: +avg(s.medias).toFixed(1), total:s.total }))
         .sort((a,b) => a.semana.localeCompare(b.semana));
 
-    // ── Saúde / Churn ─────────────────────────────────────────────────────
-    const churnCount = { alto:0, medio:0, baixo:0, sem:0 };
+    // ── Saúde do Cliente (frontend usa stats.saudeStats) ─────────────────
+    const saudeStats = { saudavel: 0, risco: 0, critico: 0, indefinido: 0 };
+    for (const r of reunioes) {
+        const v = (r.saude_cliente || '').toLowerCase();
+        if (v.includes('saudável') || v.includes('saudavel') || v.includes('boa') || v.includes('positiv') || v.includes('estável') || v.includes('estavel'))
+            saudeStats.saudavel++;
+        else if (v.includes('risco') || v.includes('atenção') || v.includes('atencao') || v.includes('moderado') || v.includes('médio') || v.includes('medio'))
+            saudeStats.risco++;
+        else if (v.includes('crítico') || v.includes('critico') || v.includes('grave') || v.includes('alto') || v.includes('ruim') || v.includes('negativ'))
+            saudeStats.critico++;
+        else
+            saudeStats.indefinido++;
+    }
+
+    // ── Risco de Churn (frontend usa stats.churnStats) ───────────────────
+    const churnStats = { alto: 0, medio: 0, baixo: 0, indefinido: 0 };
     for (const r of reunioes) {
         const v = (r.risco_churn || '').toLowerCase();
-        if (v.includes('alto') || v.includes('crítico')) churnCount.alto++;
-        else if (v.includes('médio') || v.includes('medio') || v.includes('moderado')) churnCount.medio++;
-        else if (v.includes('baixo')) churnCount.baixo++;
-        else churnCount.sem++;
+        if (v.includes('alto') || v.includes('crítico') || v.includes('critico'))
+            churnStats.alto++;
+        else if (v.includes('médio') || v.includes('medio') || v.includes('moderado'))
+            churnStats.medio++;
+        else if (v.includes('baixo'))
+            churnStats.baixo++;
+        else
+            churnStats.indefinido++;
     }
 
     // ── Checklist completion rate ─────────────────────────────────────────
@@ -142,9 +160,10 @@ function calcStats(reunioes) {
         media_geral: +avg(medias).toFixed(1),
         porCoordenador,
         ranking,
-        mediasPilares,
+        pilaresTime,
         evolucao,
-        churnCount,
+        saudeStats,
+        churnStats,
         ckRates
     };
 }
