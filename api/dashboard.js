@@ -17,10 +17,12 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido' });
     if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
 
-    const { analista, periodo, data_inicio, data_fim } = req.query;
+    const { coordenador, analista, periodo, data_inicio, data_fim } = req.query;
 
     try {
         let filter = '';
+        if (coordenador && coordenador !== 'todos')
+            filter += `&coordenador=eq.${encodeURIComponent(coordenador)}`;
         if (analista && analista !== 'todos')
             filter += `&analista_nome=ilike.*${encodeURIComponent(analista.split(' ')[0])}*`;
         if (periodo && periodo !== 'todos' && !data_inicio) {
@@ -33,7 +35,7 @@ export default async function handler(req, res) {
             filter += `&created_at=lte.${fim.toISOString()}`;
         }
 
-        const url = `${SUPABASE_URL}/rest/v1/reunioes_cs?select=*&order=created_at.desc${filter}`;
+        const url = `${SUPABASE_URL}/rest/v1/cs_reunioes?select=*&order=created_at.desc${filter}`;
         const response = await fetch(url, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -61,28 +63,26 @@ function calcStats(reunioes) {
     const total  = reunioes.length;
     const medias = reunioes.map(r => r.media_final).filter(Boolean);
 
-    const saudeStats = { saudavel: 0, risco: 0, critico: 0, indefinido: 0 };
+    // ── Por coordenador ──────────────────────────────────────────────────
+    const porCoordenador = {};
     for (const r of reunioes) {
-        const v = (r.saude_cliente || '').toLowerCase();
-        if (v.includes('saudável') || v.includes('saudavel') || v.includes('boa') || v.includes('ótima') || v.includes('otima') || v.includes('positiva')) saudeStats.saudavel++;
-        else if (v.includes('risco') || v.includes('atenção') || v.includes('atencao') || v.includes('preocupante')) saudeStats.risco++;
-        else if (v.includes('crítico') || v.includes('critico') || v.includes('ruim') || v.includes('péssima')) saudeStats.critico++;
-        else saudeStats.indefinido++;
+        if (!porCoordenador[r.coordenador])
+            porCoordenador[r.coordenador] = { total:0, medias:[], churn_alto:0 };
+        const c = porCoordenador[r.coordenador];
+        c.total++;
+        if (r.media_final) c.medias.push(r.media_final);
+        if ((r.risco_churn || '').toLowerCase().includes('alto') ||
+            (r.risco_churn || '').toLowerCase().includes('crítico')) c.churn_alto++;
+    }
+    for (const k of Object.keys(porCoordenador)) {
+        porCoordenador[k].media = +avg(porCoordenador[k].medias).toFixed(1);
     }
 
-    const churnStats = { alto: 0, medio: 0, baixo: 0, indefinido: 0 };
-    for (const r of reunioes) {
-        const v = (r.risco_churn || '').toLowerCase();
-        if (v.includes('alto') || v.includes('crítico') || v.includes('critico')) churnStats.alto++;
-        else if (v.includes('médio') || v.includes('medio') || v.includes('moderado')) churnStats.medio++;
-        else if (v.includes('baixo')) churnStats.baixo++;
-        else churnStats.indefinido++;
-    }
-
+    // ── Ranking analistas ────────────────────────────────────────────────
     const porAnalista = {};
     for (const r of reunioes) {
         if (!porAnalista[r.analista_nome])
-            porAnalista[r.analista_nome] = { nome: r.analista_nome, total:0, medias:{} };
+            porAnalista[r.analista_nome] = { nome: r.analista_nome, coordenador: r.coordenador, total:0, medias:{} };
         const a = porAnalista[r.analista_nome];
         a.total++;
         if (r.media_final) { a.medias._all = a.medias._all || []; a.medias._all.push(r.media_final); }
@@ -97,12 +97,14 @@ function calcStats(reunioes) {
         return res;
     }).sort((a,b) => b.media - a.media);
 
-    const pilaresTime = {};
+    // ── Médias por pilar ─────────────────────────────────────────────────
+    const mediasPilares = {};
     PILLARS.forEach(p => {
         const vals = reunioes.map(r => r['nota_'+p]).filter(Boolean);
-        pilaresTime[p] = +avg(vals).toFixed(1);
+        mediasPilares[p] = +avg(vals).toFixed(1);
     });
 
+    // ── Evolução semanal ─────────────────────────────────────────────────
     const porSemana = {};
     for (const r of reunioes) {
         const d = new Date(r.created_at);
@@ -116,6 +118,17 @@ function calcStats(reunioes) {
         .map(s => ({ semana:s.semana, media: +avg(s.medias).toFixed(1), total:s.total }))
         .sort((a,b) => a.semana.localeCompare(b.semana));
 
+    // ── Saúde / Churn ─────────────────────────────────────────────────────
+    const churnCount = { alto:0, medio:0, baixo:0, sem:0 };
+    for (const r of reunioes) {
+        const v = (r.risco_churn || '').toLowerCase();
+        if (v.includes('alto') || v.includes('crítico')) churnCount.alto++;
+        else if (v.includes('médio') || v.includes('medio') || v.includes('moderado')) churnCount.medio++;
+        else if (v.includes('baixo')) churnCount.baixo++;
+        else churnCount.sem++;
+    }
+
+    // ── Checklist completion rate ─────────────────────────────────────────
     const ckKeys = ['definiu_prazo_implementacao','alinhou_dever_de_casa','validou_certificado_digital',
                     'agendou_proximo_passo','conectou_com_dor_vendas','explicou_canal_suporte'];
     const ckRates = {};
@@ -124,5 +137,14 @@ function calcStats(reunioes) {
         ckRates[k] = +(avg(vals) * 100).toFixed(0);
     });
 
-    return { total, media_geral: +avg(medias).toFixed(1), saudeStats, churnStats, ranking, pilaresTime, evolucao, ckRates };
+    return {
+        total,
+        media_geral: +avg(medias).toFixed(1),
+        porCoordenador,
+        ranking,
+        mediasPilares,
+        evolucao,
+        churnCount,
+        ckRates
+    };
 }
