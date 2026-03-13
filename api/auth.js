@@ -37,8 +37,7 @@ export default async function handler(req, res) {
 
         const domain = user.email.toLowerCase().split('@')[1];
         if (domain !== 'nibo.com.br') {
-    return res.redirect(`/?auth_error=dominio_invalido`)
-}
+            return res.redirect(`/?auth_error=dominio_invalido&email=${encodeURIComponent(user.email)}`);
         }
 
         const session = Buffer.from(JSON.stringify({
