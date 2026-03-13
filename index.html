@@ -744,7 +744,7 @@ async function salvarCoordBanner() {
     const cs = ANALYSTS_CACHE.find(a => a.nome?.toLowerCase() === nome.toLowerCase());
     if (!cs) { alert('CS não cadastrado. Cadastre-o primeiro.'); return; }
     try {
-        const res = await fetch('/api/analysts', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id:cs.id, coordenador:coordNome||null }) });
+        const res = await fetch('/api/team', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id:cs.id, coordenador:coordNome||null }) });
         const d = await res.json();
         if (!d.ok) throw new Error(d.error);
         // Atualiza reunião com coordenador
