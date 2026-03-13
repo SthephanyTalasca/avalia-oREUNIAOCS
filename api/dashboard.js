@@ -63,19 +63,54 @@ function calcStats(reunioes) {
     const total  = reunioes.length;
     const medias = reunioes.map(r => r.media_final).filter(Boolean);
 
+    // ── Saúde do cliente ─────────────────────────────────────────────────
+    const saudeStats = { saudavel: 0, risco: 0, critico: 0, indefinido: 0 };
+    for (const r of reunioes) {
+        const v = (r.saude_cliente || '').toLowerCase();
+        if (v.includes('saudável') || v.includes('saudavel') || v.includes('boa') || v.includes('ótima') || v.includes('otima') || v.includes('positiva')) {
+            saudeStats.saudavel++;
+        } else if (v.includes('risco') || v.includes('atenção') || v.includes('atencao') || v.includes('preocupante')) {
+            saudeStats.risco++;
+        } else if (v.includes('crítico') || v.includes('critico') || v.includes('ruim') || v.includes('péssima')) {
+            saudeStats.critico++;
+        } else {
+            saudeStats.indefinido++;
+        }
+    }
+
+    // ── Risco de churn ────────────────────────────────────────────────────
+    const churnStats = { alto: 0, medio: 0, baixo: 0, indefinido: 0 };
+    for (const r of reunioes) {
+        const v = (r.risco_churn || '').toLowerCase();
+        if (v.includes('alto') || v.includes('crítico') || v.includes('critico')) churnStats.alto++;
+        else if (v.includes('médio') || v.includes('medio') || v.includes('moderado')) churnStats.medio++;
+        else if (v.includes('baixo')) churnStats.baixo++;
+        else churnStats.indefinido++;
+    }
+
     // ── Por coordenador ──────────────────────────────────────────────────
     const porCoordenador = {};
     for (const r of reunioes) {
         if (!porCoordenador[r.coordenador])
-            porCoordenador[r.coordenador] = { total:0, medias:[], churn_alto:0 };
+            porCoordenador[r.coordenador] = { total:0, medias:[], saudaveis:0, risco:0, criticos:0, churn_alto:0 };
         const c = porCoordenador[r.coordenador];
         c.total++;
         if (r.media_final) c.medias.push(r.media_final);
         if ((r.risco_churn || '').toLowerCase().includes('alto') ||
             (r.risco_churn || '').toLowerCase().includes('crítico')) c.churn_alto++;
+
+        // saúde por coordenador
+        const saude = (r.saude_cliente || '').toLowerCase();
+        if (saude.includes('saudável') || saude.includes('saudavel') || saude.includes('boa') || saude.includes('ótima') || saude.includes('otima') || saude.includes('positiva')) {
+            c.saudaveis++;
+        } else if (saude.includes('risco') || saude.includes('atenção') || saude.includes('atencao') || saude.includes('preocupante')) {
+            c.risco++;
+        } else if (saude.includes('crítico') || saude.includes('critico') || saude.includes('ruim') || saude.includes('péssima')) {
+            c.criticos++;
+        }
     }
     for (const k of Object.keys(porCoordenador)) {
-        porCoordenador[k].media = +avg(porCoordenador[k].medias).toFixed(1);
+        porCoordenador[k].media_cs = +avg(porCoordenador[k].medias).toFixed(1);
     }
 
     // ── Ranking analistas ────────────────────────────────────────────────
@@ -97,11 +132,11 @@ function calcStats(reunioes) {
         return res;
     }).sort((a,b) => b.media - a.media);
 
-    // ── Médias por pilar ─────────────────────────────────────────────────
-    const mediasPilares = {};
+    // ── Médias por pilar (pilaresTime — nome esperado pelo index.html) ───
+    const pilaresTime = {};
     PILLARS.forEach(p => {
         const vals = reunioes.map(r => r['nota_'+p]).filter(Boolean);
-        mediasPilares[p] = +avg(vals).toFixed(1);
+        pilaresTime[p] = +avg(vals).toFixed(1);
     });
 
     // ── Evolução semanal ─────────────────────────────────────────────────
@@ -118,16 +153,6 @@ function calcStats(reunioes) {
         .map(s => ({ semana:s.semana, media: +avg(s.medias).toFixed(1), total:s.total }))
         .sort((a,b) => a.semana.localeCompare(b.semana));
 
-    // ── Saúde / Churn ─────────────────────────────────────────────────────
-    const churnCount = { alto:0, medio:0, baixo:0, sem:0 };
-    for (const r of reunioes) {
-        const v = (r.risco_churn || '').toLowerCase();
-        if (v.includes('alto') || v.includes('crítico')) churnCount.alto++;
-        else if (v.includes('médio') || v.includes('medio') || v.includes('moderado')) churnCount.medio++;
-        else if (v.includes('baixo')) churnCount.baixo++;
-        else churnCount.sem++;
-    }
-
     // ── Checklist completion rate ─────────────────────────────────────────
     const ckKeys = ['definiu_prazo_implementacao','alinhou_dever_de_casa','validou_certificado_digital',
                     'agendou_proximo_passo','conectou_com_dor_vendas','explicou_canal_suporte'];
@@ -140,11 +165,12 @@ function calcStats(reunioes) {
     return {
         total,
         media_geral: +avg(medias).toFixed(1),
-        porCoordenador,
+        saudeStats,      // ← era inexistente
+        churnStats,      // ← era churnCount
+        porCoordenador,  // ← agora tem media_cs, saudaveis, risco, criticos
         ranking,
-        mediasPilares,
+        pilaresTime,     // ← era mediasPilares
         evolucao,
-        churnCount,
         ckRates
     };
 }
