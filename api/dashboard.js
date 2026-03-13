@@ -119,13 +119,22 @@ function calcStats(reunioes) {
         .sort((a,b) => a.semana.localeCompare(b.semana));
 
     // ── Saúde / Churn ─────────────────────────────────────────────────────
-    const churnCount = { alto:0, medio:0, baixo:0, sem:0 };
+    const saudeStats = { saudavel:0, risco:0, critico:0, indefinido:0 };
+    for (const r of reunioes) {
+        const vs = (r.saude_cliente || '').toLowerCase();
+        if (vs.includes('saudáv') || vs.includes('saudav') || vs.includes('ótimo') || vs.includes('otimo') || vs.includes('bom') || vs.includes('boa')) saudeStats.saudavel++;
+        else if (vs.includes('crítico') || vs.includes('critico') || vs.includes('ruim') || vs.includes('péssimo') || vs.includes('pessimo')) saudeStats.critico++;
+        else if (vs.includes('risco') || vs.includes('atenção') || vs.includes('atencao') || vs.includes('preocupante') || vs.includes('moderado')) saudeStats.risco++;
+        else saudeStats.indefinido++;
+    }
+
+    const churnStats = { alto:0, medio:0, baixo:0, indefinido:0 };
     for (const r of reunioes) {
         const v = (r.risco_churn || '').toLowerCase();
-        if (v.includes('alto') || v.includes('crítico')) churnCount.alto++;
-        else if (v.includes('médio') || v.includes('medio') || v.includes('moderado')) churnCount.medio++;
-        else if (v.includes('baixo')) churnCount.baixo++;
-        else churnCount.sem++;
+        if (v.includes('alto') || v.includes('crítico')) churnStats.alto++;
+        else if (v.includes('médio') || v.includes('medio') || v.includes('moderado')) churnStats.medio++;
+        else if (v.includes('baixo')) churnStats.baixo++;
+        else churnStats.indefinido++;
     }
 
     // ── Checklist completion rate ─────────────────────────────────────────
@@ -142,9 +151,10 @@ function calcStats(reunioes) {
         media_geral: +avg(medias).toFixed(1),
         porCoordenador,
         ranking,
-        mediasPilares,
+        pilaresTime: mediasPilares,
         evolucao,
-        churnCount,
+        churnStats,
+        saudeStats,
         ckRates
     };
 }
