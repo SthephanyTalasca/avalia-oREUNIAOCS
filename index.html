@@ -96,25 +96,6 @@
                 <i data-lucide="message-square" class="text-blue-600"></i>
                 <h2 class="font-bold text-slate-800 text-lg">Submeter Transcrição do Cliente</h2>
             </div>
-            <!-- Coordenador -->
-            <div class="flex gap-4 mb-6">
-                <label class="flex-1 cursor-pointer">
-                    <input type="radio" name="coordenador" value="Simone Rangel" class="hidden peer" />
-                    <div class="peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 border-2 border-slate-200 rounded-2xl p-4 text-center transition-all hover:border-blue-300">
-                        <i data-lucide="user-circle" class="w-5 h-5 mx-auto mb-1"></i>
-                        <p class="font-black text-sm">Simone Rangel</p>
-                        <p class="text-[10px] font-medium opacity-70">Coordenadora</p>
-                    </div>
-                </label>
-                <label class="flex-1 cursor-pointer">
-                    <input type="radio" name="coordenador" value="Jonathan Dornelas" class="hidden peer" />
-                    <div class="peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 border-2 border-slate-200 rounded-2xl p-4 text-center transition-all hover:border-blue-300">
-                        <i data-lucide="user-circle" class="w-5 h-5 mx-auto mb-1"></i>
-                        <p class="font-black text-sm">Jonathan Dornelas</p>
-                        <p class="text-[10px] font-medium opacity-70">Coordenador</p>
-                    </div>
-                </label>
-            </div>
             <textarea id="transcript-input" rows="6"
                 class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:ring-4 ring-blue-500/5 focus:outline-none transition-all text-sm resize-none mb-2"
                 placeholder="Cole aqui o diálogo da reunião de Onboarding ou Implementação..."></textarea>
@@ -334,11 +315,6 @@
                     </button>
                 </div>
                 <div id="dash-filters-gestor" class="flex flex-wrap gap-3 items-center">
-                    <select id="dash-filter-coord" onchange="onCoordChange()" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none">
-                        <option value="todos">Todos os times</option>
-                        <option value="Simone Rangel">Simone Rangel</option>
-                        <option value="Jonathan Dornelas">Jonathan Dornelas</option>
-                    </select>
                     <select id="dash-filter-analista" onchange="loadDashboard()" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none">
                         <option value="todos">Todos os analistas</option>
                     </select>
@@ -487,9 +463,7 @@ function buildStars(score) {
 async function handleAnalysis() {
     const prompt = transcriptInput.value.trim();
     if (!prompt) return;
-    const coordRadio = document.querySelector('input[name="coordenador"]:checked');
-    if (!coordRadio) { alert('Selecione o coordenador responsável antes de analisar.'); return; }
-    const coordenador = coordRadio.value;
+
 
     document.getElementById('results-section').classList.remove('hidden');
     document.getElementById('loading-spinner').classList.remove('hidden');
@@ -521,7 +495,7 @@ async function handleAnalysis() {
         await new Promise(r => setTimeout(r,500));
 
         renderDashboard(data);
-        saveAnalysis(coordenador, data).then(id => { window._currentReuniaoId = id; });
+        saveAnalysis(data).then(id => { window._currentReuniaoId = id; });
     } catch (err) {
         alert('Erro na análise: ' + err.message);
         document.getElementById('results-section').classList.add('hidden');
@@ -672,7 +646,7 @@ async function renderAnalistaBanner(data) {
         (media>=4?'bg-emerald-100 text-emerald-700':media>=3?'bg-blue-100 text-blue-600':'bg-red-100 text-red-600');
     sel.innerHTML = '<option value="">— Corrigir analista —</option>';
     if (!ANALYSTS_CACHE.length) await loadAnalystsCache();
-    ANALYSTS_CACHE.forEach(a => {
+    ANALYSTS_CACHE.filter(a=>a.ativo!==false).forEach(a => {
         const o = document.createElement('option'); o.value = a.nome; o.textContent = a.nome;
         if (a.nome === nome) o.selected = true; sel.appendChild(o);
     });
@@ -697,9 +671,9 @@ async function renderAnalistaBanner(data) {
 }
 
 // ─── Save analysis ────────────────────────────────────────────────────────────
-async function saveAnalysis(coordenador, analise) {
+async function saveAnalysis(analise) {
     try {
-        const res = await fetch('/api/save', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ coordenador, analise }) });
+        const res = await fetch('/api/save', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ analise }) });
         const d = await res.json();
         if (d.ok) { console.log('Salvo:', d.id); return d.id; }
         console.warn('Erro ao salvar:', d.error); return null;
@@ -740,25 +714,12 @@ function setDashMode(mode) {
 async function populateEuSelect() {
     const sel = document.getElementById('dash-filter-eu'); if (!sel) return;
     sel.innerHTML = '<option value="">— selecione seu nome —</option>';
-    const byCoord = {};
-    ANALYSTS_CACHE.forEach(a => { if (!byCoord[a.coordenador]) byCoord[a.coordenador]=[]; byCoord[a.coordenador].push(a); });
-    Object.entries(byCoord).forEach(([coord, analistas]) => {
-        const g = document.createElement('optgroup'); g.label = 'Time ' + coord;
-        analistas.forEach(a => { const o=document.createElement('option'); o.value=a.nome; o.textContent=a.nome; g.appendChild(o); });
-        sel.appendChild(g);
+    ANALYSTS_CACHE.forEach(a => {
+        const o = document.createElement('option'); o.value=a.nome; o.textContent=a.nome; sel.appendChild(o);
     });
 }
 
-async function onCoordChange() {
-    const coord = document.getElementById('dash-filter-coord').value;
-    const sel   = document.getElementById('dash-filter-analista');
-    sel.innerHTML = '<option value="todos">Todos os analistas</option>';
-    if (!ANALYSTS_CACHE.length) await loadAnalystsCache();
-    (coord==='todos' ? ANALYSTS_CACHE : ANALYSTS_CACHE.filter(a=>a.coordenador===coord)).forEach(a => {
-        const o = document.createElement('option'); o.value=a.nome; o.textContent=a.nome; sel.appendChild(o);
-    });
-    loadDashboard();
-}
+async function onCoordChange() { loadDashboard(); }
 
 function onPeriodoChange() {
     const val = document.getElementById('dash-filter-periodo').value;
@@ -779,7 +740,6 @@ async function showDashboard() {
 function closeDashboard() { document.getElementById('dashboard-modal').classList.add('hidden'); }
 
 async function loadDashboard() {
-    const coord   = document.getElementById('dash-filter-coord').value;
     const analista= document.getElementById('dash-filter-analista')?.value || 'todos';
     const periodo = document.getElementById('dash-filter-periodo').value;
     const inicio  = document.getElementById('dash-filter-inicio')?.value || '';
@@ -787,7 +747,7 @@ async function loadDashboard() {
     const loading = document.getElementById('dash-loading');
     loading.classList.remove('hidden');
     try {
-        let qs = `coordenador=${encodeURIComponent(coord)}&periodo=${periodo}&analista=${encodeURIComponent(analista)}`;
+        let qs = `periodo=${periodo}&analista=${encodeURIComponent(analista)}`;
         if (inicio) qs += `&data_inicio=${encodeURIComponent(inicio)}`;
         if (fim)    qs += `&data_fim=${encodeURIComponent(fim)}`;
         const res  = await fetch('/api/dashboard?' + qs);
@@ -858,29 +818,7 @@ function renderGestorDash({ reunioes, stats }) {
         <span class="text-xs font-black text-slate-600 w-12 text-right">${v} (${pct}%)</span></div>`;
     };
 
-    // Por coordenador
-    const coordCards = Object.entries(stats.porCoordenador).map(([nome,c]) => {
-        const isSimone = nome.includes('Simone');
-        const border = isSimone?'border-blue-500':'border-violet-500';
-        const badge  = isSimone?'bg-blue-100 text-blue-700':'bg-violet-100 text-violet-700';
-        return `<div class="glass-card p-8 border-t-4 ${border}">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="w-10 h-10 rounded-full ${badge.split(' ')[0]} flex items-center justify-center">
-                    <i data-lucide="user-circle" class="w-5 h-5 ${isSimone?'text-blue-600':'text-violet-600'}"></i>
-                </div>
-                <div>
-                    <p class="font-black text-sm text-slate-800">${nome}</p>
-                    <button onclick="abrirAnalysesCoord('${nome.replace(/'/g,"\\'")}');" class="text-[10px] text-blue-500 hover:text-blue-700 font-black underline underline-offset-2">${c.total} reuniões →</button>
-                </div>
-            </div>
-            <div class="grid grid-cols-4 gap-3">
-                <div class="text-center p-3 bg-slate-50 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase mb-1">Média CS</p><p class="text-2xl font-black ${sc(c.media_cs)}">${c.media_cs||'—'}</p></div>
-                <div class="text-center p-3 bg-emerald-50 rounded-2xl"><p class="text-[8px] font-black text-emerald-500 uppercase mb-1">Saudáveis</p><p class="text-2xl font-black text-emerald-600">${c.saudaveis}</p></div>
-                <div class="text-center p-3 bg-amber-50 rounded-2xl"><p class="text-[8px] font-black text-amber-500 uppercase mb-1">Em Risco</p><p class="text-2xl font-black text-amber-600">${c.risco}</p></div>
-                <div class="text-center p-3 bg-red-50 rounded-2xl"><p class="text-[8px] font-black text-red-400 uppercase mb-1">Críticos</p><p class="text-2xl font-black text-red-500">${c.criticos}</p></div>
-            </div>
-        </div>`;
-    }).join('');
+    const coordCards = '';
 
     // Pilares mais fracos do time
     const pt = stats.pilaresTime;
@@ -897,7 +835,7 @@ function renderGestorDash({ reunioes, stats }) {
         const medalColor = a.media>=4?'border-emerald-300':a.media>=3?'border-blue-300':'border-red-300';
         return `<div class="flex items-center gap-4 p-4 rounded-2xl border ${scBg(a.media)} hover:shadow-sm transition-all cursor-pointer" onclick="abrirAnalysesAnalista('${a.nome.replace(/'/g,"\\'")}')">
             <div class="w-8 h-8 rounded-full bg-white border-2 ${medalColor} flex items-center justify-center font-black text-sm text-slate-600">${i+1}</div>
-            <div class="flex-1"><p class="font-black text-sm text-slate-800">${a.nome}</p><p class="text-[10px] text-slate-400 font-bold">${a.coordenador} · ${a.total} reuniões</p></div>
+            <div class="flex-1"><p class="font-black text-sm text-slate-800">${a.nome}</p><p class="text-[10px] text-slate-400 font-bold">${a.total} reuniões</p></div>
             <div class="text-3xl font-black ${sc(a.media)} min-w-[50px] text-right">${a.media}</div>
         </div>`;
     }).join('');
@@ -911,7 +849,7 @@ function renderGestorDash({ reunioes, stats }) {
             <div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><i data-lucide="heart-pulse" class="w-4 h-4 text-emerald-400"></i> Saúde dos Clientes</h4><div class="space-y-3">${saudeItems.map(barRow).join('')}</div></div>
             <div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i> Risco de Churn</h4><div class="space-y-3">${churnItems.map(barRow).join('')}</div></div>
         </div>` +
-        `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">${coordCards}</div>` +
+
         `<div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-400"></i> Média dos Pilares no Período</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${pilarBars}</div></div>` +
         `<div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i> Ranking de Analistas</h4><div class="space-y-3">${ranking}</div></div>` +
         evolucaoChart;
@@ -937,7 +875,7 @@ async function loadAnalistaDash() {
     if (!nome) return;
     content.innerHTML = '<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando seu desempenho...</p></div>';
     try {
-        const res  = await fetch(`/api/dashboard?analista=${encodeURIComponent(nome)}&periodo=${periodo}&coordenador=todos`);
+        const res  = await fetch(`/api/dashboard?analista=${encodeURIComponent(nome)}&periodo=${periodo}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         renderAnalistaDash(nome, data);
@@ -1017,7 +955,7 @@ function renderAnalistaDash(nome, { reunioes, stats }) {
     <div class="glass-card p-8 bg-gradient-to-r from-[#002d72] to-blue-700 text-white flex flex-wrap items-center gap-6">
         <div class="w-16 h-16 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center text-2xl font-black flex-shrink-0">${nome.charAt(0)}</div>
         <div class="flex-1"><p class="text-blue-200 text-[10px] font-black uppercase tracking-widest mb-1">Seu Desempenho de CS</p>
-        <h3 class="text-2xl font-black">${nome}</h3><p class="text-blue-300 text-xs font-bold">${a.coordenador} · ${a.total} análise(s)</p></div>
+        <h3 class="text-2xl font-black">${nome}</h3><p class="text-blue-300 text-xs font-bold">${a.total} análise(s)</p></div>
         <div class="flex gap-6">
             <div class="text-center"><p class="text-blue-200 text-[9px] font-black uppercase tracking-widest mb-1">Média</p><p class="text-5xl font-black">${fmt(a.media)}</p><p class="text-blue-300 text-[10px]">/ 5.0</p></div>
             ${avgRec?`<div class="text-center"><p class="text-blue-200 text-[9px] font-black uppercase tracking-widest mb-1">Último Mês</p><p class="text-5xl font-black ${avgRec>=4?'text-emerald-300':avgRec>=3?'text-white':'text-red-300'}">${fmt(avgRec)}</p><p class="text-blue-300 text-[10px]">/ 5.0</p></div>`:''}
@@ -1046,7 +984,7 @@ async function loadGestaoPanel() {
     const content = document.getElementById('dash-content');
     content.innerHTML = '<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando...</p></div>';
     try {
-        const [aRes, rRes] = await Promise.all([fetch('/api/analysts?incluir_inativos=1'), fetch('/api/dashboard?coordenador=todos&periodo=todos&analista=todos')]);
+        const [aRes, rRes] = await Promise.all([fetch('/api/analysts?incluir_inativos=1'), fetch('/api/dashboard?periodo=todos&analista=todos')]);
         const analistas = await aRes.json(); const { reunioes } = await rRes.json();
         ANALYSTS_CACHE = analistas.filter(a=>a.ativo);
         _vendMap = {}; analistas.forEach(a=>{ _vendMap[a.id]=a; });
@@ -1060,11 +998,9 @@ function renderGestaoPanel(analistas, reunioes) {
     const content = document.getElementById('dash-content');
     const ativos   = analistas.filter(a=>a.ativo);
     const inativos = analistas.filter(a=>!a.ativo);
-    const byCoord = {}; ativos.forEach(a=>{ if(!byCoord[a.coordenador])byCoord[a.coordenador]=[]; byCoord[a.coordenador].push(a); });
     const sc = n => n>=4?'text-emerald-600':n>=3?'text-blue-600':'text-red-500';
 
-    const analistaRows = Object.entries(byCoord).map(([coord,lista]) => {
-        const isSimone=coord.includes('Simone'); const border=isSimone?'border-blue-500':'border-violet-500'; const badge=isSimone?'bg-blue-100 text-blue-700':'bg-violet-100 text-violet-700';
+    const analistaRows = [ativos].map(lista => {
         const rows = lista.map(a => {
             const count = reunioes.filter(r=>r.analista_nome&&r.analista_nome.toLowerCase().includes(a.nome.split(' ')[0].toLowerCase())).length;
             return `<div class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100">
@@ -1080,7 +1016,7 @@ function renderGestaoPanel(analistas, reunioes) {
                 </div>
             </div>`;
         }).join('');
-        return `<div class="glass-card p-6 border-t-4 ${border}"><p class="text-[9px] font-black uppercase tracking-widest mb-4"><span class="px-3 py-1 rounded-full ${badge}">${coord}</span></p><div class="space-y-2">${rows}</div></div>`;
+        return `<div class="glass-card p-6"><div class="space-y-2">${rows}</div></div>`;
     }).join('');
 
     content.innerHTML = `
@@ -1092,8 +1028,7 @@ function renderGestaoPanel(analistas, reunioes) {
         <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4 text-emerald-500"></i> Cadastrar Analista</h4>
         <div class="flex flex-wrap gap-3 items-end">
             <div class="flex-1 min-w-[200px]"><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nome Completo</label><input id="novo-an-nome" type="text" placeholder="Ex: Ana Silva" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 ring-blue-300" /></div>
-            <div class="min-w-[200px]"><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Time</label>
-            <select id="novo-an-coord" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold bg-white focus:outline-none focus:ring-2 ring-blue-300"><option value="">— Selecione —</option><option value="Simone Rangel">Simone Rangel</option><option value="Jonathan Dornelas">Jonathan Dornelas</option></select></div>
+
             <button onclick="cadastrarAnalista()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-md"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar</button>
         </div>
         <p id="novo-an-msg" class="text-[11px] font-bold mt-3 hidden"></p>
@@ -1116,11 +1051,10 @@ function gestaoClick(e) {
 
 async function cadastrarAnalista() {
     const nome=document.getElementById('novo-an-nome').value.trim();
-    const coordenador=document.getElementById('novo-an-coord').value;
     const msg=document.getElementById('novo-an-msg');
-    if (!nome||!coordenador) { msg.className='text-[11px] font-bold mt-3 text-red-500'; msg.textContent='⚠️ Preencha nome e time.'; msg.classList.remove('hidden'); return; }
+    if (!nome) { msg.className='text-[11px] font-bold mt-3 text-red-500'; msg.textContent='⚠️ Preencha o nome.'; msg.classList.remove('hidden'); return; }
     try {
-        const res=await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,coordenador})});
+        const res=await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome})});
         const d=await res.json(); if(!d.ok) throw new Error(d.error);
         msg.className='text-[11px] font-bold mt-3 text-emerald-600'; msg.textContent=(d.reativado?'♻️ Reativado: ':'✅ Cadastrado: ')+nome; msg.classList.remove('hidden');
         document.getElementById('novo-an-nome').value=''; document.getElementById('novo-an-coord').value='';
@@ -1155,8 +1089,7 @@ function abrirModalEditarAnalista(a) {
         <button id="eam-close" class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button></div>
         <div class="space-y-4">
             <div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nome</label><input id="edit-an-nome" type="text" value="${a.nome.replace(/"/g,'&quot;')}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 ring-blue-300" /></div>
-            <div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Time</label>
-            <select id="edit-an-coord" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold bg-white focus:outline-none focus:ring-2 ring-blue-300"><option value="Simone Rangel"${a.coordenador==='Simone Rangel'?' selected':''}>Simone Rangel</option><option value="Jonathan Dornelas"${a.coordenador==='Jonathan Dornelas'?' selected':''}>Jonathan Dornelas</option></select></div>
+
             <p id="edit-an-msg" class="text-[11px] font-bold hidden"></p>
             <button id="eam-save" class="w-full bg-blue-600 hover:bg-[#002d72] text-white py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all">Salvar</button>
         </div></div>`;
@@ -1164,9 +1097,9 @@ function abrirModalEditarAnalista(a) {
     document.getElementById('eam-close').addEventListener('click',()=>modal.remove());
     modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
     document.getElementById('eam-save').addEventListener('click', async ()=>{
-        const nome=document.getElementById('edit-an-nome').value.trim(), coordenador=document.getElementById('edit-an-coord').value, msg=document.getElementById('edit-an-msg');
+        const nome=document.getElementById('edit-an-nome').value.trim(), msg=document.getElementById('edit-an-msg');
         if(!nome){msg.className='text-[11px] font-bold text-red-500';msg.textContent='⚠️ Nome obrigatório.';msg.classList.remove('hidden');return;}
-        try{const res=await fetch('/api/analysts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:a.id,nome,coordenador})});const d=await res.json();if(!d.ok)throw new Error(d.error);msg.className='text-[11px] font-bold text-emerald-600';msg.textContent='✅ Atualizado!';msg.classList.remove('hidden');setTimeout(()=>{modal.remove();loadGestaoPanel();},800);}catch(err){msg.className='text-[11px] font-bold text-red-500';msg.textContent='❌ '+err.message;msg.classList.remove('hidden');}
+        try{const res=await fetch('/api/analysts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:a.id,nome})});const d=await res.json();if(!d.ok)throw new Error(d.error);msg.className='text-[11px] font-bold text-emerald-600';msg.textContent='✅ Atualizado!';msg.classList.remove('hidden');setTimeout(()=>{modal.remove();loadGestaoPanel();},800);}catch(err){msg.className='text-[11px] font-bold text-red-500';msg.textContent='❌ '+err.message;msg.classList.remove('hidden');}
     });
 }
 
@@ -1175,7 +1108,7 @@ function abrirModalInativos() {
     const old=document.getElementById('modal-inativos'); if(old) old.remove();
     const rows=inativos.map(a=>`<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
         <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-black text-slate-400 text-sm">${a.nome.charAt(0)}</div>
-        <div><p class="font-bold text-sm text-slate-500 line-through">${a.nome}</p><p class="text-[10px] text-slate-400">${a.coordenador}</p></div></div>
+        <div><p class="font-bold text-sm text-slate-500 line-through">${a.nome}</p></div></div>
         <button data-action="reativar" data-id="${a.id}" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"><i data-lucide="user-plus" class="w-3 h-3"></i> Reativar</button>
     </div>`).join('');
     const modal=document.createElement('div'); modal.id='modal-inativos'; modal.className='fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4';
@@ -1185,7 +1118,7 @@ function abrirModalInativos() {
     modal.addEventListener('click',async e=>{
         const btn=e.target.closest('[data-action="reativar"]'); if(!btn) { if(e.target===modal)modal.remove(); return; }
         const a=_vendMap[btn.dataset.id]; if(!a||!confirm(`Reativar ${a.nome}?`)) return;
-        try{const res=await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:a.nome,coordenador:a.coordenador})});const d=await res.json();if(!d.ok)throw new Error(d.error);modal.remove();loadGestaoPanel();}catch(err){alert('Erro: '+err.message);}
+        try{const res=await fetch('/api/analysts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:a.nome})});const d=await res.json();if(!d.ok)throw new Error(d.error);modal.remove();loadGestaoPanel();}catch(err){alert('Erro: '+err.message);}
     });
 }
 
@@ -1197,7 +1130,7 @@ async function loadHistorico(page) {
     const content=document.getElementById('dash-content');
     content.innerHTML='<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando histórico...</p></div>';
     try {
-        const [rRes,aRes]=await Promise.all([fetch('/api/dashboard?coordenador=todos&periodo=todos&analista=todos'),fetch('/api/analysts')]);
+        const [rRes,aRes]=await Promise.all([fetch('/api/dashboard?periodo=todos&analista=todos'),fetch('/api/analysts')]);
         const {reunioes}=await rRes.json(); _histAtivos=await aRes.json();
         renderHistorico(reunioes||[]);
     } catch(err) { document.getElementById('dash-content').innerHTML=`<div class="text-center py-20 text-red-400 font-bold">${err.message}</div>`; }
@@ -1208,10 +1141,9 @@ function renderHistorico(reunioes) {
     const sc=n=>n>=4?'text-emerald-600':n>=3?'text-blue-600':'text-red-500';
     const scBg=n=>n>=4?'bg-emerald-50':n>=3?'bg-blue-50':'bg-red-50';
     const searchVal=(document.getElementById('hist-search')?.value||'').toLowerCase();
-    const coordFilt=document.getElementById('hist-filter-coord')?.value||'todos';
     const anFilt=document.getElementById('hist-filter-an')?.value||'todos';
     let filtered=reunioes;
-    if(coordFilt!=='todos') filtered=filtered.filter(r=>r.coordenador===coordFilt);
+
     if(anFilt!=='todos')    filtered=filtered.filter(r=>r.analista_nome===anFilt);
     if(searchVal) filtered=filtered.filter(r=>(r.analista_nome||'').toLowerCase().includes(searchVal)||(r.cliente_nome||'').toLowerCase().includes(searchVal));
     const total=filtered.length, start=_histPage*HIST_LIMIT, page=filtered.slice(start,start+HIST_LIMIT), pages=Math.ceil(total/HIST_LIMIT);
@@ -1221,7 +1153,7 @@ function renderHistorico(reunioes) {
         <div class="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-100 hover:shadow-sm transition-all">
             <div class="w-9 h-9 rounded-full ${scBg(r.media_final)} flex items-center justify-center font-black text-xs ${sc(r.media_final)} flex-shrink-0">${r.media_final||'?'}</div>
             <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-0.5"><p class="text-[9px] font-black text-slate-400">${new Date(r.created_at).toLocaleDateString('pt-BR')}</p><span class="text-[8px] px-2 py-0.5 bg-slate-100 rounded-full font-bold text-slate-400">${r.coordenador||''}</span></div>
+                <div class="flex items-center gap-2 mb-0.5"><p class="text-[9px] font-black text-slate-400">${new Date(r.created_at).toLocaleDateString('pt-BR')}</p></div>
                 <p class="font-black text-sm text-slate-800 truncate">${r.analista_nome||'Não identificado'}</p>
                 <p class="text-[10px] text-slate-400 truncate">${r.cliente_nome||'—'}</p>
             </div>
@@ -1241,7 +1173,7 @@ function renderHistorico(reunioes) {
         <div class="flex flex-wrap gap-3 items-center mb-6">
             <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mr-2"><i data-lucide="clock" class="w-4 h-4"></i> Histórico de Análises</h4>
             <input id="hist-search" type="text" placeholder="Buscar analista, cliente..." oninput="refilterHistorico(${JSON.stringify(reunioes).replace(/</g,'\u003c')})" class="flex-1 min-w-[160px] border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 ring-blue-300" />
-            <select id="hist-filter-coord" onchange="refilterHistorico(${JSON.stringify(reunioes).replace(/</g,'\u003c')})" class="text-xs font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none"><option value="todos">Todos os times</option><option value="Simone Rangel">Simone Rangel</option><option value="Jonathan Dornelas">Jonathan Dornelas</option></select>
+
             <select id="hist-filter-an" onchange="refilterHistorico(${JSON.stringify(reunioes).replace(/</g,'\u003c')})" class="text-xs font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none"><option value="todos">Todos os analistas</option>${anOptions}</select>
         </div>
         <div class="space-y-2" id="hist-rows">${rows||'<p class="text-slate-300 text-sm text-center py-8">Nenhum registro encontrado.</p>'}</div>
@@ -1262,8 +1194,8 @@ function refilterHistorico(reunioes){_histPage=0;renderHistorico(reunioes);}
 function histNavPage(dir){_histPage+=dir;loadHistorico();}
 
 // ─── Análises por coordenador / analista ──────────────────────────────────────
-async function abrirAnalysesCoord(coordenador) { _abrirListaModal('coordenador='+encodeURIComponent(coordenador)+'&periodo=todos&analista=todos', 'Time '+coordenador); }
-async function abrirAnalysesAnalista(nome) { _abrirListaModal('analista='+encodeURIComponent(nome)+'&periodo=todos&coordenador=todos', nome); }
+
+async function abrirAnalysesAnalista(nome) { _abrirListaModal('analista='+encodeURIComponent(nome)+'&periodo=todos', nome); }
 
 async function _abrirListaModal(qs, titulo) {
     const old=document.getElementById('modal-lista'); if(old) old.remove();
@@ -1307,8 +1239,8 @@ async function abrirAnaliseCompleta(reuniaoId) {
     document.body.appendChild(modal); lucide.createIcons();
     document.getElementById('maf-back').addEventListener('click',()=>modal.remove());
     try {
-        const res=await fetch('/api/dashboard?coordenador=todos&periodo=todos&analista=todos');
-        const data=await res.json(); const r=(data.reunioes||[]).find(x=>x.id==reuniaoId);
+        const res=await fetch('/api/dashboard?periodo=todos&analista=todos');
+        const data=await res.json(); const r=(data.reunioes||[]).find(x=>x.id===reuniaoId);
         if(!r) throw new Error('Análise não encontrada.');
         const analise=r.analise_json||{}; if(!analise.media_final) throw new Error('Dados incompletos.');
         document.getElementById('maf-title').textContent=(r.analista_nome||'—')+' · '+new Date(r.created_at).toLocaleDateString('pt-BR');
@@ -1330,7 +1262,7 @@ function renderAnaliseModal(data, reuniao) {
     <div class="flex flex-wrap items-center gap-4 p-5 bg-slate-50 rounded-[2rem] border border-slate-200">
         <div class="w-12 h-12 rounded-full bg-[#002d72] flex items-center justify-center font-black text-white text-xl flex-shrink-0">${(reuniao.analista_nome||'?').charAt(0)}</div>
         <div class="flex-1"><p class="font-black text-slate-800 text-lg">${reuniao.analista_nome||'Não identificado'}</p>
-        <p class="text-[10px] text-slate-400 font-bold">${reuniao.coordenador||''} · Cliente: ${reuniao.cliente_nome||'—'} · ${new Date(reuniao.created_at).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</p></div>
+        <p class="text-[10px] text-slate-400 font-bold">Cliente: ${reuniao.cliente_nome||'—'} · ${new Date(reuniao.created_at).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</p></div>
         <span class="px-4 py-2 rounded-full text-[10px] font-black uppercase ${heroClass}">${heroLabel}</span>
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
