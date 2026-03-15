@@ -35,7 +35,8 @@ export default async function handler(req, res) {
         });
         const user = await userRes.json();
 
-        const domain = user.email.toLowerCase().split('@')[1];
+        const emailParts = (user.email || '').toLowerCase().split('@');
+        const domain = emailParts.length === 2 ? emailParts[1] : '';
         if (domain !== 'nibo.com.br') {
             return res.redirect(`/?auth_error=dominio_invalido&email=${encodeURIComponent(user.email)}`);
         }

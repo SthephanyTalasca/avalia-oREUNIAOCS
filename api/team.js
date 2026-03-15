@@ -1,4 +1,4 @@
-// api/analysts.js — CS Auditor
+// api/team.js — CS Auditor
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 
@@ -10,7 +10,7 @@ function getSession(req) {
         if (s.exp && Date.now() > s.exp) return null;
         if (s.email.toLowerCase().split('@')[1] !== 'nibo.com.br') return null;
         return s;
-    } catch { return null; }
+    } catch (e) { console.error('getSession error:', e); return null; }
 }
 
 const H = (extra = {}) => ({
