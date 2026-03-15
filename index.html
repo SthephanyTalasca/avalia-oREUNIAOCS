@@ -46,18 +46,19 @@
                 <input type="text" id="cc-name-input" placeholder="Analista de CS"
                     class="pl-10 pr-5 py-2 rounded-xl bg-blue-900/40 border border-blue-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-blue-300 transition-all" />
             </div>
-            <div class="relative">
-                <i data-lucide="shield" class="absolute left-3 top-2.5 w-4 h-4 text-amber-300"></i>
-                <select id="coordinator-select" 
-                    class="pl-10 pr-5 py-2 rounded-xl bg-amber-900/40 border border-amber-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-amber-300 transition-all cursor-pointer">
-                    <option value="">Selecione Coordenador...</option>
-                    <option value="Marina Silva">Marina Silva</option>
-                    <option value="Rafael Costa">Rafael Costa</option>
-                    <option value="Beatriz Oliveira">Beatriz Oliveira</option>
-                    <option value="Lucas Ferreira">Lucas Ferreira</option>
-                    <option value="Customizado">Customizado</option>
-                </select>
-            </div>
+    
+<div class="relative">
+       <i data-lucide="shield" class="absolute left-3 top-2.5 w-4 h-4 text-amber-300"></i>
+      <select id="coordinator-select" 
+        class="pl-10 pr-5 py-2 rounded-xl bg-amber-900/40 border border-amber-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-amber-300 transition-all cursor-pointer">
+        <option value="">Selecione Coordenador...</option>
+        <option value="Sayuri">Sayuri</option>
+        <option value="Tayanara">Tayanara</option>
+        <option value="Túlio">Túlio</option>
+        <option value="Michel">Michel</option>
+        <option value="Jéssica">Jéssica</option>
+    </select>
+</div>
             <button id="history-btn" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-900/40 border border-purple-400/50 text-purple-200 text-sm hover:border-purple-300 transition-all" title="Ver histórico de avaliações">
                 <i data-lucide="history" class="w-4 h-4"></i>
                 <span class="hidden md:inline">Histórico</span>
@@ -781,6 +782,24 @@ document.getElementById('save-report-btn').addEventListener('click', () => {
 
 document.getElementById('export-pdf-btn').addEventListener('click', () => {
     alert('Funcionalidade de exportar PDF em desenvolvimento. Você pode usar Ctrl+P para imprimir como PDF.');
+    async function loadCoordinators() {
+    const response = await fetch('/api/coordinators.js');
+    const coordinators = await response.json();
+    const select = document.getElementById('coordinator-select');
+    
+    // Limpa e recarrega
+    while (select.options.length > 1) select.remove(1);
+    
+    coordinators.forEach(coord => {
+        const option = document.createElement('option');
+        option.value = coord.nome;
+        option.textContent = coord.nome;
+        select.appendChild(option);
+    });
+}
+
+// Chama quando página carrega
+loadCoordinators();
 });
 </script>
 
