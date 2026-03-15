@@ -351,6 +351,47 @@ function loadHistoryModal() {
         </div>
     `).join('');
     lucide.createIcons();
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+// CARREGAR COORDENADORES DINAMICAMENTE
+// ═══════════════════════════════════════════════════════════════════════════════
+// Cole este código logo após: lucide.createIcons();
+
+async function loadCoordinators() {
+    try {
+        const response = await fetch('/api/coordinators.js');
+        if (!response.ok) {
+            console.warn('Não foi possível carregar coordenadores');
+            return;
+        }
+        
+        const coordinators = await response.json();
+        const select = document.getElementById('coordinator-select');
+        
+        // Limpa as opções hardcoded (mantém o placeholder)
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
+        
+        // Adiciona os coordenadores do banco
+        coordinators.forEach(coord => {
+            const option = document.createElement('option');
+            option.value = coord.nome;
+            option.textContent = coord.nome;
+            select.appendChild(option);
+        });
+        
+        console.log('✅ Coordenadores carregados:', coordinators.map(c => c.nome));
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar coordenadores:', error);
+    }
+}
+
+// Chama a função quando a página carrega
+document.addEventListener('DOMContentLoaded', loadCoordinators);
+// Ou se lucide.createIcons() for chamado no final do script:
+loadCoordinators();
 }
 
 function openHistoryDetail(id) {
