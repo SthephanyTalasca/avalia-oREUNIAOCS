@@ -30,13 +30,59 @@ const ALL_PILLARS = [
   ['universo_contabil', 'Universo Contábil'],
 ];
 
+// ─── Extração robusta de texto de qualquer resposta ─────────────────────────
+function extractText(response) {
+  // console.log('📦 Response type:', typeof response, Array.isArray(response));
+  
+  // Se for array de objetos (content array)
+  if (Array.isArray(response)) {
+    const textBlock = response.find(c => c?.type === 'text' || c?.text);
+    if (textBlock) {
+      if (typeof textBlock.text === 'string') return textBlock.text;
+      if (typeof textBlock === 'string') return textBlock;
+    }
+  }
+  
+  // Se for objeto com content
+  if (response?.content) {
+    if (Array.isArray(response.content)) {
+      const textBlock = response.content.find(c => c?.type === 'text' || c?.text);
+      if (textBlock?.text) return textBlock.text;
+    } else if (typeof response.content === 'string') {
+      return response.content;
+    }
+  }
+  
+  // Se for string direto
+  if (typeof response === 'string') return response;
+  
+  // Se tiver .text
+  if (typeof response?.text === 'string') return response.text;
+  
+  // Se tiver .candidates (formato novo do Gemini)
+  if (Array.isArray(response?.candidates)) {
+    const candidate = response.candidates[0];
+    if (candidate?.content?.parts?.[0]?.text) {
+      return candidate.content.parts[0].text;
+    }
+  }
+  
+  // Último recurso
+  const str = JSON.stringify(response);
+  console.warn('⚠️  Conversão para string:', str.substring(0, 200));
+  return str;
+}
+
 // ─── Repara JSON truncado ─────────────────────────────────────────────────
 function repairJson(raw) {
-  let s = (raw || '').trimEnd();
+  if (!raw || typeof raw !== 'string') return '{}';
+  
+  let s = raw.trimEnd();
   s = s.replace(/,\s*$/, '');
   s = s.replace(/"[^"]*$/, '');
   s = s.replace(/:\s*$/, '');
   s = s.replace(/,\s*$/, '');
+  
   let braces = 0, brackets = 0, inStr = false, esc = false;
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];
@@ -55,47 +101,24 @@ function repairJson(raw) {
 }
 
 function safeParse(text, label) {
+  if (!text) throw new Error(`${label}: texto vazio`);
+  
   try { 
     return JSON.parse(text); 
   } catch (e1) {
+    console.warn(`⚠️  ${label} JSON inválido, tentando reparar...`);
     try {
       const repaired = repairJson(text);
       const result = JSON.parse(repaired);
       console.log(`✅ ${label} reparado com sucesso`);
       return result;
     } catch (e2) {
-      console.error(`❌ ${label} falhou:`, (text || '').substring(0, 200));
+      console.error(`❌ ${label} falhou mesmo após repair`);
+      console.error('Texto original:', text.substring(0, 300));
+      console.error('Erro:', e2.message);
       throw new Error(`JSON_PARSE_FAILED: ${label}`);
     }
   }
-}
-
-// ─── Extrair texto da resposta (funciona com diferentes formatos) ──────────
-function extractText(response) {
-  // Se tiver content array
-  if (response?.content && Array.isArray(response.content)) {
-    const textBlock = response.content.find(c => c.type === 'text');
-    if (textBlock?.text) return textBlock.text;
-  }
-  
-  // Se tiver text direto
-  if (typeof response === 'string') return response;
-  if (typeof response?.text === 'string') return response.text;
-  
-  // Se for o objeto inteiro
-  return JSON.stringify(response);
-}
-
-function makeTextSchema(pairs) {
-  const props = {};
-  const req   = [];
-  pairs.forEach(function(p) {
-    const k = p[0];
-    props['porque_'   + k] = { type: Type.STRING };
-    props['melhoria_' + k] = { type: Type.STRING };
-    req.push('porque_' + k, 'melhoria_' + k);
-  });
-  return { type: Type.OBJECT, properties: props, required: req };
 }
 
 async function withRetry(fn, label, attempts = 3) {
@@ -115,89 +138,80 @@ async function withRetry(fn, label, attempts = 3) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CHAMADA 1: NOTAS NUMÉRICAS
+// CHAMADA 1: NOTAS NUMÉRICAS (SEM SCHEMA JSON - TEXT MODE)
 // ═══════════════════════════════════════════════════════════════════════════════
 async function getNumbers(transcript) {
-  const systemPrompt = `Você é um auditor de CS expert do Nibo. Avalie APENAS o que está na transcrição.
+  const systemPrompt = `Você é um auditor de CS expert do Nibo. Avalie a transcrição e retorne JSON válido.
+
+RESPONDA COM JSON PURO (sem markdown, sem backticks):
+{
+  "media_final": X.X,
+  "tempo_fala_cs_pct": 0-100,
+  "tempo_fala_cliente_pct": 0-100,
+  "nota_consultividade": 1-5 ou -1,
+  "nota_escuta_ativa": 1-5 ou -1,
+  "nota_jornada_cliente": 1-5 ou -1,
+  "nota_encantamento": 1-5 ou -1,
+  "nota_objecoes": 1-5 ou -1,
+  "nota_rapport": 1-5 ou -1,
+  "nota_autoridade": 1-5 ou -1,
+  "nota_postura": 1-5 ou -1,
+  "nota_gestao_tempo": 1-5 ou -1,
+  "nota_contextualizacao": 1-5 ou -1,
+  "nota_clareza": 1-5 ou -1,
+  "nota_objetividade": 1-5 ou -1,
+  "nota_flexibilidade": 1-5 ou -1,
+  "nota_dominio_produto": 1-5 ou -1,
+  "nota_dominio_negocio": 1-5 ou -1,
+  "nota_ecossistema_nibo": 1-5 ou -1,
+  "nota_universo_contabil": 1-5 ou -1,
+  "ck_prazo": true/false,
+  "ck_dever_casa": true/false,
+  "ck_certificado": true/false,
+  "ck_proximo_passo": true/false,
+  "ck_dor_vendas": true/false,
+  "ck_suporte": true/false
+}
 
 REGRAS:
-- Se não houver evidência = -1
-- Notas: 1=Péssimo, 2=Fraco, 3=Adequado, 4=Bom, 5=Excelente
+- -1 = sem evidência na transcrição
+- 1-5 = notas reais
+- media_final = média dos valores 1-5 (ignorar -1)
 - DETERMINÍSTICO: mesma transcrição = mesmas notas
-- Arredonde para inteiro (1-5)
+- Arredonde notas para inteiro (1-5)
 
 CRITÉRIOS POR PILAR:
-- Consultividade: Recomenda soluções? (5=sim, assertivas)
-- Escuta Ativa: Pergunta? Cliente fala 40%+? (5=sim em ambos)
-- Jornada do Cliente: Próximos passos claros? (5=roadmap + datas)
-- Encantamento: Surpresa positiva? (5=sim, oferece valor extra)
-- Objeções/Bugs: Aborda problemas? (5=identifica 3+ pontos)
+- Consultividade: Recomenda soluções? (5=assertivo, 1=apenas responde)
+- Escuta Ativa: Pergunta aberta? Cliente fala? (5=40%+ cliente, -1=praticamente não fala)
+- Jornada do Cliente: Próximos passos claros? (5=roadmap com datas)
+- Encantamento: Oferece valor extra? (5=sim, surpresa positiva)
+- Objeções/Bugs: Aborda problemas? (5=identifica 3+)
 - Rapport: Tom amigável, empatia? (5=conexão clara)
-- Autoridade: Demonstra expertise? (5=casos, dados, best practices)
-- Postura: Profissional, organizado? (5=muito bem estruturado)
-- Gestão de Tempo: Respeita horário? (5=cumpre tudo no prazo)
+- Autoridade: Demonstra expertise? (5=cases, dados, best practices)
+- Postura: Profissional, organizado? (5=muito estruturado)
+- Gestão de Tempo: Respeita horário? (5=cumpre tudo)
 - Contextualização: Conhece cliente? (5=referencia dados específicos)
 - Clareza: Explica bem? (5=muito claro, sem jargão)
-- Objetividade: Vai ao ponto? (5=foca problemas, sem desvios)
-- Flexibilidade: Adapta abordagem? (5=pivota conforme necessário)
+- Objetividade: Vai ao ponto? (5=foca problemas)
+- Flexibilidade: Adapta? (5=pivota conforme necessário)
 - Domínio de Produto: Conhece Nibo? (5=cita features com precisão)
-- Domínio de Negócio: Conhece contabilidade? (5=domínio completo)
-- Ecossistema Nibo: Conhece integrações? (5=recomenda as certas)
-- Universo Contábil: Conhece classificações? (5=domínio total)`;
+- Domínio de Negócio: Conhece contabilidade? (5=domínio total)
+- Ecossistema Nibo: Conhece integrações? (5=recomenda certas)
+- Universo Contábil: Conhece classificações? (5=domínio completo)`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: [{ role: 'user', parts: [{ text: transcript }] }],
     generationConfig: {
-      responseMimeType: 'application/json',
       temperature: 0.1,
-      maxOutputTokens: 8192,
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          media_final:            { type: Type.NUMBER },
-          tempo_fala_cs_pct:      { type: Type.NUMBER },
-          tempo_fala_cliente_pct: { type: Type.NUMBER },
-          nota_consultividade:    { type: Type.NUMBER },
-          nota_escuta_ativa:      { type: Type.NUMBER },
-          nota_jornada_cliente:   { type: Type.NUMBER },
-          nota_encantamento:      { type: Type.NUMBER },
-          nota_objecoes:          { type: Type.NUMBER },
-          nota_rapport:           { type: Type.NUMBER },
-          nota_autoridade:        { type: Type.NUMBER },
-          nota_postura:           { type: Type.NUMBER },
-          nota_gestao_tempo:      { type: Type.NUMBER },
-          nota_contextualizacao:  { type: Type.NUMBER },
-          nota_clareza:           { type: Type.NUMBER },
-          nota_objetividade:      { type: Type.NUMBER },
-          nota_flexibilidade:     { type: Type.NUMBER },
-          nota_dominio_produto:   { type: Type.NUMBER },
-          nota_dominio_negocio:   { type: Type.NUMBER },
-          nota_ecossistema_nibo:  { type: Type.NUMBER },
-          nota_universo_contabil: { type: Type.NUMBER },
-          ck_prazo:               { type: Type.BOOLEAN },
-          ck_dever_casa:          { type: Type.BOOLEAN },
-          ck_certificado:         { type: Type.BOOLEAN },
-          ck_proximo_passo:       { type: Type.BOOLEAN },
-          ck_dor_vendas:          { type: Type.BOOLEAN },
-          ck_suporte:             { type: Type.BOOLEAN },
-        },
-        required: [
-          'media_final', 'tempo_fala_cs_pct', 'tempo_fala_cliente_pct',
-          'nota_consultividade', 'nota_escuta_ativa', 'nota_jornada_cliente',
-          'nota_encantamento', 'nota_objecoes', 'nota_rapport', 'nota_autoridade',
-          'nota_postura', 'nota_gestao_tempo', 'nota_contextualizacao', 'nota_clareza',
-          'nota_objetividade', 'nota_flexibilidade', 'nota_dominio_produto',
-          'nota_dominio_negocio', 'nota_ecossistema_nibo', 'nota_universo_contabil',
-          'ck_prazo', 'ck_dever_casa', 'ck_certificado',
-          'ck_proximo_passo', 'ck_dor_vendas', 'ck_suporte',
-        ],
-      },
+      maxOutputTokens: 4096,
     },
     systemInstruction: systemPrompt,
   });
 
   const text = extractText(res);
+  console.log('📦 Resposta bruta getNumbers (primeiros 300 chars):', text.substring(0, 300));
+  
   const parsed = safeParse(text, 'getNumbers');
 
   // Converte -1 para null
@@ -212,9 +226,13 @@ CRITÉRIOS POR PILAR:
     let n = parsed['nota_' + k];
     if (n !== null && n !== undefined) {
       n = Number(n);
-      if (n < 1) n = 1;
-      if (n > 5) n = 5;
-      parsed['nota_' + k] = Math.round(n);
+      if (isNaN(n)) n = null;
+      else {
+        if (n < 1) n = 1;
+        if (n > 5) n = 5;
+        n = Math.round(n);
+      }
+      parsed['nota_' + k] = n;
     }
   });
 
@@ -222,12 +240,12 @@ CRITÉRIOS POR PILAR:
   parsed.tempo_fala_cliente = (parsed.tempo_fala_cliente_pct || 50) + '%';
 
   parsed.checklist_cs = {
-    definiu_prazo_implementacao:  parsed.ck_prazo         || false,
-    alinhou_dever_de_casa:        parsed.ck_dever_casa    || false,
-    validou_certificado_digital:  parsed.ck_certificado   || false,
-    agendou_proximo_passo:        parsed.ck_proximo_passo || false,
-    conectou_com_dor_vendas:      parsed.ck_dor_vendas    || false,
-    explicou_canal_suporte:       parsed.ck_suporte       || false,
+    definiu_prazo_implementacao:  Boolean(parsed.ck_prazo),
+    alinhou_dever_de_casa:        Boolean(parsed.ck_dever_casa),
+    validou_certificado_digital:  Boolean(parsed.ck_certificado),
+    agendou_proximo_passo:        Boolean(parsed.ck_proximo_passo),
+    conectou_com_dor_vendas:      Boolean(parsed.ck_dor_vendas),
+    explicou_canal_suporte:       Boolean(parsed.ck_suporte),
   };
 
   return parsed;
@@ -240,34 +258,39 @@ async function getMeta(transcript, numbers) {
     .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
     .join(', ');
 
+  const prompt = `Analise esta transcrição. Notas já obtidas: ${notasStr}.
+
+Retorne JSON PURO:
+{
+  "resumo_executivo": "1 frase sobre o onboarding",
+  "saude_cliente": "1 frase sobre saúde do cliente",
+  "risco_churn": "1 frase sobre risco de churn",
+  "sistemas_citados": ["sistema1", "sistema2"],
+  "pontos_fortes": ["ponto1", "ponto2"],
+  "pontos_atencao": ["atenção1", "atenção2"]
+}
+
+Requisitos:
+- pontos_fortes e pontos_atencao: máx 4 itens cada, frases curtas
+- sistemas_citados: APENAS ferramentas mencionadas explicitamente
+- resumo/saude/churn: 1 frase concisa cada`;
+
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: [{ role: 'user', parts: [{ text: transcript }] }],
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
-      responseMimeType: 'application/json',
       temperature: 0.2,
       maxOutputTokens: 2048,
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          resumo_executivo: { type: Type.STRING },
-          saude_cliente:    { type: Type.STRING },
-          risco_churn:      { type: Type.STRING },
-          sistemas_citados: { type: Type.ARRAY, items: { type: Type.STRING } },
-          pontos_fortes:    { type: Type.ARRAY, items: { type: Type.STRING } },
-          pontos_atencao:   { type: Type.ARRAY, items: { type: Type.STRING } },
-        },
-        required: ['resumo_executivo', 'saude_cliente', 'risco_churn', 'sistemas_citados', 'pontos_fortes', 'pontos_atencao'],
-      },
     },
-    systemInstruction: `Notas: ${notasStr}. Retorne JSON. resumo=1 frase. saude/churn=1 frase. sistemas=lista. fortes/atencao=máx 4 itens curtos.`,
+    systemInstruction: 'Retorne APENAS JSON válido. Sem markdown, sem backticks, sem explicações. JSON puro.',
   });
 
   const text = extractText(res);
+  console.log('📦 Resposta bruta getMeta (primeiros 300 chars):', text.substring(0, 300));
   return safeParse(text, 'getMeta');
 }
 
-// ─── CHAMADA 3A: Justificativas 1-9 ────────────────────────────────────────
+// ─── CHAMADA 3: Justificativas (pilares 1-9) ──────────────────────────────
 async function getTextsA(transcript, numbers) {
   const group = ALL_PILLARS.slice(0, 9);
   const notasStr = group
@@ -275,23 +298,37 @@ async function getTextsA(transcript, numbers) {
     .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
     .join(', ');
 
+  const prompt = `Justifique as notas. Notas: ${notasStr}.
+
+Retorne JSON PURO com porque_ e melhoria_ para cada pilar:
+{
+  "porque_consultividade": "...",
+  "melhoria_consultividade": "...",
+  "porque_escuta_ativa": "...",
+  "melhoria_escuta_ativa": "...",
+  ... (repita para todos os 9 pilares)
+}
+
+Regras:
+- Se -1 (sem evidência): porque="Sem evidência na transcrição." melhoria=""
+- Se tem nota: porque=1-2 frases (fato objetivo). melhoria=1 frase (o que faltou para 5, ou "Excelência atingida.")`;
+
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: [{ role: 'user', parts: [{ text: transcript }] }],
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
-      responseMimeType: 'application/json',
       temperature: 0.1,
       maxOutputTokens: 3000,
-      responseSchema: makeTextSchema(group),
     },
-    systemInstruction: `Notas: ${notasStr}. Para sem evidência: porque="Sem evidência na transcrição." melhoria="". Para com evidência: porque=1-2 frases (fato objetivo). melhoria=1 frase (o que faltou para 5, ou "Excelência atingida.").`,
+    systemInstruction: 'Retorne APENAS JSON válido. Sem markdown, sem backticks. JSON puro.',
   });
 
   const text = extractText(res);
+  console.log('📦 Resposta bruta getTextsA (primeiros 300 chars):', text.substring(0, 300));
   return safeParse(text, 'getTextsA');
 }
 
-// ─── CHAMADA 3B: Justificativas 10-17 ───────────────────────────────────────
+// ─── CHAMADA 4: Justificativas (pilares 10-17) ────────────────────────────
 async function getTextsB(transcript, numbers) {
   const group = ALL_PILLARS.slice(9);
   const notasStr = group
@@ -299,23 +336,35 @@ async function getTextsB(transcript, numbers) {
     .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
     .join(', ');
 
+  const prompt = `Justifique as notas. Notas: ${notasStr}.
+
+Retorne JSON PURO:
+{
+  "porque_contextualizacao": "...",
+  "melhoria_contextualizacao": "...",
+  ... (repita para os 8 pilares restantes)
+}
+
+Regras:
+- Se -1: porque="Sem evidência na transcrição." melhoria=""
+- Se tem nota: porque=1-2 frases (fato objetivo). melhoria=1 frase`;
+
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: [{ role: 'user', parts: [{ text: transcript }] }],
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
-      responseMimeType: 'application/json',
       temperature: 0.1,
       maxOutputTokens: 3000,
-      responseSchema: makeTextSchema(group),
     },
-    systemInstruction: `Notas: ${notasStr}. Para sem evidência: porque="Sem evidência na transcrição." melhoria="". Para com evidência: porque=1-2 frases (fato objetivo). melhoria=1 frase (o que faltou para 5, ou "Excelência atingida.").`,
+    systemInstruction: 'Retorne APENAS JSON válido. JSON puro, sem markdown.',
   });
 
   const text = extractText(res);
+  console.log('📦 Resposta bruta getTextsB (primeiros 300 chars):', text.substring(0, 300));
   return safeParse(text, 'getTextsB');
 }
 
-// ─── CHAMADA 4: Relatório ──────────────────────────────────────────────────
+// ─── CHAMADA 5: Relatório ─────────────────────────────────────────────────
 async function getRelatorio(numbers, meta, texts, coordinator) {
   const linhas = ALL_PILLARS.map(p => {
     const k    = p[0];
@@ -328,7 +377,27 @@ async function getRelatorio(numbers, meta, texts, coordinator) {
   }).filter(Boolean).join('\n');
 
   const coordinatorLine = coordinator ? `Coordenador: **${coordinator}**\n\n` : '';
-  const prompt = `Feedback de CS. ${coordinatorLine}NOTAS:\n${linhas}\n\nMédia: ${numbers.media_final}/5 | Saúde: ${meta.saude_cliente} | Churn: ${meta.risco_churn}\n\n## O que fez bem\n## O que melhorar\n## O que falar no 1:1\n## Plano de ação`;
+  const prompt = `FEEDBACK DE CS
+
+${coordinatorLine}NOTAS:
+${linhas}
+
+Média: ${numbers.media_final}/5
+Saúde: ${meta.saude_cliente}
+Churn: ${meta.risco_churn}
+
+Fortes: ${(meta.pontos_fortes || []).join('; ')}
+Atenção: ${(meta.pontos_atencao || []).join('; ')}
+
+Estruture o feedback assim:
+
+## O que fez bem
+
+## O que melhorar
+
+## O que falar no 1:1
+
+## Plano de ação`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -337,7 +406,7 @@ async function getRelatorio(numbers, meta, texts, coordinator) {
       temperature: 0.2,
       maxOutputTokens: 4096,
     },
-    systemInstruction: `Coordenador CS do Nibo. Markdown puro, direto. "O que falar": frases prontas. "Plano": máx 3 prioridades.`,
+    systemInstruction: 'Coordenador sênior de CS do Nibo. Markdown puro. "O que falar": frases prontas. "Plano": máx 3 prioridades.',
   });
 
   return extractText(res);
@@ -358,10 +427,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('📝 Analisando transcrição...');
+    console.log('📝 Iniciando análise...');
     
     const numbers = await withRetry(() => getNumbers(prompt), 'getNumbers', 2);
-    console.log('✅ Notas obtidas');
+    console.log('✅ Notas obtidas:', numbers.media_final);
 
     const [meta, textsA, textsB] = await Promise.all([
       withRetry(() => getMeta(prompt, numbers), 'getMeta', 2),
@@ -376,8 +445,8 @@ export default async function handler(req, res) {
     ALL_PILLARS.forEach(p => {
       const k = p[0];
       if (numbers['nota_' + k] === null) {
-        texts['porque_'   + k] = 'Sem evidência na transcrição.';
-        texts['melhoria_' + k] = null;
+        texts['porque_'   + k] = texts['porque_'   + k] || 'Sem evidência na transcrição.';
+        texts['melhoria_' + k] = '';
       } else {
         texts['porque_'   + k] = texts['porque_'   + k] || 'Sem justificativa disponível.';
         texts['melhoria_' + k] = texts['melhoria_' + k] || 'Excelência atingida.';
@@ -407,10 +476,9 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('❌ Erro na API:', error.message);
+    console.error('❌ Erro na análise:', error.message);
     return res.status(500).json({ 
-      error: error.message || 'Erro ao analisar transcrição',
-      details: error.message
+      error: error.message || 'Erro ao analisar transcrição'
     });
   }
 }
