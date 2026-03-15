@@ -30,47 +30,82 @@ const ALL_PILLARS = [
   ['universo_contabil', 'Universo Contábil'],
 ];
 
-// ─── Extração robusta de texto de qualquer resposta do Gemini ───────────────
+// ─── Extração robusta de texto - cobre todas as variações da API Gemini ─────
 function extractText(response) {
-  // Gemini 2.5 Flash retorna em response.text diretamente na maioria dos casos
+  console.log('🔎 Tipo da resposta:', typeof response);
+  console.log('🔎 Keys da resposta:', response ? Object.keys(response) : 'null');
+  
+  // 1. response.text como função (SDK mais recente)
+  if (typeof response?.text === 'function') {
+    try {
+      const result = response.text();
+      console.log('✅ Extraído via response.text()');
+      return result;
+    } catch (e) {
+      console.warn('⚠️ response.text() falhou:', e.message);
+    }
+  }
+  
+  // 2. response.text como string
   if (typeof response?.text === 'string') {
+    console.log('✅ Extraído via response.text (string)');
     return response.text;
   }
   
-  // Ou pode estar em response.candidates
-  if (Array.isArray(response?.candidates)) {
+  // 3. response.response.text() - estrutura aninhada
+  if (typeof response?.response?.text === 'function') {
+    try {
+      const result = response.response.text();
+      console.log('✅ Extraído via response.response.text()');
+      return result;
+    } catch (e) {
+      console.warn('⚠️ response.response.text() falhou:', e.message);
+    }
+  }
+  
+  // 4. response.candidates (formato antigo/alternativo)
+  if (Array.isArray(response?.candidates) && response.candidates.length > 0) {
     const candidate = response.candidates[0];
     if (candidate?.content?.parts?.[0]?.text) {
+      console.log('✅ Extraído via response.candidates[0].content.parts[0].text');
       return candidate.content.parts[0].text;
     }
   }
   
-  // Se for array de objetos (content array)
+  // 5. Se for array de content blocks
   if (Array.isArray(response)) {
     const textBlock = response.find(c => c?.type === 'text' || c?.text);
-    if (textBlock) {
-      if (typeof textBlock.text === 'string') return textBlock.text;
-      if (typeof textBlock === 'string') return textBlock;
+    if (textBlock?.text) {
+      console.log('✅ Extraído via array de content blocks');
+      return textBlock.text;
     }
   }
   
-  // Se for objeto com content
+  // 6. response.content
   if (response?.content) {
-    if (Array.isArray(response.content)) {
-      const textBlock = response.content.find(c => c?.type === 'text' || c?.text);
-      if (textBlock?.text) return textBlock.text;
-    } else if (typeof response.content === 'string') {
+    if (typeof response.content === 'string') {
+      console.log('✅ Extraído via response.content (string)');
       return response.content;
     }
+    if (Array.isArray(response.content)) {
+      const textBlock = response.content.find(c => c?.text);
+      if (textBlock?.text) {
+        console.log('✅ Extraído via response.content array');
+        return textBlock.text;
+      }
+    }
   }
   
-  // Se for string direto
-  if (typeof response === 'string') return response;
+  // 7. String direto
+  if (typeof response === 'string') {
+    console.log('✅ Resposta já é string');
+    return response;
+  }
   
-  // Último recurso
-  const str = JSON.stringify(response);
-  console.warn('⚠️  Conversão para string:', str.substring(0, 500));
-  return str;
+  // 8. Último recurso - stringify
+  console.error('❌ Não conseguiu extrair texto. Estrutura completa:');
+  console.error(JSON.stringify(response, null, 2).substring(0, 2000));
+  throw new Error('EXTRACT_TEXT_FAILED: Não foi possível extrair texto da resposta do Gemini');
 }
 
 // ─── Limpa markdown e extrai JSON puro ────────────────────────────────────
@@ -79,16 +114,16 @@ function cleanJsonResponse(text) {
   
   let s = text.trim();
   
-  // Remove blocos de código markdown (```json ... ``` ou ``` ... ```)
+  // Remove blocos de código markdown
   const codeBlockMatch = s.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (codeBlockMatch) {
     s = codeBlockMatch[1].trim();
   }
   
-  // Se ainda tiver backticks soltos, remove
+  // Remove backticks soltos
   s = s.replace(/^`+|`+$/g, '');
   
-  // Remove texto antes do primeiro { e depois do último }
+  // Extrai apenas o JSON (do primeiro { ao último })
   const firstBrace = s.indexOf('{');
   const lastBrace = s.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -111,44 +146,39 @@ function repairJson(raw) {
   let braces = 0, brackets = 0, inStr = false, esc = false;
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];
-    if (esc)              { esc = false; continue; }
-    if (ch === '\\' && inStr) { esc = true;  continue; }
-    if (ch === '"')       { inStr = !inStr; continue; }
-    if (inStr)            continue;
-    if      (ch === '{')  braces++;
-    else if (ch === '}')  braces--;
-    else if (ch === '[')  brackets++;
-    else if (ch === ']')  brackets--;
+    if (esc) { esc = false; continue; }
+    if (ch === '\\' && inStr) { esc = true; continue; }
+    if (ch === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (ch === '{') braces++;
+    else if (ch === '}') braces--;
+    else if (ch === '[') brackets++;
+    else if (ch === ']') brackets--;
   }
   while (brackets > 0) { s += ']'; brackets--; }
-  while (braces  > 0)  { s += '}'; braces--;  }
+  while (braces > 0) { s += '}'; braces--; }
   return s;
 }
 
 function safeParse(text, label) {
   if (!text) throw new Error(`${label}: texto vazio`);
   
-  // Primeiro limpa o texto
   const cleaned = cleanJsonResponse(text);
-  console.log(`🔍 ${label} - Texto limpo (primeiros 200 chars):`, cleaned.substring(0, 200));
+  console.log(`🔍 ${label} - Texto limpo (200 chars):`, cleaned.substring(0, 200));
   
   if (!cleaned) throw new Error(`${label}: texto vazio após limpeza`);
   
-  try { 
-    return JSON.parse(cleaned); 
+  try {
+    return JSON.parse(cleaned);
   } catch (e1) {
-    console.warn(`⚠️  ${label} JSON inválido, tentando reparar...`);
-    console.warn(`Erro original: ${e1.message}`);
+    console.warn(`⚠️ ${label} JSON inválido, tentando reparar...`);
     try {
       const repaired = repairJson(cleaned);
       const result = JSON.parse(repaired);
       console.log(`✅ ${label} reparado com sucesso`);
       return result;
     } catch (e2) {
-      console.error(`❌ ${label} falhou mesmo após repair`);
-      console.error('Texto original:', text.substring(0, 500));
-      console.error('Texto limpo:', cleaned.substring(0, 500));
-      console.error('Erro:', e2.message);
+      console.error(`❌ ${label} falhou. Texto original (500 chars):`, text.substring(0, 500));
       throw new Error(`JSON_PARSE_FAILED: ${label}`);
     }
   }
@@ -161,9 +191,9 @@ async function withRetry(fn, label, attempts = 3) {
       return await fn();
     } catch (e) {
       lastErr = e;
-      console.error(`⚠️  ${label} tentativa ${i + 1}/${attempts} falhou:`, e.message);
+      console.error(`⚠️ ${label} tentativa ${i + 1}/${attempts} falhou:`, e.message);
       if (i < attempts - 1) {
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        await new Promise(r => setTimeout(r, 1500 * (i + 1)));
       }
     }
   }
@@ -174,56 +204,61 @@ async function withRetry(fn, label, attempts = 3) {
 // CHAMADA 1: NOTAS NUMÉRICAS
 // ═══════════════════════════════════════════════════════════════════════════════
 async function getNumbers(transcript) {
-  const systemPrompt = `Você é um auditor de CS expert do Nibo. Avalie a transcrição e retorne APENAS um objeto JSON válido, sem nenhum texto adicional, sem markdown, sem backticks.
+  const userPrompt = `Analise esta transcrição de reunião de CS e retorne as notas.
 
-O JSON deve ter exatamente esta estrutura:
+TRANSCRIÇÃO:
+${transcript}
+
+---
+
+Retorne APENAS este JSON (sem texto adicional, sem markdown):
 {
-  "media_final": X.X,
-  "tempo_fala_cs_pct": 0-100,
-  "tempo_fala_cliente_pct": 0-100,
-  "nota_consultividade": 1-5 ou -1,
-  "nota_escuta_ativa": 1-5 ou -1,
-  "nota_jornada_cliente": 1-5 ou -1,
-  "nota_encantamento": 1-5 ou -1,
-  "nota_objecoes": 1-5 ou -1,
-  "nota_rapport": 1-5 ou -1,
-  "nota_autoridade": 1-5 ou -1,
-  "nota_postura": 1-5 ou -1,
-  "nota_gestao_tempo": 1-5 ou -1,
-  "nota_contextualizacao": 1-5 ou -1,
-  "nota_clareza": 1-5 ou -1,
-  "nota_objetividade": 1-5 ou -1,
-  "nota_flexibilidade": 1-5 ou -1,
-  "nota_dominio_produto": 1-5 ou -1,
-  "nota_dominio_negocio": 1-5 ou -1,
-  "nota_ecossistema_nibo": 1-5 ou -1,
-  "nota_universo_contabil": 1-5 ou -1,
-  "ck_prazo": true ou false,
-  "ck_dever_casa": true ou false,
-  "ck_certificado": true ou false,
-  "ck_proximo_passo": true ou false,
-  "ck_dor_vendas": true ou false,
-  "ck_suporte": true ou false
+  "media_final": 3.5,
+  "tempo_fala_cs_pct": 60,
+  "tempo_fala_cliente_pct": 40,
+  "nota_consultividade": 4,
+  "nota_escuta_ativa": 3,
+  "nota_jornada_cliente": 4,
+  "nota_encantamento": 3,
+  "nota_objecoes": -1,
+  "nota_rapport": 4,
+  "nota_autoridade": 3,
+  "nota_postura": 4,
+  "nota_gestao_tempo": 4,
+  "nota_contextualizacao": 3,
+  "nota_clareza": 4,
+  "nota_objetividade": 4,
+  "nota_flexibilidade": 3,
+  "nota_dominio_produto": 4,
+  "nota_dominio_negocio": 3,
+  "nota_ecossistema_nibo": -1,
+  "nota_universo_contabil": -1,
+  "ck_prazo": true,
+  "ck_dever_casa": false,
+  "ck_certificado": true,
+  "ck_proximo_passo": true,
+  "ck_dor_vendas": false,
+  "ck_suporte": true
 }
 
-REGRAS:
-- -1 = sem evidência na transcrição
-- 1-5 = notas reais (inteiros)
-- media_final = média dos valores 1-5 (ignorar -1)
-- RESPONDA APENAS COM O JSON, NADA MAIS`;
+Use -1 quando não houver evidência. Notas de 1 a 5 (inteiros). media_final = média das notas válidas.`;
 
+  console.log('📤 Chamando Gemini para getNumbers...');
+  
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: [{ role: 'user', parts: [{ text: `Analise esta transcrição de reunião de CS:\n\n${transcript}` }] }],
+    contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
     generationConfig: {
-      temperature: 0.1,
-      maxOutputTokens: 4096,
+      temperature: 0,
+      maxOutputTokens: 2048,
+      responseMimeType: 'application/json',
     },
-    systemInstruction: systemPrompt,
   });
 
+  console.log('📥 Resposta recebida do Gemini');
+  
   const text = extractText(res);
-  console.log('📦 Resposta bruta getNumbers (primeiros 500 chars):', text.substring(0, 500));
+  console.log('📦 Texto extraído (500 chars):', text.substring(0, 500));
   
   const parsed = safeParse(text, 'getNumbers');
 
@@ -233,7 +268,7 @@ REGRAS:
     if (val === -1 || val === '-1') parsed['nota_' + p[0]] = null;
   });
 
-  // Validação
+  // Validação das notas
   ALL_PILLARS.forEach(p => {
     const k = p[0];
     let n = parsed['nota_' + k];
@@ -249,16 +284,16 @@ REGRAS:
     }
   });
 
-  parsed.tempo_fala_cs      = (parsed.tempo_fala_cs_pct      || 50) + '%';
+  parsed.tempo_fala_cs = (parsed.tempo_fala_cs_pct || 50) + '%';
   parsed.tempo_fala_cliente = (parsed.tempo_fala_cliente_pct || 50) + '%';
 
   parsed.checklist_cs = {
-    definiu_prazo_implementacao:  Boolean(parsed.ck_prazo),
-    alinhou_dever_de_casa:        Boolean(parsed.ck_dever_casa),
-    validou_certificado_digital:  Boolean(parsed.ck_certificado),
-    agendou_proximo_passo:        Boolean(parsed.ck_proximo_passo),
-    conectou_com_dor_vendas:      Boolean(parsed.ck_dor_vendas),
-    explicou_canal_suporte:       Boolean(parsed.ck_suporte),
+    definiu_prazo_implementacao: Boolean(parsed.ck_prazo),
+    alinhou_dever_de_casa: Boolean(parsed.ck_dever_casa),
+    validou_certificado_digital: Boolean(parsed.ck_certificado),
+    agendou_proximo_passo: Boolean(parsed.ck_proximo_passo),
+    conectou_com_dor_vendas: Boolean(parsed.ck_dor_vendas),
+    explicou_canal_suporte: Boolean(parsed.ck_suporte),
   };
 
   return parsed;
@@ -271,33 +306,34 @@ async function getMeta(transcript, numbers) {
     .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
     .join(', ');
 
-  const prompt = `Analise esta transcrição. Notas já obtidas: ${notasStr}.
-
-Retorne APENAS um objeto JSON válido, sem markdown, sem backticks, sem texto adicional:
-{
-  "resumo_executivo": "1 frase sobre o onboarding",
-  "saude_cliente": "1 frase sobre saúde do cliente",
-  "risco_churn": "1 frase sobre risco de churn",
-  "sistemas_citados": ["sistema1", "sistema2"],
-  "pontos_fortes": ["ponto1", "ponto2"],
-  "pontos_atencao": ["atenção1", "atenção2"]
-}
+  const prompt = `Analise esta transcrição de CS. Notas: ${notasStr}.
 
 TRANSCRIÇÃO:
-${transcript}`;
+${transcript}
+
+---
+
+Retorne APENAS este JSON:
+{
+  "resumo_executivo": "Uma frase resumindo o onboarding",
+  "saude_cliente": "Uma frase sobre saúde do cliente",
+  "risco_churn": "Uma frase sobre risco de churn",
+  "sistemas_citados": ["sistema1", "sistema2"],
+  "pontos_fortes": ["ponto forte 1", "ponto forte 2"],
+  "pontos_atencao": ["ponto de atenção 1"]
+}`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
-      temperature: 0.2,
+      temperature: 0.1,
       maxOutputTokens: 2048,
+      responseMimeType: 'application/json',
     },
-    systemInstruction: 'Retorne APENAS JSON válido. Sem markdown, sem backticks, sem explicações. Apenas o objeto JSON.',
   });
 
   const text = extractText(res);
-  console.log('📦 Resposta bruta getMeta (primeiros 300 chars):', text.substring(0, 300));
   return safeParse(text, 'getMeta');
 }
 
@@ -309,36 +345,34 @@ async function getTextsA(transcript, numbers) {
     .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
     .join(', ');
 
-  const prompt = `Justifique as notas. Notas: ${notasStr}.
-
-Retorne APENAS JSON válido com porque_ e melhoria_ para cada pilar:
-{
-  "porque_consultividade": "...",
-  "melhoria_consultividade": "...",
-  "porque_escuta_ativa": "...",
-  "melhoria_escuta_ativa": "...",
-  "porque_jornada_cliente": "...",
-  "melhoria_jornada_cliente": "...",
-  "porque_encantamento": "...",
-  "melhoria_encantamento": "...",
-  "porque_objecoes": "...",
-  "melhoria_objecoes": "...",
-  "porque_rapport": "...",
-  "melhoria_rapport": "...",
-  "porque_autoridade": "...",
-  "melhoria_autoridade": "...",
-  "porque_postura": "...",
-  "melhoria_postura": "...",
-  "porque_gestao_tempo": "...",
-  "melhoria_gestao_tempo": "..."
-}
-
-Regras:
-- Se -1 (sem evidência): porque="Sem evidência na transcrição." melhoria=""
-- Se tem nota: porque=1-2 frases. melhoria=1 frase.
+  const prompt = `Justifique as notas de CS: ${notasStr}
 
 TRANSCRIÇÃO:
-${transcript}`;
+${transcript}
+
+---
+
+Retorne APENAS este JSON com porque_ e melhoria_ para os 9 pilares:
+{
+  "porque_consultividade": "justificativa",
+  "melhoria_consultividade": "sugestão",
+  "porque_escuta_ativa": "justificativa",
+  "melhoria_escuta_ativa": "sugestão",
+  "porque_jornada_cliente": "justificativa",
+  "melhoria_jornada_cliente": "sugestão",
+  "porque_encantamento": "justificativa",
+  "melhoria_encantamento": "sugestão",
+  "porque_objecoes": "justificativa",
+  "melhoria_objecoes": "sugestão",
+  "porque_rapport": "justificativa",
+  "melhoria_rapport": "sugestão",
+  "porque_autoridade": "justificativa",
+  "melhoria_autoridade": "sugestão",
+  "porque_postura": "justificativa",
+  "melhoria_postura": "sugestão",
+  "porque_gestao_tempo": "justificativa",
+  "melhoria_gestao_tempo": "sugestão"
+}`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -346,12 +380,11 @@ ${transcript}`;
     generationConfig: {
       temperature: 0.1,
       maxOutputTokens: 3000,
+      responseMimeType: 'application/json',
     },
-    systemInstruction: 'Retorne APENAS JSON válido. Sem markdown, sem backticks. Apenas o objeto JSON.',
   });
 
   const text = extractText(res);
-  console.log('📦 Resposta bruta getTextsA (primeiros 300 chars):', text.substring(0, 300));
   return safeParse(text, 'getTextsA');
 }
 
@@ -363,34 +396,32 @@ async function getTextsB(transcript, numbers) {
     .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
     .join(', ');
 
-  const prompt = `Justifique as notas. Notas: ${notasStr}.
-
-Retorne APENAS JSON válido:
-{
-  "porque_contextualizacao": "...",
-  "melhoria_contextualizacao": "...",
-  "porque_clareza": "...",
-  "melhoria_clareza": "...",
-  "porque_objetividade": "...",
-  "melhoria_objetividade": "...",
-  "porque_flexibilidade": "...",
-  "melhoria_flexibilidade": "...",
-  "porque_dominio_produto": "...",
-  "melhoria_dominio_produto": "...",
-  "porque_dominio_negocio": "...",
-  "melhoria_dominio_negocio": "...",
-  "porque_ecossistema_nibo": "...",
-  "melhoria_ecossistema_nibo": "...",
-  "porque_universo_contabil": "...",
-  "melhoria_universo_contabil": "..."
-}
-
-Regras:
-- Se -1: porque="Sem evidência na transcrição." melhoria=""
-- Se tem nota: porque=1-2 frases. melhoria=1 frase
+  const prompt = `Justifique as notas de CS: ${notasStr}
 
 TRANSCRIÇÃO:
-${transcript}`;
+${transcript}
+
+---
+
+Retorne APENAS este JSON:
+{
+  "porque_contextualizacao": "justificativa",
+  "melhoria_contextualizacao": "sugestão",
+  "porque_clareza": "justificativa",
+  "melhoria_clareza": "sugestão",
+  "porque_objetividade": "justificativa",
+  "melhoria_objetividade": "sugestão",
+  "porque_flexibilidade": "justificativa",
+  "melhoria_flexibilidade": "sugestão",
+  "porque_dominio_produto": "justificativa",
+  "melhoria_dominio_produto": "sugestão",
+  "porque_dominio_negocio": "justificativa",
+  "melhoria_dominio_negocio": "sugestão",
+  "porque_ecossistema_nibo": "justificativa",
+  "melhoria_ecossistema_nibo": "sugestão",
+  "porque_universo_contabil": "justificativa",
+  "melhoria_universo_contabil": "sugestão"
+}`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -398,29 +429,28 @@ ${transcript}`;
     generationConfig: {
       temperature: 0.1,
       maxOutputTokens: 3000,
+      responseMimeType: 'application/json',
     },
-    systemInstruction: 'Retorne APENAS JSON válido. Sem markdown, sem backticks. Apenas o objeto JSON.',
   });
 
   const text = extractText(res);
-  console.log('📦 Resposta bruta getTextsB (primeiros 300 chars):', text.substring(0, 300));
   return safeParse(text, 'getTextsB');
 }
 
 // ─── CHAMADA 5: Relatório ─────────────────────────────────────────────────
 async function getRelatorio(numbers, meta, texts, coordinator) {
   const linhas = ALL_PILLARS.map(p => {
-    const k    = p[0];
+    const k = p[0];
     const nota = numbers['nota_' + k];
     if (nota === null) return null;
-    const pq   = texts['porque_'   + k] || '';
-    const ml   = texts['melhoria_' + k] || '';
-    const suf  = (ml && ml !== 'Excelência atingida.') ? ' | Melhoria: ' + ml : '';
+    const pq = texts['porque_' + k] || '';
+    const ml = texts['melhoria_' + k] || '';
+    const suf = (ml && ml !== 'Excelência atingida.') ? ' | Melhoria: ' + ml : '';
     return '- **' + p[1] + '**: ' + nota + '/5 — ' + pq + suf;
   }).filter(Boolean).join('\n');
 
   const coordinatorLine = coordinator ? `Coordenador: **${coordinator}**\n\n` : '';
-  const prompt = `FEEDBACK DE CS
+  const prompt = `Gere um feedback de CS em Markdown.
 
 ${coordinatorLine}NOTAS:
 ${linhas}
@@ -432,14 +462,10 @@ Churn: ${meta.risco_churn}
 Fortes: ${(meta.pontos_fortes || []).join('; ')}
 Atenção: ${(meta.pontos_atencao || []).join('; ')}
 
-Estruture o feedback assim:
-
+Use esta estrutura:
 ## O que fez bem
-
 ## O que melhorar
-
 ## O que falar no 1:1
-
 ## Plano de ação`;
 
   const res = await ai.models.generateContent({
@@ -449,7 +475,6 @@ Estruture o feedback assim:
       temperature: 0.2,
       maxOutputTokens: 4096,
     },
-    systemInstruction: 'Coordenador sênior de CS do Nibo. Markdown puro. "O que falar": frases prontas. "Plano": máx 3 prioridades.',
   });
 
   return extractText(res);
@@ -472,9 +497,9 @@ export default async function handler(req, res) {
   try {
     console.log('📝 Iniciando análise...');
     console.log('📏 Tamanho da transcrição:', prompt.length, 'caracteres');
-    
+
     const numbers = await withRetry(() => getNumbers(prompt), 'getNumbers', 3);
-    console.log('✅ Notas obtidas:', numbers.media_final);
+    console.log('✅ Notas obtidas. Média:', numbers.media_final);
 
     const [meta, textsA, textsB] = await Promise.all([
       withRetry(() => getMeta(prompt, numbers), 'getMeta', 2),
@@ -489,20 +514,20 @@ export default async function handler(req, res) {
     ALL_PILLARS.forEach(p => {
       const k = p[0];
       if (numbers['nota_' + k] === null) {
-        texts['porque_'   + k] = texts['porque_'   + k] || 'Sem evidência na transcrição.';
+        texts['porque_' + k] = texts['porque_' + k] || 'Sem evidência na transcrição.';
         texts['melhoria_' + k] = '';
       } else {
-        texts['porque_'   + k] = texts['porque_'   + k] || 'Sem justificativa disponível.';
+        texts['porque_' + k] = texts['porque_' + k] || 'Sem justificativa disponível.';
         texts['melhoria_' + k] = texts['melhoria_' + k] || 'Excelência atingida.';
       }
     });
 
     meta.resumo_executivo = meta.resumo_executivo || 'Reunião de onboarding realizada.';
-    meta.saude_cliente    = meta.saude_cliente    || 'Não avaliado.';
-    meta.risco_churn      = meta.risco_churn      || 'Não avaliado.';
+    meta.saude_cliente = meta.saude_cliente || 'Não avaliado.';
+    meta.risco_churn = meta.risco_churn || 'Não avaliado.';
     meta.sistemas_citados = meta.sistemas_citados || [];
-    meta.pontos_fortes    = meta.pontos_fortes    || [];
-    meta.pontos_atencao   = meta.pontos_atencao   || [];
+    meta.pontos_fortes = meta.pontos_fortes || [];
+    meta.pontos_atencao = meta.pontos_atencao || [];
 
     const justificativa_detalhada = await withRetry(
       () => getRelatorio(numbers, meta, texts, coordinator),
@@ -522,7 +547,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('❌ Erro na análise:', error.message);
     console.error('Stack:', error.stack);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: error.message || 'Erro ao analisar transcrição'
     });
   }
