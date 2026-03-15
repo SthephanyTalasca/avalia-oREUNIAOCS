@@ -172,7 +172,7 @@
             if (coordenador) params.append('coordenador', coordenador);
             if (analista) params.append('analista', analista);
 
-            const response = await fetch('/api/dashboard.js?' + params.toString());
+            const response = await fetch('/api/dashboard?' + params.toString());
             if (!response.ok) throw new Error('Erro ao carregar dados');
 
             const data = await response.json();
