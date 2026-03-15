@@ -10,7 +10,7 @@ function getSession(req) {
         if (s.exp && Date.now() > s.exp) return null;
         if (s.email.toLowerCase().split('@')[1] !== 'nibo.com.br') return null;
         return s;
-    } catch { return null; }
+    } catch (e) { console.error('getSession error:', e); return null; }
 }
 
 const H = (extra = {}) => ({ 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, ...extra });

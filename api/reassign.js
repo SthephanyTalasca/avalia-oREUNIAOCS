@@ -10,7 +10,7 @@ function getSession(req) {
         if (s.exp && Date.now() > s.exp) return null;
         if (s.email.toLowerCase().split('@')[1] !== 'nibo.com.br') return null;
         return s;
-    } catch { return null; }
+    } catch (e) { console.error('getSession error:', e); return null; }
 }
 
 export default async function handler(req, res) {
