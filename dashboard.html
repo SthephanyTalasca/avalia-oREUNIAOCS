@@ -130,7 +130,8 @@
 
         <div id="empty-state" class="text-center py-8 hidden">
             <i data-lucide="inbox" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
-            <p class="text-slate-500">Nenhuma avaliação encontrada</p>
+            <p class="text-slate-500 font-semibold">Nenhuma avaliação encontrada</p>
+            <p class="text-slate-400 text-sm mt-1">Analise transcrições na <a href="/" class="underline text-blue-500 hover:text-blue-700">página principal</a> para os dados aparecerem aqui.</p>
         </div>
     </div>
 
@@ -173,7 +174,12 @@
             if (analista) params.append('analista', analista);
 
             const response = await fetch('/api/dashboard?' + params.toString());
-            if (!response.ok) throw new Error('Erro ao carregar dados');
+            if (response.status === 401) {
+                document.getElementById('loading-table').innerHTML =
+                    '<p class="text-amber-600 font-bold text-center py-4">⚠️ Sessão expirada ou não iniciada. <a href="/api/auth" class="underline text-blue-600 hover:text-blue-800">Clique aqui para fazer login</a></p>';
+                return;
+            }
+            if (!response.ok) throw new Error('Erro ao carregar dados (' + response.status + ')');
 
             const data = await response.json();
             allReunioes = data.reunioes || [];

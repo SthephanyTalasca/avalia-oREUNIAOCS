@@ -551,12 +551,15 @@ async function handleAnalysis() {
 
         // Salva no servidor (Supabase)
         try {
+            const analista_nome = document.getElementById('cc-name-input').value.trim() || 'Não identificado';
             const saveRes = await fetch('/api/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ analise: data, coordenador: coordinator })
+                body: JSON.stringify({ analise: { ...data, analista_nome }, coordenador: coordinator })
             });
-            if (!saveRes.ok) {
+            if (saveRes.status === 401) {
+                console.warn('Sessão expirada. Faça login para salvar avaliações no servidor.');
+            } else if (!saveRes.ok) {
                 const err = await saveRes.json().catch(() => ({}));
                 console.warn('Aviso: análise não salva no servidor:', err.error || saveRes.status);
             }
