@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
 export const maxDuration = 300;
 
@@ -30,9 +30,20 @@ const ALL_PILLARS = [
   ['universo_contabil', 'Universo Contábil'],
 ];
 
-// ─── Extração robusta de texto de qualquer resposta ─────────────────────────
+// ─── Extração robusta de texto de qualquer resposta do Gemini ───────────────
 function extractText(response) {
-  // console.log('📦 Response type:', typeof response, Array.isArray(response));
+  // Gemini 2.5 Flash retorna em response.text diretamente na maioria dos casos
+  if (typeof response?.text === 'string') {
+    return response.text;
+  }
+  
+  // Ou pode estar em response.candidates
+  if (Array.isArray(response?.candidates)) {
+    const candidate = response.candidates[0];
+    if (candidate?.content?.parts?.[0]?.text) {
+      return candidate.content.parts[0].text;
+    }
+  }
   
   // Se for array de objetos (content array)
   if (Array.isArray(response)) {
@@ -56,21 +67,35 @@ function extractText(response) {
   // Se for string direto
   if (typeof response === 'string') return response;
   
-  // Se tiver .text
-  if (typeof response?.text === 'string') return response.text;
-  
-  // Se tiver .candidates (formato novo do Gemini)
-  if (Array.isArray(response?.candidates)) {
-    const candidate = response.candidates[0];
-    if (candidate?.content?.parts?.[0]?.text) {
-      return candidate.content.parts[0].text;
-    }
-  }
-  
   // Último recurso
   const str = JSON.stringify(response);
-  console.warn('⚠️  Conversão para string:', str.substring(0, 200));
+  console.warn('⚠️  Conversão para string:', str.substring(0, 500));
   return str;
+}
+
+// ─── Limpa markdown e extrai JSON puro ────────────────────────────────────
+function cleanJsonResponse(text) {
+  if (!text || typeof text !== 'string') return '';
+  
+  let s = text.trim();
+  
+  // Remove blocos de código markdown (```json ... ``` ou ``` ... ```)
+  const codeBlockMatch = s.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (codeBlockMatch) {
+    s = codeBlockMatch[1].trim();
+  }
+  
+  // Se ainda tiver backticks soltos, remove
+  s = s.replace(/^`+|`+$/g, '');
+  
+  // Remove texto antes do primeiro { e depois do último }
+  const firstBrace = s.indexOf('{');
+  const lastBrace = s.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    s = s.substring(firstBrace, lastBrace + 1);
+  }
+  
+  return s.trim();
 }
 
 // ─── Repara JSON truncado ─────────────────────────────────────────────────
@@ -103,18 +128,26 @@ function repairJson(raw) {
 function safeParse(text, label) {
   if (!text) throw new Error(`${label}: texto vazio`);
   
+  // Primeiro limpa o texto
+  const cleaned = cleanJsonResponse(text);
+  console.log(`🔍 ${label} - Texto limpo (primeiros 200 chars):`, cleaned.substring(0, 200));
+  
+  if (!cleaned) throw new Error(`${label}: texto vazio após limpeza`);
+  
   try { 
-    return JSON.parse(text); 
+    return JSON.parse(cleaned); 
   } catch (e1) {
     console.warn(`⚠️  ${label} JSON inválido, tentando reparar...`);
+    console.warn(`Erro original: ${e1.message}`);
     try {
-      const repaired = repairJson(text);
+      const repaired = repairJson(cleaned);
       const result = JSON.parse(repaired);
       console.log(`✅ ${label} reparado com sucesso`);
       return result;
     } catch (e2) {
       console.error(`❌ ${label} falhou mesmo após repair`);
-      console.error('Texto original:', text.substring(0, 300));
+      console.error('Texto original:', text.substring(0, 500));
+      console.error('Texto limpo:', cleaned.substring(0, 500));
       console.error('Erro:', e2.message);
       throw new Error(`JSON_PARSE_FAILED: ${label}`);
     }
@@ -138,12 +171,12 @@ async function withRetry(fn, label, attempts = 3) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CHAMADA 1: NOTAS NUMÉRICAS (SEM SCHEMA JSON - TEXT MODE)
+// CHAMADA 1: NOTAS NUMÉRICAS
 // ═══════════════════════════════════════════════════════════════════════════════
 async function getNumbers(transcript) {
-  const systemPrompt = `Você é um auditor de CS expert do Nibo. Avalie a transcrição e retorne JSON válido.
+  const systemPrompt = `Você é um auditor de CS expert do Nibo. Avalie a transcrição e retorne APENAS um objeto JSON válido, sem nenhum texto adicional, sem markdown, sem backticks.
 
-RESPONDA COM JSON PURO (sem markdown, sem backticks):
+O JSON deve ter exatamente esta estrutura:
 {
   "media_final": X.X,
   "tempo_fala_cs_pct": 0-100,
@@ -165,43 +198,23 @@ RESPONDA COM JSON PURO (sem markdown, sem backticks):
   "nota_dominio_negocio": 1-5 ou -1,
   "nota_ecossistema_nibo": 1-5 ou -1,
   "nota_universo_contabil": 1-5 ou -1,
-  "ck_prazo": true/false,
-  "ck_dever_casa": true/false,
-  "ck_certificado": true/false,
-  "ck_proximo_passo": true/false,
-  "ck_dor_vendas": true/false,
-  "ck_suporte": true/false
+  "ck_prazo": true ou false,
+  "ck_dever_casa": true ou false,
+  "ck_certificado": true ou false,
+  "ck_proximo_passo": true ou false,
+  "ck_dor_vendas": true ou false,
+  "ck_suporte": true ou false
 }
 
 REGRAS:
 - -1 = sem evidência na transcrição
-- 1-5 = notas reais
+- 1-5 = notas reais (inteiros)
 - media_final = média dos valores 1-5 (ignorar -1)
-- DETERMINÍSTICO: mesma transcrição = mesmas notas
-- Arredonde notas para inteiro (1-5)
-
-CRITÉRIOS POR PILAR:
-- Consultividade: Recomenda soluções? (5=assertivo, 1=apenas responde)
-- Escuta Ativa: Pergunta aberta? Cliente fala? (5=40%+ cliente, -1=praticamente não fala)
-- Jornada do Cliente: Próximos passos claros? (5=roadmap com datas)
-- Encantamento: Oferece valor extra? (5=sim, surpresa positiva)
-- Objeções/Bugs: Aborda problemas? (5=identifica 3+)
-- Rapport: Tom amigável, empatia? (5=conexão clara)
-- Autoridade: Demonstra expertise? (5=cases, dados, best practices)
-- Postura: Profissional, organizado? (5=muito estruturado)
-- Gestão de Tempo: Respeita horário? (5=cumpre tudo)
-- Contextualização: Conhece cliente? (5=referencia dados específicos)
-- Clareza: Explica bem? (5=muito claro, sem jargão)
-- Objetividade: Vai ao ponto? (5=foca problemas)
-- Flexibilidade: Adapta? (5=pivota conforme necessário)
-- Domínio de Produto: Conhece Nibo? (5=cita features com precisão)
-- Domínio de Negócio: Conhece contabilidade? (5=domínio total)
-- Ecossistema Nibo: Conhece integrações? (5=recomenda certas)
-- Universo Contábil: Conhece classificações? (5=domínio completo)`;
+- RESPONDA APENAS COM O JSON, NADA MAIS`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: [{ role: 'user', parts: [{ text: transcript }] }],
+    contents: [{ role: 'user', parts: [{ text: `Analise esta transcrição de reunião de CS:\n\n${transcript}` }] }],
     generationConfig: {
       temperature: 0.1,
       maxOutputTokens: 4096,
@@ -210,7 +223,7 @@ CRITÉRIOS POR PILAR:
   });
 
   const text = extractText(res);
-  console.log('📦 Resposta bruta getNumbers (primeiros 300 chars):', text.substring(0, 300));
+  console.log('📦 Resposta bruta getNumbers (primeiros 500 chars):', text.substring(0, 500));
   
   const parsed = safeParse(text, 'getNumbers');
 
@@ -260,7 +273,7 @@ async function getMeta(transcript, numbers) {
 
   const prompt = `Analise esta transcrição. Notas já obtidas: ${notasStr}.
 
-Retorne JSON PURO:
+Retorne APENAS um objeto JSON válido, sem markdown, sem backticks, sem texto adicional:
 {
   "resumo_executivo": "1 frase sobre o onboarding",
   "saude_cliente": "1 frase sobre saúde do cliente",
@@ -270,10 +283,8 @@ Retorne JSON PURO:
   "pontos_atencao": ["atenção1", "atenção2"]
 }
 
-Requisitos:
-- pontos_fortes e pontos_atencao: máx 4 itens cada, frases curtas
-- sistemas_citados: APENAS ferramentas mencionadas explicitamente
-- resumo/saude/churn: 1 frase concisa cada`;
+TRANSCRIÇÃO:
+${transcript}`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -282,7 +293,7 @@ Requisitos:
       temperature: 0.2,
       maxOutputTokens: 2048,
     },
-    systemInstruction: 'Retorne APENAS JSON válido. Sem markdown, sem backticks, sem explicações. JSON puro.',
+    systemInstruction: 'Retorne APENAS JSON válido. Sem markdown, sem backticks, sem explicações. Apenas o objeto JSON.',
   });
 
   const text = extractText(res);
@@ -300,18 +311,34 @@ async function getTextsA(transcript, numbers) {
 
   const prompt = `Justifique as notas. Notas: ${notasStr}.
 
-Retorne JSON PURO com porque_ e melhoria_ para cada pilar:
+Retorne APENAS JSON válido com porque_ e melhoria_ para cada pilar:
 {
   "porque_consultividade": "...",
   "melhoria_consultividade": "...",
   "porque_escuta_ativa": "...",
   "melhoria_escuta_ativa": "...",
-  ... (repita para todos os 9 pilares)
+  "porque_jornada_cliente": "...",
+  "melhoria_jornada_cliente": "...",
+  "porque_encantamento": "...",
+  "melhoria_encantamento": "...",
+  "porque_objecoes": "...",
+  "melhoria_objecoes": "...",
+  "porque_rapport": "...",
+  "melhoria_rapport": "...",
+  "porque_autoridade": "...",
+  "melhoria_autoridade": "...",
+  "porque_postura": "...",
+  "melhoria_postura": "...",
+  "porque_gestao_tempo": "...",
+  "melhoria_gestao_tempo": "..."
 }
 
 Regras:
 - Se -1 (sem evidência): porque="Sem evidência na transcrição." melhoria=""
-- Se tem nota: porque=1-2 frases (fato objetivo). melhoria=1 frase (o que faltou para 5, ou "Excelência atingida.")`;
+- Se tem nota: porque=1-2 frases. melhoria=1 frase.
+
+TRANSCRIÇÃO:
+${transcript}`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -320,7 +347,7 @@ Regras:
       temperature: 0.1,
       maxOutputTokens: 3000,
     },
-    systemInstruction: 'Retorne APENAS JSON válido. Sem markdown, sem backticks. JSON puro.',
+    systemInstruction: 'Retorne APENAS JSON válido. Sem markdown, sem backticks. Apenas o objeto JSON.',
   });
 
   const text = extractText(res);
@@ -338,16 +365,32 @@ async function getTextsB(transcript, numbers) {
 
   const prompt = `Justifique as notas. Notas: ${notasStr}.
 
-Retorne JSON PURO:
+Retorne APENAS JSON válido:
 {
   "porque_contextualizacao": "...",
   "melhoria_contextualizacao": "...",
-  ... (repita para os 8 pilares restantes)
+  "porque_clareza": "...",
+  "melhoria_clareza": "...",
+  "porque_objetividade": "...",
+  "melhoria_objetividade": "...",
+  "porque_flexibilidade": "...",
+  "melhoria_flexibilidade": "...",
+  "porque_dominio_produto": "...",
+  "melhoria_dominio_produto": "...",
+  "porque_dominio_negocio": "...",
+  "melhoria_dominio_negocio": "...",
+  "porque_ecossistema_nibo": "...",
+  "melhoria_ecossistema_nibo": "...",
+  "porque_universo_contabil": "...",
+  "melhoria_universo_contabil": "..."
 }
 
 Regras:
 - Se -1: porque="Sem evidência na transcrição." melhoria=""
-- Se tem nota: porque=1-2 frases (fato objetivo). melhoria=1 frase`;
+- Se tem nota: porque=1-2 frases. melhoria=1 frase
+
+TRANSCRIÇÃO:
+${transcript}`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -356,7 +399,7 @@ Regras:
       temperature: 0.1,
       maxOutputTokens: 3000,
     },
-    systemInstruction: 'Retorne APENAS JSON válido. JSON puro, sem markdown.',
+    systemInstruction: 'Retorne APENAS JSON válido. Sem markdown, sem backticks. Apenas o objeto JSON.',
   });
 
   const text = extractText(res);
@@ -428,8 +471,9 @@ export default async function handler(req, res) {
 
   try {
     console.log('📝 Iniciando análise...');
+    console.log('📏 Tamanho da transcrição:', prompt.length, 'caracteres');
     
-    const numbers = await withRetry(() => getNumbers(prompt), 'getNumbers', 2);
+    const numbers = await withRetry(() => getNumbers(prompt), 'getNumbers', 3);
     console.log('✅ Notas obtidas:', numbers.media_final);
 
     const [meta, textsA, textsB] = await Promise.all([
@@ -477,6 +521,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('❌ Erro na análise:', error.message);
+    console.error('Stack:', error.stack);
     return res.status(500).json({ 
       error: error.message || 'Erro ao analisar transcrição'
     });
