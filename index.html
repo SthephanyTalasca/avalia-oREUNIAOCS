@@ -771,7 +771,148 @@ function closeModal() {
     modalBox.classList.replace('scale-100','scale-95');
     setTimeout(() => { modal.classList.replace('flex','hidden'); }, 300);
 }
+// ═══════════════════════════════════════════════════════════════════════════════
+// INSIRA ESTE CÓDIGO NO FINAL DO <script> DO index.html
+// ANTES DE: analyzeBtn.addEventListener('click', handleAnalysis);
+// ═══════════════════════════════════════════════════════════════════════════════
 
+// Mapeamento CS → Coordenador
+const CS_TO_COORDINATOR = {
+  // TIME SAYURI
+  'brayan santos': 'Sayuri',
+  'brayan': 'Sayuri',
+  'camille vaz': 'Sayuri',
+  'camille': 'Sayuri',
+  'carolina miranda': 'Sayuri',
+  'carolina': 'Sayuri',
+  'isaque silva': 'Sayuri',
+  'isaque': 'Sayuri',
+  'larissa mota': 'Sayuri',
+  'nat vieira': 'Sayuri',
+  'nat': 'Sayuri',
+  'vinícius oliveira': 'Sayuri',
+  'vinicius': 'Sayuri',
+
+  // TIME TAYANARA
+  'ana de battisti': 'Tayanara',
+  'ana battisti': 'Tayanara',
+  'ana': 'Tayanara',
+  'denis silva': 'Tayanara',
+  'denis': 'Tayanara',
+  'larissa teixeira': 'Tayanara',
+  'lorrayne moreira': 'Tayanara',
+  'lorrayne': 'Tayanara',
+  'micaelle martins': 'Tayanara',
+  'micaelle': 'Tayanara',
+  'sthephany talasca': 'Tayanara',
+  'sthephany': 'Tayanara',
+  'sthe': 'Tayanara',
+  'thais silva': 'Tayanara',
+  'thais': 'Tayanara',
+  'willian martins': 'Tayanara',
+  'willian': 'Tayanara',
+  'yuri santos': 'Tayanara',
+  'yuri': 'Tayanara',
+
+  // TIME MICHEL
+  'aline almeida': 'Michel',
+  'aline': 'Michel',
+  'bianca kim': 'Michel',
+  'bianca': 'Michel',
+  'jéssica barreiro': 'Michel',
+  'jessica barreiro': 'Michel',
+  'jessica': 'Michel',
+  'julia rodrigues': 'Michel',
+  'julia': 'Michel',
+  'maria fernanda costa': 'Michel',
+  'mafê': 'Michel',
+  'maryana alves': 'Michel',
+  'maryana': 'Michel',
+  'rafaele oliveira': 'Michel',
+  'rafaele': 'Michel',
+  'túlio morgado': 'Michel',
+  'túlio': 'Michel',
+  'tulio': 'Michel',
+};
+
+// Função para detectar CS na transcrição
+function detectCSAndCoordinator(transcript) {
+  if (!transcript) return { cs: null, coordinator: null };
+
+  const lowerTranscript = transcript.toLowerCase();
+
+  // Procura por menções de nomes de CS
+  for (const [name, coordinator] of Object.entries(CS_TO_COORDINATOR)) {
+    if (lowerTranscript.includes(name)) {
+      return { cs: name, coordinator: coordinator };
+    }
+  }
+
+  return { cs: null, coordinator: null };
+}
+
+// Listener para detectar CS ao digitar na transcrição
+document.getElementById('transcript-input').addEventListener('input', function() {
+  const transcript = this.value;
+  const { cs, coordinator } = detectCSAndCoordinator(transcript);
+
+  if (coordinator) {
+    // Auto-preenche o seletor de coordenador
+    document.getElementById('coordinator-select').value = coordinator;
+    
+    // Mostra uma mensagem visual
+    const nameInput = document.getElementById('cc-name-input');
+    if (!nameInput.value) {
+      // Se não tem nome, sugere
+      nameInput.placeholder = `Detectado: ${cs} (${coordinator})`;
+      nameInput.classList.add('ring-2', 'ring-green-400');
+    }
+  } else {
+    // Remove a sugestão se não encontrar nada
+    const nameInput = document.getElementById('cc-name-input');
+    nameInput.placeholder = 'Analista de CS';
+    nameInput.classList.remove('ring-2', 'ring-green-400');
+  }
+});
+
+// Também detecta quando o usuário termina de colar (para PDFs ou textos longos)
+document.getElementById('transcript-input').addEventListener('paste', function() {
+  setTimeout(() => {
+    const transcript = this.value;
+    const { cs, coordinator } = detectCSAndCoordinator(transcript);
+
+    if (coordinator) {
+      document.getElementById('coordinator-select').value = coordinator;
+      console.log(`✅ Coordenador auto-detectado: ${coordinator} (${cs})`);
+      
+      // Toast de notificação
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold';
+      toast.textContent = `✅ ${coordinator} atribuído a ${cs}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+  }, 100);
+});
+
+// Também tenta detectar quando clica em "Analisar"
+const originalHandleAnalysis = handleAnalysis;
+async function handleAnalysisWithDetection() {
+  const transcript = document.getElementById('transcript-input').value;
+  const { cs, coordinator } = detectCSAndCoordinator(transcript);
+
+  if (coordinator && !document.getElementById('coordinator-select').value) {
+    document.getElementById('coordinator-select').value = coordinator;
+    console.log(`✅ Auto-detectado: ${coordinator}`);
+  }
+
+  // Chama a função original
+  return originalHandleAnalysis.call(this);
+}
+
+// Substitui o handler
+document.getElementById('analyze-btn').removeEventListener('click', handleAnalysis);
+document.getElementById('analyze-btn').addEventListener('click', handleAnalysisWithDetection);
 document.getElementById('justification-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 analyzeBtn.addEventListener('click', handleAnalysis);
 
