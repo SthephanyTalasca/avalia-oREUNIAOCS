@@ -15,7 +15,6 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #0f172a; }
         .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: all 0.3s ease; }
         .glass-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulse-opacity { 0%,100%{opacity:1} 50%{opacity:.4} }
         .pulse-text { animation: pulse-opacity 1.8s ease-in-out infinite; }
         .markdown-content h1, .markdown-content h2 { font-weight: 800; color: #1e3a8a; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1rem; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; }
@@ -23,14 +22,15 @@
         .markdown-content ul { list-style-type: none; padding-left: 0; margin-bottom: 1.25rem; }
         .markdown-content li { position: relative; padding-left: 1.5rem; margin-bottom: 0.4rem; color: #475569; font-size: 0.85rem; }
         .markdown-content li::before { content: "•"; position: absolute; left: 0; color: #2563eb; font-weight: bold; }
-        /* Melhorias para seletor */
         select { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
     </style>
 </head>
 <body class="pb-20 antialiased">
 
+<!-- NAVBAR CORRIGIDA -->
 <nav class="bg-[#002d72] text-white py-4 px-8 sticky top-0 z-50 shadow-xl border-b border-blue-400">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+        <!-- LOGO -->
         <div class="flex items-center gap-3">
             <div class="bg-white p-2.5 rounded-2xl shadow-inner">
                 <i data-lucide="headset" class="text-[#002d72] w-6 h-6"></i>
@@ -40,211 +40,198 @@
                 <p class="text-[9px] text-blue-200 uppercase tracking-widest font-bold mt-1">Análise de Implementação e Onboarding</p>
             </div>
         </div>
+
+        <!-- CONTROLES (Analista, Coordenador, Botões) -->
         <div class="flex items-center gap-4 flex-wrap justify-center md:justify-end">
+            <!-- Input Analista -->
             <div class="relative">
                 <i data-lucide="user" class="absolute left-3 top-2.5 w-4 h-4 text-blue-300"></i>
                 <input type="text" id="cc-name-input" placeholder="Analista de CS"
                     class="pl-10 pr-5 py-2 rounded-xl bg-blue-900/40 border border-blue-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-blue-300 transition-all" />
             </div>
-    
-<div class="relative">
-       <i data-lucide="shield" class="absolute left-3 top-2.5 w-4 h-4 text-amber-300"></i>
-      <select id="coordinator-select" 
-        class="pl-10 pr-5 py-2 rounded-xl bg-amber-900/40 border border-amber-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-amber-300 transition-all cursor-pointer">
-        <option value="">Selecione Coordenador...</option>
-        <option value="Sayuri">Sayuri</option>
-        <option value="Tayanara">Tayanara</option>
-        <option value="Túlio">Túlio</option>
-        <option value="Michel">Michel</option>
-        <option value="Jéssica">Jéssica</option>
-    </select>
-</div>
-            <button id="history-btn" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-900/40 border border-purple-400/50 text-purple-200 text-sm hover:border-purple-300 transition-all" title="Ver histórico de avaliações">
-                <i data-lucide="history" class="w-4 h-4"></i>
-                <span class="hidden md:inline">Histórico</span>
-            </button>
+            
+            <!-- Select Coordenador -->
+            <div class="relative">
+                <i data-lucide="shield" class="absolute left-3 top-2.5 w-4 h-4 text-amber-300"></i>
+                <select id="coordinator-select" 
+                    class="pl-10 pr-5 py-2 rounded-xl bg-amber-900/40 border border-amber-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-amber-300 transition-all cursor-pointer">
+                    <option value="">Selecione Coordenador...</option>
+                    <option value="Sayuri">Sayuri</option>
+                    <option value="Tayanara">Tayanara</option>
+                    <option value="Túlio">Túlio</option>
+                    <option value="Michel">Michel</option>
+                    <option value="Jéssica">Jéssica</option>
+                </select>
+            </div>
+
+            <!-- Botão Dashboard -->
+            <a href="/dashboard.html" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-900/40 border border-indigo-400/50 text-indigo-200 text-sm hover:border-indigo-300 transition-all" title="Ver Dashboard de Avaliações">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Dashboard</span>
+            </a>
         </div>
     </div>
 </nav>
 
 <main class="max-w-7xl mx-auto px-4 mt-8">
 
-```
-<!-- Input -->
-<section class="mb-10">
-    <div class="glass-card p-8 md:p-10">
-        <div class="flex items-center gap-3 mb-6">
-            <i data-lucide="message-square" class="text-blue-600"></i>
-            <h2 class="font-bold text-slate-800 text-lg">Submeter Transcrição do Cliente</h2>
-        </div>
-        <textarea id="transcript-input" rows="6"
-            class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:ring-4 ring-blue-500/5 focus:outline-none transition-all text-sm resize-none"
-            placeholder="Cole aqui o diálogo da reunião de Onboarding..."></textarea>
-        <div class="flex items-center justify-between mt-3 mb-6 px-1">
-            <div class="text-[11px] font-bold text-slate-400">
-                <span id="char-count">0</span> caracteres
+    <!-- Input -->
+    <section class="mb-10">
+        <div class="glass-card p-8 md:p-10">
+            <div class="flex items-center gap-3 mb-6">
+                <i data-lucide="message-square" class="text-blue-600"></i>
+                <h2 class="font-bold text-slate-800 text-lg">Submeter Transcrição do Cliente</h2>
             </div>
-            <label class="text-[11px] font-bold text-slate-400 cursor-pointer hover:text-blue-600 transition-colors flex items-center gap-2">
-                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                Ou carregar PDF anterior
-                <input type="file" id="pdf-upload" accept=".pdf" class="hidden" />
-            </label>
-        </div>
-        <div class="flex justify-end">
-            <button id="analyze-btn"
-                class="flex items-center gap-3 bg-blue-600 hover:bg-[#002d72] text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                <span id="btn-text">Analisar Sucesso do Cliente</span>
-                <i data-lucide="zap" class="w-4 h-4"></i>
-            </button>
-        </div>
-    </div>
-</section>
-
-<!-- Results -->
-<div id="results-section" class="hidden space-y-8">
-
-    <!-- Loading -->
-    <div id="loading-spinner" class="glass-card p-12">
-        <div class="max-w-lg mx-auto space-y-6">
-            <div id="step-scores" class="flex items-center gap-4 transition-opacity duration-500">
-                <div id="step-scores-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-500"></i>
+            <textarea id="transcript-input" rows="6"
+                class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:ring-4 ring-blue-500/5 focus:outline-none transition-all text-sm resize-none"
+                placeholder="Cole aqui o diálogo da reunião de Onboarding..."></textarea>
+            <div class="flex items-center justify-between mt-3 mb-6 px-1">
+                <div class="text-[11px] font-bold text-slate-400">
+                    <span id="char-count">0</span> caracteres
                 </div>
+                <label class="text-[11px] font-bold text-slate-400 cursor-pointer hover:text-blue-600 transition-colors flex items-center gap-2">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                    Ou carregar PDF anterior
+                    <input type="file" id="pdf-upload" accept=".pdf" class="hidden" />
+                </label>
+            </div>
+            <div class="flex justify-end">
+                <button id="analyze-btn"
+                    class="flex items-center gap-3 bg-blue-600 hover:bg-[#002d72] text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span id="btn-text">Analisar Sucesso do Cliente</span>
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results -->
+    <div id="results-section" class="hidden space-y-8">
+
+        <!-- Loading -->
+        <div id="loading-spinner" class="glass-card p-12">
+            <div class="max-w-lg mx-auto space-y-6">
+                <div id="step-scores" class="flex items-center gap-4 transition-opacity duration-500">
+                    <div id="step-scores-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
+                            <span>Avaliando os 17 pilares</span>
+                            <span id="step-scores-pct">—</span>
+                        </div>
+                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="bar-scores" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-report" class="flex items-center gap-4 opacity-30 transition-opacity duration-500">
+                    <div id="step-report-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="scroll-text" class="w-4 h-4 text-blue-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
+                            <span>Gerando relatório de auditoria</span>
+                            <span id="step-report-pct">—</span>
+                        </div>
+                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="bar-report" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p id="loading-label" class="text-center text-slate-400 font-bold text-xs uppercase tracking-widest mt-10 pulse-text">Iniciando...</p>
+        </div>
+
+        <!-- Analysis -->
+        <div id="analysis-content" class="hidden space-y-8">
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center border-b-[10px] border-blue-600">
+                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Média de CS (Máx 5)</span>
+                    <div id="media-final" class="text-7xl font-black text-[#002d72] mb-3">0.0</div>
+                    <div id="status-tag" class="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-3">---</div>
+                </div>
+                <div class="lg:col-span-3 glass-card p-10 bg-gradient-to-br from-blue-700 to-blue-900 text-white flex flex-col justify-center">
+                    <div id="concorrentes-tags" class="flex flex-wrap gap-2 mb-4"></div>
+                    <h3 class="font-bold text-blue-200 text-[10px] uppercase tracking-widest mb-4">Diagnóstico da Implementação</h3>
+                    <p id="resumo-text" class="text-xl md:text-2xl font-bold leading-tight mb-8"></p>
+                    <div class="flex gap-4">
+                        <div class="p-4 bg-white/10 rounded-2xl border border-white/20 flex-1">
+                            <span class="text-[9px] font-black text-blue-300 uppercase block mb-1 tracking-widest italic">Saúde do Cliente:</span>
+                            <p id="saude-text" class="text-base font-bold text-white"></p>
+                        </div>
+                        <div class="p-4 bg-red-500/20 rounded-2xl border border-red-400/30 flex-1">
+                            <span class="text-[9px] font-black text-red-300 uppercase block mb-1 tracking-widest italic">Risco de Churn:</span>
+                            <p id="churn-text" class="text-base font-bold text-white"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="notas-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-4"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass-card p-8 min-h-[400px] flex items-center justify-center">
+                    <canvas id="radarChart"></canvas>
+                </div>
+                <div class="space-y-6">
+                    <div class="glass-card p-8">
+                        <h4 class="text-[10px] font-black uppercase text-slate-400 mb-8 tracking-widest">Tempo de Fala (Analista vs Cliente)</h4>
+                        <div id="talk-time-container" class="space-y-8"></div>
+                    </div>
+                    <div class="glass-card p-8">
+                        <h3 class="font-bold text-slate-800 text-[14px] mb-6 flex items-center gap-3">
+                            <i data-lucide="list-checks" class="text-blue-600 w-5 h-5"></i>
+                            Checklist de Onboarding
+                        </h3>
+                        <div id="checklist-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-emerald-50/60 p-8 rounded-[2rem] border border-emerald-100 shadow-sm">
+                    <h4 class="text-[10px] font-black text-emerald-700 mb-6 uppercase tracking-widest flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i> Pontos Fortes
+                    </h4>
+                    <ul id="lista-fortes" class="space-y-3 text-[12px] font-bold text-emerald-900"></ul>
+                </div>
+                <div class="bg-amber-50/60 p-8 rounded-[2rem] border border-amber-100 shadow-sm">
+                    <h4 class="text-[10px] font-black text-amber-700 mb-6 uppercase tracking-widest flex items-center gap-2">
+                        <i data-lucide="target" class="w-4 h-4"></i> Oportunidades de Melhoria
+                    </h4>
+                    <ul id="lista-atencao" class="space-y-3 text-[12px] font-bold text-amber-900"></ul>
+                </div>
+            </div>
+
+            <div class="glass-card p-12 md:p-16 shadow-2xl border-t-[10px] border-[#002d72] flex justify-between items-start">
                 <div class="flex-1">
-                    <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                        <span>Avaliando os 17 pilares</span>
-                        <span id="step-scores-pct">—</span>
-                    </div>
-                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div id="bar-scores" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width:0%"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="step-report" class="flex items-center gap-4 opacity-30 transition-opacity duration-500">
-                <div id="step-report-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="scroll-text" class="w-4 h-4 text-blue-500"></i>
-                </div>
-                <div class="flex-1">
-                    <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                        <span>Gerando relatório de auditoria</span>
-                        <span id="step-report-pct">—</span>
-                    </div>
-                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div id="bar-report" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width:0%"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <p id="loading-label" class="text-center text-slate-400 font-bold text-xs uppercase tracking-widest mt-10 pulse-text">Iniciando...</p>
-    </div>
-
-    <!-- Analysis -->
-    <div id="analysis-content" class="hidden space-y-8">
-
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center border-b-[10px] border-blue-600">
-                <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Média de CS (Máx 5)</span>
-                <div id="media-final" class="text-7xl font-black text-[#002d72] mb-3">0.0</div>
-                <div id="status-tag" class="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-3">---</div>
-            </div>
-            <div class="lg:col-span-3 glass-card p-10 bg-gradient-to-br from-blue-700 to-blue-900 text-white flex flex-col justify-center">
-                <div id="concorrentes-tags" class="flex flex-wrap gap-2 mb-4"></div>
-                <h3 class="font-bold text-blue-200 text-[10px] uppercase tracking-widest mb-4">Diagnóstico da Implementação</h3>
-                <p id="resumo-text" class="text-xl md:text-2xl font-bold leading-tight mb-8"></p>
-                <div class="flex gap-4">
-                    <div class="p-4 bg-white/10 rounded-2xl border border-white/20 flex-1">
-                        <span class="text-[9px] font-black text-blue-300 uppercase block mb-1 tracking-widest italic">Saúde do Cliente:</span>
-                        <p id="saude-text" class="text-base font-bold text-white"></p>
-                    </div>
-                    <div class="p-4 bg-red-500/20 rounded-2xl border border-red-400/30 flex-1">
-                        <span class="text-[9px] font-black text-red-300 uppercase block mb-1 tracking-widest italic">Risco de Churn:</span>
-                        <p id="churn-text" class="text-base font-bold text-white"></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="notas-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-4"></div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="glass-card p-8 min-h-[400px] flex items-center justify-center">
-                <canvas id="radarChart"></canvas>
-            </div>
-            <div class="space-y-6">
-                <div class="glass-card p-8">
-                    <h4 class="text-[10px] font-black uppercase text-slate-400 mb-8 tracking-widest">Tempo de Fala (Analista vs Cliente)</h4>
-                    <div id="talk-time-container" class="space-y-8"></div>
-                </div>
-                <div class="glass-card p-8">
-                    <h3 class="font-bold text-slate-800 text-[14px] mb-6 flex items-center gap-3">
-                        <i data-lucide="list-checks" class="text-blue-600 w-5 h-5"></i>
-                        Checklist de Onboarding
+                    <h3 class="text-xl font-extrabold text-[#002d72] uppercase tracking-widest mb-10 border-b pb-6 flex items-center gap-4">
+                        <i data-lucide="scroll-text"></i>
+                        Relatório de Auditoria de CS
                     </h3>
-                    <div id="checklist-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                    <div id="markdown-body" class="markdown-content"></div>
+                </div>
+                <div class="flex gap-2 ml-4">
+                    <button id="save-report-btn" class="flex items-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all" title="Salvar relatório">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">Salvar</span>
+                    </button>
+                    <button id="export-pdf-btn" class="flex items-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all" title="Exportar como PDF">
+                        <i data-lucide="file-pdf" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">PDF</span>
+                    </button>
                 </div>
             </div>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-emerald-50/60 p-8 rounded-[2rem] border border-emerald-100 shadow-sm">
-                <h4 class="text-[10px] font-black text-emerald-700 mb-6 uppercase tracking-widest flex items-center gap-2">
-                    <i data-lucide="trending-up" class="w-4 h-4"></i> Pontos Fortes
-                </h4>
-                <ul id="lista-fortes" class="space-y-3 text-[12px] font-bold text-emerald-900"></ul>
-            </div>
-            <div class="bg-amber-50/60 p-8 rounded-[2rem] border border-amber-100 shadow-sm">
-                <h4 class="text-[10px] font-black text-amber-700 mb-6 uppercase tracking-widest flex items-center gap-2">
-                    <i data-lucide="target" class="w-4 h-4"></i> Oportunidades de Melhoria
-                </h4>
-                <ul id="lista-atencao" class="space-y-3 text-[12px] font-bold text-amber-900"></ul>
-            </div>
-        </div>
-
-        <div class="glass-card p-12 md:p-16 shadow-2xl border-t-[10px] border-[#002d72] flex justify-between items-start">
-            <div class="flex-1">
-                <h3 class="text-xl font-extrabold text-[#002d72] uppercase tracking-widest mb-10 border-b pb-6 flex items-center gap-4">
-                    <i data-lucide="scroll-text"></i>
-                    Relatório de Auditoria de CS
-                </h3>
-                <div id="markdown-body" class="markdown-content"></div>
-            </div>
-            <div class="flex gap-2 ml-4">
-                <button id="save-report-btn" class="flex items-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all" title="Salvar relatório">
-                    <i data-lucide="save" class="w-4 h-4"></i>
-                    <span class="hidden md:inline">Salvar</span>
-                </button>
-                <button id="export-pdf-btn" class="flex items-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all" title="Exportar como PDF">
-                    <i data-lucide="file-pdf" class="w-4 h-4"></i>
-                    <span class="hidden md:inline">PDF</span>
-                </button>
-            </div>
-        </div>
     </div>
-</div>
-```
 
 </main>
 
-<!-- Modal de Histórico -->
-
-<div id="history-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
-    <div class="bg-white rounded-[2rem] p-8 max-w-2xl w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[80vh] overflow-y-auto" id="history-modal-content">
-        <div class="flex justify-between items-center mb-6 sticky top-0 bg-white pb-4 border-b">
-            <h2 class="text-lg font-black text-[#002d72] uppercase">Histórico de Avaliações</h2>
-            <button onclick="closeHistoryModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full text-slate-500 transition-colors">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-        <div id="history-list" class="space-y-3">
-            <p class="text-slate-500 text-center py-8">Nenhuma avaliação salva ainda.</p>
-        </div>
-    </div>
-</div>
-
 <!-- Modal de Detalhes de Avaliação -->
-
 <div id="justification-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
     <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col" id="modal-content-box">
         <div class="flex justify-between items-start mb-6">
@@ -272,7 +259,6 @@
 </div>
 
 <!-- Modal de Leitor de PDF -->
-
 <div id="pdf-viewer-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
     <div class="bg-white rounded-[2rem] p-6 max-w-4xl w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]" id="pdf-viewer-content">
         <div class="flex justify-between items-center mb-4 sticky top-0 bg-white pb-4 border-b">
@@ -291,6 +277,78 @@
 <script>
 lucide.createIcons();
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAPEAMENTO CS → COORDENADOR (AUTO-DETECT)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CS_TO_COORDINATOR = {
+  // TIME SAYURI
+  'brayan santos': 'Sayuri', 'brayan': 'Sayuri',
+  'camille vaz': 'Sayuri', 'camille': 'Sayuri',
+  'carolina miranda': 'Sayuri', 'carolina': 'Sayuri',
+  'isaque silva': 'Sayuri', 'isaque': 'Sayuri',
+  'larissa mota': 'Sayuri',
+  'nat vieira': 'Sayuri', 'nat': 'Sayuri',
+  'vinícius oliveira': 'Sayuri', 'vinicius': 'Sayuri',
+
+  // TIME TAYANARA
+  'ana de battisti': 'Tayanara', 'ana battisti': 'Tayanara', 'ana': 'Tayanara',
+  'denis silva': 'Tayanara', 'denis': 'Tayanara',
+  'larissa teixeira': 'Tayanara',
+  'lorrayne moreira': 'Tayanara', 'lorrayne': 'Tayanara',
+  'micaelle martins': 'Tayanara', 'micaelle': 'Tayanara',
+  'sthephany talasca': 'Tayanara', 'sthephany': 'Tayanara', 'sthe': 'Tayanara',
+  'thais silva': 'Tayanara', 'thais': 'Tayanara',
+  'willian martins': 'Tayanara', 'willian': 'Tayanara',
+  'yuri santos': 'Tayanara', 'yuri': 'Tayanara',
+
+  // TIME MICHEL
+  'aline almeida': 'Michel', 'aline': 'Michel',
+  'bianca kim': 'Michel', 'bianca': 'Michel',
+  'jéssica barreiro': 'Michel', 'jessica barreiro': 'Michel', 'jessica': 'Michel',
+  'julia rodrigues': 'Michel', 'julia': 'Michel',
+  'maria fernanda costa': 'Michel', 'mafê': 'Michel',
+  'maryana alves': 'Michel', 'maryana': 'Michel',
+  'rafaele oliveira': 'Michel', 'rafaele': 'Michel',
+  'túlio morgado': 'Michel', 'túlio': 'Michel', 'tulio': 'Michel',
+};
+
+function detectCSAndCoordinator(transcript) {
+  if (!transcript) return { cs: null, coordinator: null };
+  const lowerTranscript = transcript.toLowerCase();
+  for (const [name, coordinator] of Object.entries(CS_TO_COORDINATOR)) {
+    if (lowerTranscript.includes(name)) {
+      return { cs: name, coordinator: coordinator };
+    }
+  }
+  return { cs: null, coordinator: null };
+}
+
+// Detecta ao digitar
+document.getElementById('transcript-input').addEventListener('input', function() {
+  const transcript = this.value;
+  const { cs, coordinator } = detectCSAndCoordinator(transcript);
+  if (coordinator) {
+    document.getElementById('coordinator-select').value = coordinator;
+  }
+});
+
+// Detecta ao colar
+document.getElementById('transcript-input').addEventListener('paste', function() {
+  setTimeout(() => {
+    const transcript = this.value;
+    const { cs, coordinator } = detectCSAndCoordinator(transcript);
+    if (coordinator) {
+      document.getElementById('coordinator-select').value = coordinator;
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-50';
+      toast.textContent = `✅ ${coordinator} atribuído a ${cs}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+  }, 100);
+});
+
 // ─── Local Storage ─────────────────────────────────────────────────────────
 const STORAGE_KEY = 'nibo_auditor_history';
 
@@ -308,118 +366,6 @@ function saveToHistory(data) {
     history.unshift(entry);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     return entry.id;
-}
-
-function getHistory() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-}
-
-function deleteHistoryEntry(id) {
-    const history = getHistory();
-    const filtered = history.filter(h => h.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    loadHistoryModal();
-}
-
-function loadHistoryModal() {
-    const history = getHistory();
-    const list = document.getElementById('history-list');
-    
-    if (history.length === 0) {
-        list.innerHTML = '<p class="text-slate-500 text-center py-8">Nenhuma avaliação salva ainda.</p>';
-        return;
-    }
-
-    list.innerHTML = history.map(h => `
-        <div class="p-4 bg-gradient-to-r from-blue-50 to-slate-50 rounded-xl border border-blue-100 flex justify-between items-start hover:shadow-md transition-all">
-            <div class="flex-1">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="text-sm font-bold text-[#002d72]">${h.analista}</span>
-                    <span class="text-[10px] px-2 py-1 bg-blue-200 text-blue-800 rounded-full font-bold">${h.media.toFixed(1)}/5</span>
-                </div>
-                <p class="text-xs text-slate-600 mb-1">Coordenador: <span class="font-bold">${h.coordenador}</span></p>
-                <p class="text-xs text-slate-500">${h.timestamp}</p>
-                <p class="text-xs text-slate-600 mt-2 italic line-clamp-2">"${h.resumo}"</p>
-            </div>
-            <div class="flex gap-2 ml-4">
-                <<!-- 
-PROCURE ESTA SEÇÃO NO SEU index.html (por volta da linha 90-100):
-
-            <button id="history-btn" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-900/40 border border-purple-400/50 text-purple-200 text-sm hover:border-purple-300 transition-all" title="Ver histórico de avaliações">
-                <i data-lucide="history" class="w-4 h-4"></i>
-                <span class="hidden md:inline">Histórico</span>
-            </button>
-
-E SUBSTITUA PELO:
--->
-
-<a href="/dashboard.html" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-900/40 border border-indigo-400/50 text-indigo-200 text-sm hover:border-indigo-300 transition-all" title="Ver Dashboard de Avaliações">
-    <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-    <span class="hidden md:inline">Dashboard</span>
-</a>
-                <button onclick="deleteHistoryEntry(${h.id})" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-all" title="Deletar">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
-    lucide.createIcons();
-
-    // ═══════════════════════════════════════════════════════════════════════════════
-// CARREGAR COORDENADORES DINAMICAMENTE
-// ═══════════════════════════════════════════════════════════════════════════════
-// Cole este código logo após: lucide.createIcons();
-
-async function loadCoordinators() {
-    try {
-        const response = await fetch('/api/coordinators.js');
-        if (!response.ok) {
-            console.warn('Não foi possível carregar coordenadores');
-            return;
-        }
-        
-        const coordinators = await response.json();
-        const select = document.getElementById('coordinator-select');
-        
-        // Limpa as opções hardcoded (mantém o placeholder)
-        while (select.options.length > 1) {
-            select.remove(1);
-        }
-        
-        // Adiciona os coordenadores do banco
-        coordinators.forEach(coord => {
-            const option = document.createElement('option');
-            option.value = coord.nome;
-            option.textContent = coord.nome;
-            select.appendChild(option);
-        });
-        
-        console.log('✅ Coordenadores carregados:', coordinators.map(c => c.nome));
-        
-    } catch (error) {
-        console.error('❌ Erro ao carregar coordenadores:', error);
-    }
-}
-
-// Chama a função quando a página carrega
-document.addEventListener('DOMContentLoaded', loadCoordinators);
-// Ou se lucide.createIcons() for chamado no final do script:
-loadCoordinators();
-}
-
-function openHistoryDetail(id) {
-    const history = getHistory();
-    const entry = history.find(h => h.id === id);
-    if (!entry) return;
-    
-    closeHistoryModal();
-    // Renderizar os dados no dashboard
-    setTimeout(() => {
-        renderDashboard(entry.data);
-        document.getElementById('results-section').classList.remove('hidden');
-        document.getElementById('loading-spinner').classList.add('hidden');
-        document.getElementById('analysis-content').classList.remove('hidden');
-    }, 300);
 }
 
 // ─── PDF Upload e Visualização ────────────────────────────────────────────
@@ -488,29 +434,6 @@ function closePdfViewer() {
     setTimeout(() => { modal.classList.replace('flex', 'hidden'); }, 300);
 }
 
-// ─── History Modal ────────────────────────────────────────────────────────
-document.getElementById('history-btn').addEventListener('click', () => {
-    loadHistoryModal();
-    const modal = document.getElementById('history-modal');
-    modal.classList.replace('hidden', 'flex');
-    setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        document.getElementById('history-modal-content').classList.replace('scale-95', 'scale-100');
-        lucide.createIcons();
-    }, 10);
-});
-
-function closeHistoryModal() {
-    const modal = document.getElementById('history-modal');
-    modal.classList.add('opacity-0');
-    document.getElementById('history-modal-content').classList.replace('scale-100', 'scale-95');
-    setTimeout(() => { modal.classList.replace('flex', 'hidden'); }, 300);
-}
-
-document.getElementById('history-modal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) closeHistoryModal();
-});
-
 // ─── Pillar Store ──────────────────────────────────────────────────────────
 const pillarStore = {};
 let radarChartInstance = null;
@@ -563,9 +486,7 @@ function animateTo(barId, pctId, target, durationMs) {
 
 function markDone(iconId) {
     const el = document.getElementById(iconId);
-    if (el) el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="3" class="w-4 h-4 text-emerald-500">
-        <polyline points="20 6 9 17 4 12"/></svg>`;
+    if (el) el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-4 h-4 text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>`;
 }
 
 function activate(rowId) {
@@ -783,148 +704,7 @@ function closeModal() {
     modalBox.classList.replace('scale-100','scale-95');
     setTimeout(() => { modal.classList.replace('flex','hidden'); }, 300);
 }
-// ═══════════════════════════════════════════════════════════════════════════════
-// INSIRA ESTE CÓDIGO NO FINAL DO <script> DO index.html
-// ANTES DE: analyzeBtn.addEventListener('click', handleAnalysis);
-// ═══════════════════════════════════════════════════════════════════════════════
 
-// Mapeamento CS → Coordenador
-const CS_TO_COORDINATOR = {
-  // TIME SAYURI
-  'brayan santos': 'Sayuri',
-  'brayan': 'Sayuri',
-  'camille vaz': 'Sayuri',
-  'camille': 'Sayuri',
-  'carolina miranda': 'Sayuri',
-  'carolina': 'Sayuri',
-  'isaque silva': 'Sayuri',
-  'isaque': 'Sayuri',
-  'larissa mota': 'Sayuri',
-  'nat vieira': 'Sayuri',
-  'nat': 'Sayuri',
-  'vinícius oliveira': 'Sayuri',
-  'vinicius': 'Sayuri',
-
-  // TIME TAYANARA
-  'ana de battisti': 'Tayanara',
-  'ana battisti': 'Tayanara',
-  'ana': 'Tayanara',
-  'denis silva': 'Tayanara',
-  'denis': 'Tayanara',
-  'larissa teixeira': 'Tayanara',
-  'lorrayne moreira': 'Tayanara',
-  'lorrayne': 'Tayanara',
-  'micaelle martins': 'Tayanara',
-  'micaelle': 'Tayanara',
-  'sthephany talasca': 'Tayanara',
-  'sthephany': 'Tayanara',
-  'sthe': 'Tayanara',
-  'thais silva': 'Tayanara',
-  'thais': 'Tayanara',
-  'willian martins': 'Tayanara',
-  'willian': 'Tayanara',
-  'yuri santos': 'Tayanara',
-  'yuri': 'Tayanara',
-
-  // TIME MICHEL
-  'aline almeida': 'Michel',
-  'aline': 'Michel',
-  'bianca kim': 'Michel',
-  'bianca': 'Michel',
-  'jéssica barreiro': 'Michel',
-  'jessica barreiro': 'Michel',
-  'jessica': 'Michel',
-  'julia rodrigues': 'Michel',
-  'julia': 'Michel',
-  'maria fernanda costa': 'Michel',
-  'mafê': 'Michel',
-  'maryana alves': 'Michel',
-  'maryana': 'Michel',
-  'rafaele oliveira': 'Michel',
-  'rafaele': 'Michel',
-  'túlio morgado': 'Michel',
-  'túlio': 'Michel',
-  'tulio': 'Michel',
-};
-
-// Função para detectar CS na transcrição
-function detectCSAndCoordinator(transcript) {
-  if (!transcript) return { cs: null, coordinator: null };
-
-  const lowerTranscript = transcript.toLowerCase();
-
-  // Procura por menções de nomes de CS
-  for (const [name, coordinator] of Object.entries(CS_TO_COORDINATOR)) {
-    if (lowerTranscript.includes(name)) {
-      return { cs: name, coordinator: coordinator };
-    }
-  }
-
-  return { cs: null, coordinator: null };
-}
-
-// Listener para detectar CS ao digitar na transcrição
-document.getElementById('transcript-input').addEventListener('input', function() {
-  const transcript = this.value;
-  const { cs, coordinator } = detectCSAndCoordinator(transcript);
-
-  if (coordinator) {
-    // Auto-preenche o seletor de coordenador
-    document.getElementById('coordinator-select').value = coordinator;
-    
-    // Mostra uma mensagem visual
-    const nameInput = document.getElementById('cc-name-input');
-    if (!nameInput.value) {
-      // Se não tem nome, sugere
-      nameInput.placeholder = `Detectado: ${cs} (${coordinator})`;
-      nameInput.classList.add('ring-2', 'ring-green-400');
-    }
-  } else {
-    // Remove a sugestão se não encontrar nada
-    const nameInput = document.getElementById('cc-name-input');
-    nameInput.placeholder = 'Analista de CS';
-    nameInput.classList.remove('ring-2', 'ring-green-400');
-  }
-});
-
-// Também detecta quando o usuário termina de colar (para PDFs ou textos longos)
-document.getElementById('transcript-input').addEventListener('paste', function() {
-  setTimeout(() => {
-    const transcript = this.value;
-    const { cs, coordinator } = detectCSAndCoordinator(transcript);
-
-    if (coordinator) {
-      document.getElementById('coordinator-select').value = coordinator;
-      console.log(`✅ Coordenador auto-detectado: ${coordinator} (${cs})`);
-      
-      // Toast de notificação
-      const toast = document.createElement('div');
-      toast.className = 'fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold';
-      toast.textContent = `✅ ${coordinator} atribuído a ${cs}`;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-  }, 100);
-});
-
-// Também tenta detectar quando clica em "Analisar"
-const originalHandleAnalysis = handleAnalysis;
-async function handleAnalysisWithDetection() {
-  const transcript = document.getElementById('transcript-input').value;
-  const { cs, coordinator } = detectCSAndCoordinator(transcript);
-
-  if (coordinator && !document.getElementById('coordinator-select').value) {
-    document.getElementById('coordinator-select').value = coordinator;
-    console.log(`✅ Auto-detectado: ${coordinator}`);
-  }
-
-  // Chama a função original
-  return originalHandleAnalysis.call(this);
-}
-
-// Substitui o handler
-document.getElementById('analyze-btn').removeEventListener('click', handleAnalysis);
-document.getElementById('analyze-btn').addEventListener('click', handleAnalysisWithDetection);
 document.getElementById('justification-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 analyzeBtn.addEventListener('click', handleAnalysis);
 
@@ -935,24 +715,6 @@ document.getElementById('save-report-btn').addEventListener('click', () => {
 
 document.getElementById('export-pdf-btn').addEventListener('click', () => {
     alert('Funcionalidade de exportar PDF em desenvolvimento. Você pode usar Ctrl+P para imprimir como PDF.');
-    async function loadCoordinators() {
-    const response = await fetch('/api/coordinators.js');
-    const coordinators = await response.json();
-    const select = document.getElementById('coordinator-select');
-    
-    // Limpa e recarrega
-    while (select.options.length > 1) select.remove(1);
-    
-    coordinators.forEach(coord => {
-        const option = document.createElement('option');
-        option.value = coord.nome;
-        option.textContent = coord.nome;
-        select.appendChild(option);
-    });
-}
-
-// Chama quando página carrega
-loadCoordinators();
 });
 </script>
 
