@@ -30,7 +30,7 @@ const ALL_PILLARS = [
   ['universo_contabil', 'Universo Contábil'],
 ];
 
-// ─── Repara JSON truncado fechando estruturas abertas ─────────────────────────────
+// ─── Repara JSON truncado ─────────────────────────────────────────────────
 function repairJson(raw) {
   let s = (raw || '').trimEnd();
   s = s.replace(/,\s*$/, '');
@@ -55,19 +55,37 @@ function repairJson(raw) {
 }
 
 function safeParse(text, label) {
-  try { return JSON.parse(text); } catch (*) {
+  try { 
+    return JSON.parse(text); 
+  } catch (e1) {
     try {
-      const r = JSON.parse(repairJson(text));
-      console.log(label + ' reparado OK');
-      return r;
+      const repaired = repairJson(text);
+      const result = JSON.parse(repaired);
+      console.log(`✅ ${label} reparado com sucesso`);
+      return result;
     } catch (e2) {
-      console.error(label + ' falhou mesmo após repair:', (text || '').slice(-80));
-      throw new Error('JSON_FAIL*' + label);
+      console.error(`❌ ${label} falhou:`, (text || '').substring(0, 200));
+      throw new Error(`JSON_PARSE_FAILED: ${label}`);
     }
   }
 }
 
-// ─── Monta schema de justificativas para N pilares ────────────────────────────
+// ─── Extrair texto da resposta (funciona com diferentes formatos) ──────────
+function extractText(response) {
+  // Se tiver content array
+  if (response?.content && Array.isArray(response.content)) {
+    const textBlock = response.content.find(c => c.type === 'text');
+    if (textBlock?.text) return textBlock.text;
+  }
+  
+  // Se tiver text direto
+  if (typeof response === 'string') return response;
+  if (typeof response?.text === 'string') return response.text;
+  
+  // Se for o objeto inteiro
+  return JSON.stringify(response);
+}
+
 function makeTextSchema(pairs) {
   const props = {};
   const req   = [];
@@ -80,18 +98,16 @@ function makeTextSchema(pairs) {
   return { type: Type.OBJECT, properties: props, required: req };
 }
 
-// ─── Retry automático para chamadas à API ─────────────────────────────────────
-async function withRetry(fn, label, attempts) {
-  attempts = attempts || 3;
+async function withRetry(fn, label, attempts = 3) {
   let lastErr;
   for (let i = 0; i < attempts; i++) {
     try {
       return await fn();
     } catch (e) {
       lastErr = e;
-      console.error(label + ' tentativa ' + (i + 1) + ' falhou:', e.message);
+      console.error(`⚠️  ${label} tentativa ${i + 1}/${attempts} falhou:`, e.message);
       if (i < attempts - 1) {
-        await new Promise(function(r) { setTimeout(r, 1000 * (i + 1)); });
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
       }
     }
   }
@@ -99,47 +115,43 @@ async function withRetry(fn, label, attempts) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CHAMADA 1: NOTAS NUMÉRICAS + CHECKLIST (ULTRA-ESTÁVEL, temperature=0.1)
+// CHAMADA 1: NOTAS NUMÉRICAS
 // ═══════════════════════════════════════════════════════════════════════════════
 async function getNumbers(transcript) {
-  const systemPrompt = `Você é um AUDITOR DE CS EXPERIENTE do Nibo. Sua tarefa é avaliar transcrições de reuniões de onboarding.
+  const systemPrompt = `Você é um auditor de CS expert do Nibo. Avalie APENAS o que está na transcrição.
 
-REGRAS RÍGIDAS:
-- Avalie APENAS o que está EXPLICITAMENTE na transcrição
-- Se não houver evidência clara = -1 (sem evidência)
-- Notas: 1 = Péssimo, 2 = Fraco, 3 = Adequado, 4 = Bom, 5 = Excelente
-- Não varie as notas arbitrariamente - seja CONSISTENTE e OBJETIVO
-- Se a mesma transcrição for analisada novamente, as notas DEVEM ser idênticas
+REGRAS:
+- Se não houver evidência = -1
+- Notas: 1=Péssimo, 2=Fraco, 3=Adequado, 4=Bom, 5=Excelente
+- DETERMINÍSTICO: mesma transcrição = mesmas notas
+- Arredonde para inteiro (1-5)
 
-CRITÉRIOS OBJETIVO POR PILAR:
-- Consultividade: Recomenda soluções vs apenas responde? (5=recomenda soluções assertivas)
-- Escuta Ativa: Faz perguntas abertas? Deixa cliente falar? (5=faz perguntas relevantes, 40%+ cliente fala)
-- Jornada do Cliente: Conhece próximos passos? Alinha expectativas? (5=roadmap claro + datas)
-- Encantamento: Surpresa positiva? Vai além? (5=oferece algo inesperado/valor extra)
-- Objeções/Bugs: Aborda problemas do cliente? (5=identifica e resolve 3+ pontos críticos)
-- Rapport: Tom amigável? Empatia? (5=conexão pessoal clara + ajustes de tom)
-- Autoridade: Demonstra expertise? Confiança? (5=cita casos, dados, best practices)
-- Postura: Profissional? Organizado? (5=estruturado, pontual, bem preparado)
-- Gestão de Tempo: Respeita horário? Cumpre agenda? (5=termina no prazo com tudo pronto)
-- Contextualização: Conhece o cliente? Seu negócio? (5=referencia dados específicos do cliente)
-- Clareza: Explica bem? Sem jargão? (5=muito claro, sem termos técnicos desnecessários)
-- Objetividade: Vai ao ponto? Sem desvios? (5=foca nos problemas, sem digressões)
-- Flexibilidade: Adapta abordagem? Ouve sugestões? (5=pivota conforme necessário)
-- Domínio de Produto: Conhece Nibo? Funcionalidades? (5=cita features específicas com precisão)
-- Domínio de Negócio: Conhece contabilidade/fiscal? (5=entende processos contábeis do cliente)
-- Ecossistema Nibo: Conhece integrações? Parceiros? (5=recomenda integrações relevantes)
-- Universo Contábil: Conhece o espectro contábil? (5=domínio completo de classificações)
-
-IMPORTANTE: Estas notas devem ser DETERMINÍSTICAS. A mesma transcrição sempre gera as mesmas notas.`;
+CRITÉRIOS POR PILAR:
+- Consultividade: Recomenda soluções? (5=sim, assertivas)
+- Escuta Ativa: Pergunta? Cliente fala 40%+? (5=sim em ambos)
+- Jornada do Cliente: Próximos passos claros? (5=roadmap + datas)
+- Encantamento: Surpresa positiva? (5=sim, oferece valor extra)
+- Objeções/Bugs: Aborda problemas? (5=identifica 3+ pontos)
+- Rapport: Tom amigável, empatia? (5=conexão clara)
+- Autoridade: Demonstra expertise? (5=casos, dados, best practices)
+- Postura: Profissional, organizado? (5=muito bem estruturado)
+- Gestão de Tempo: Respeita horário? (5=cumpre tudo no prazo)
+- Contextualização: Conhece cliente? (5=referencia dados específicos)
+- Clareza: Explica bem? (5=muito claro, sem jargão)
+- Objetividade: Vai ao ponto? (5=foca problemas, sem desvios)
+- Flexibilidade: Adapta abordagem? (5=pivota conforme necessário)
+- Domínio de Produto: Conhece Nibo? (5=cita features com precisão)
+- Domínio de Negócio: Conhece contabilidade? (5=domínio completo)
+- Ecossistema Nibo: Conhece integrações? (5=recomenda as certas)
+- Universo Contábil: Conhece classificações? (5=domínio total)`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: transcript,
-    config: {
+    contents: [{ role: 'user', parts: [{ text: transcript }] }],
+    generationConfig: {
       responseMimeType: 'application/json',
+      temperature: 0.1,
       maxOutputTokens: 8192,
-      temperature: 0.1, // ULTRA-BAIXO para determinismo
-      systemInstruction: systemPrompt,
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -182,23 +194,26 @@ IMPORTANTE: Estas notas devem ser DETERMINÍSTICAS. A mesma transcrição sempre
         ],
       },
     },
+    systemInstruction: systemPrompt,
   });
 
-  const parsed = safeParse(res.text, 'getNumbers');
+  const text = extractText(res);
+  const parsed = safeParse(text, 'getNumbers');
 
   // Converte -1 para null
-  ALL_PILLARS.forEach(function(p) {
-    if (parsed['nota_' + p[0]] === -1) parsed['nota_' + p[0]] = null;
+  ALL_PILLARS.forEach(p => {
+    const val = parsed['nota_' + p[0]];
+    if (val === -1 || val === '-1') parsed['nota_' + p[0]] = null;
   });
 
-  // Validação: força notas entre 1-5 (ou null)
-  ALL_PILLARS.forEach(function(p) {
+  // Validação
+  ALL_PILLARS.forEach(p => {
     const k = p[0];
-    const n = parsed['nota_' + k];
+    let n = parsed['nota_' + k];
     if (n !== null && n !== undefined) {
-      if (n < 1) parsed['nota_' + k] = 1;
-      if (n > 5) parsed['nota_' + k] = 5;
-      // Arredonda para número inteiro para mais consistência
+      n = Number(n);
+      if (n < 1) n = 1;
+      if (n > 5) n = 5;
       parsed['nota_' + k] = Math.round(n);
     }
   });
@@ -218,26 +233,20 @@ IMPORTANTE: Estas notas devem ser DETERMINÍSTICAS. A mesma transcrição sempre
   return parsed;
 }
 
-// ─── CHAMADA 2: meta-textos (resumo, saúde, sistemas, pontos) ─────────────────
+// ─── CHAMADA 2: Meta-textos ────────────────────────────────────────────────
 async function getMeta(transcript, numbers) {
   const notasStr = ALL_PILLARS
-    .filter(function(p) { return numbers['nota_' + p[0]] !== null; })
-    .map(function(p)    { return p[1] + ': ' + numbers['nota_' + p[0]] + '/5'; })
+    .filter(p => numbers['nota_' + p[0]] !== null)
+    .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
     .join(', ');
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: transcript,
-    config: {
+    contents: [{ role: 'user', parts: [{ text: transcript }] }],
+    generationConfig: {
       responseMimeType: 'application/json',
+      temperature: 0.2,
       maxOutputTokens: 2048,
-      temperature: 0.2, // Bem baixa
-      systemInstruction:
-        'Auditor de CS do Nibo. Notas: ' + notasStr + '. ' +
-        'Retorne JSON com campos solicitados. ' +
-        'pontos_fortes e pontos_atencao: máx 4 itens cada, frases curtas diretas. ' +
-        'sistemas_citados: ferramentas/sistemas mencionados EXPLICITAMENTE. ' +
-        'resumo_executivo: 1 frase concisa. saude_cliente: 1 frase. risco_churn: 1 frase.',
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -248,80 +257,67 @@ async function getMeta(transcript, numbers) {
           pontos_fortes:    { type: Type.ARRAY, items: { type: Type.STRING } },
           pontos_atencao:   { type: Type.ARRAY, items: { type: Type.STRING } },
         },
-        required: ['resumo_executivo', 'saude_cliente', 'risco_churn',
-                   'sistemas_citados', 'pontos_fortes', 'pontos_atencao'],
+        required: ['resumo_executivo', 'saude_cliente', 'risco_churn', 'sistemas_citados', 'pontos_fortes', 'pontos_atencao'],
       },
     },
+    systemInstruction: `Notas: ${notasStr}. Retorne JSON. resumo=1 frase. saude/churn=1 frase. sistemas=lista. fortes/atencao=máx 4 itens curtos.`,
   });
 
-  return safeParse(res.text, 'getMeta');
+  const text = extractText(res);
+  return safeParse(text, 'getMeta');
 }
 
-// ─── CHAMADA 3A: justificativas pilares 1-9 (temperature=0.1) ───────────────────
+// ─── CHAMADA 3A: Justificativas 1-9 ────────────────────────────────────────
 async function getTextsA(transcript, numbers) {
   const group = ALL_PILLARS.slice(0, 9);
   const notasStr = group
-    .filter(function(p) { return numbers['nota_' + p[0]] !== null; })
-    .map(function(p)    { return p[1] + ': ' + numbers['nota_' + p[0]] + '/5'; })
+    .filter(p => numbers['nota_' + p[0]] !== null)
+    .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
     .join(', ');
-
-  const instruction =
-    'Auditor de CS do Nibo. Notas: ' + notasStr + '. ' +
-    'Para pilares SEM evidência: porque="Sem evidência na transcrição." melhoria="". ' +
-    'Para com evidência: ' +
-    'porque = 1-2 frases descrevendo O QUE foi observado (fato objetivo). ' +
-    'melhoria = 1 frase do que faltou para nota 5 (se nota=5 escreva "Excelência atingida."). ' +
-    'SEJA CONSISTENTE: mesma transcrição = mesma resposta.';
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: transcript,
-    config: {
+    contents: [{ role: 'user', parts: [{ text: transcript }] }],
+    generationConfig: {
       responseMimeType: 'application/json',
+      temperature: 0.1,
       maxOutputTokens: 3000,
-      temperature: 0.1, // ULTRA-BAIXO
-      systemInstruction: instruction,
       responseSchema: makeTextSchema(group),
     },
+    systemInstruction: `Notas: ${notasStr}. Para sem evidência: porque="Sem evidência na transcrição." melhoria="". Para com evidência: porque=1-2 frases (fato objetivo). melhoria=1 frase (o que faltou para 5, ou "Excelência atingida.").`,
   });
 
-  return safeParse(res.text, 'getTextsA');
+  const text = extractText(res);
+  return safeParse(text, 'getTextsA');
 }
 
-// ─── CHAMADA 3B: justificativas pilares 10-17 (temperature=0.1) ────────────────
+// ─── CHAMADA 3B: Justificativas 10-17 ───────────────────────────────────────
 async function getTextsB(transcript, numbers) {
   const group = ALL_PILLARS.slice(9);
   const notasStr = group
-    .filter(function(p) { return numbers['nota_' + p[0]] !== null; })
-    .map(function(p)    { return p[1] + ': ' + numbers['nota_' + p[0]] + '/5'; })
+    .filter(p => numbers['nota_' + p[0]] !== null)
+    .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
     .join(', ');
-
-  const instruction =
-    'Auditor de CS do Nibo. Notas: ' + notasStr + '. ' +
-    'Para pilares SEM evidência: porque="Sem evidência na transcrição." melhoria="". ' +
-    'Para com evidência: ' +
-    'porque = 1-2 frases descrevendo O QUE foi observado (fato objetivo). ' +
-    'melhoria = 1 frase do que faltou para nota 5 (se nota=5 escreva "Excelência atingida."). ' +
-    'SEJA CONSISTENTE: mesma transcrição = mesma resposta.';
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: transcript,
-    config: {
+    contents: [{ role: 'user', parts: [{ text: transcript }] }],
+    generationConfig: {
       responseMimeType: 'application/json',
+      temperature: 0.1,
       maxOutputTokens: 3000,
-      temperature: 0.1, // ULTRA-BAIXO
-      systemInstruction: instruction,
       responseSchema: makeTextSchema(group),
     },
+    systemInstruction: `Notas: ${notasStr}. Para sem evidência: porque="Sem evidência na transcrição." melhoria="". Para com evidência: porque=1-2 frases (fato objetivo). melhoria=1 frase (o que faltou para 5, ou "Excelência atingida.").`,
   });
 
-  return safeParse(res.text, 'getTextsB');
+  const text = extractText(res);
+  return safeParse(text, 'getTextsB');
 }
 
-// ─── CHAMADA 4: relatório (temperature=0.2, mais criativo mas ainda consistente) ──
+// ─── CHAMADA 4: Relatório ──────────────────────────────────────────────────
 async function getRelatorio(numbers, meta, texts, coordinator) {
-  const linhas = ALL_PILLARS.map(function(p) {
+  const linhas = ALL_PILLARS.map(p => {
     const k    = p[0];
     const nota = numbers['nota_' + k];
     if (nota === null) return null;
@@ -331,71 +327,53 @@ async function getRelatorio(numbers, meta, texts, coordinator) {
     return '- **' + p[1] + '**: ' + nota + '/5 — ' + pq + suf;
   }).filter(Boolean).join('\n');
 
-  const coordinatorLine = coordinator ? `Coordenador responsável: **${coordinator}**\n\n` : '';
-
-  const prompt =
-    'Coordenador de CS do Nibo — feedback sobre o analista desta reunião.\n\n' +
-    coordinatorLine +
-    'NOTAS:\n' + linhas + '\n\n' +
-    'Média: ' + (numbers.media_final || '?') + '/5' +
-    ' | Saúde: ' + (meta.saude_cliente || '') +
-    ' | Churn: '  + (meta.risco_churn  || '') + '\n' +
-    'Fortes: '  + (meta.pontos_fortes  || []).join('; ') + '\n' +
-    'Atenção: ' + (meta.pontos_atencao || []).join('; ') + '\n\n' +
-    '## O que o analista fez bem\n' +
-    '## O que precisa melhorar\n' +
-    '## O que falar no 1:1\n' +
-    '## Plano de ação individual';
+  const coordinatorLine = coordinator ? `Coordenador: **${coordinator}**\n\n` : '';
+  const prompt = `Feedback de CS. ${coordinatorLine}NOTAS:\n${linhas}\n\nMédia: ${numbers.media_final}/5 | Saúde: ${meta.saude_cliente} | Churn: ${meta.risco_churn}\n\n## O que fez bem\n## O que melhorar\n## O que falar no 1:1\n## Plano de ação`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      maxOutputTokens: 4096,
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
       temperature: 0.2,
-      systemInstruction:
-        'Coordenador sênior de CS do Nibo. Markdown puro, linguagem direta e humana. ' +
-        '"O que falar no 1:1": frases prontas. ' +
-        '"Plano de ação": máx 3 prioridades (ação + prazo + métrica). ' +
-        'Só mencione pilares com nota numérica.',
+      maxOutputTokens: 4096,
     },
+    systemInstruction: `Coordenador CS do Nibo. Markdown puro, direto. "O que falar": frases prontas. "Plano": máx 3 prioridades.`,
   });
 
-  return res.text || '';
+  return extractText(res);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// HANDLER PRINCIPAL
+// HANDLER
 // ═══════════════════════════════════════════════════════════════════════════════
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido.' });
   }
 
-  const prompt = req.body && req.body.prompt;
-  const coordinator = req.body && req.body.coordinator;
+  const { prompt, coordinator } = req.body || {};
 
   if (!prompt) {
     return res.status(400).json({ error: 'Transcrição obrigatória.' });
   }
 
   try {
-    // 1. Notas numéricas (com retry)
-    const numbers = await withRetry(function() { return getNumbers(prompt); }, 'getNumbers');
+    console.log('📝 Analisando transcrição...');
+    
+    const numbers = await withRetry(() => getNumbers(prompt), 'getNumbers', 2);
+    console.log('✅ Notas obtidas');
 
-    // 2. Meta-textos + justificativas A e B em paralelo (com retry individual)
-    const results = await Promise.all([
-      withRetry(function() { return getMeta(prompt, numbers);   }, 'getMeta'),
-      withRetry(function() { return getTextsA(prompt, numbers); }, 'getTextsA'),
-      withRetry(function() { return getTextsB(prompt, numbers); }, 'getTextsB'),
+    const [meta, textsA, textsB] = await Promise.all([
+      withRetry(() => getMeta(prompt, numbers), 'getMeta', 2),
+      withRetry(() => getTextsA(prompt, numbers), 'getTextsA', 2),
+      withRetry(() => getTextsB(prompt, numbers), 'getTextsB', 2),
     ]);
-    const meta   = results[0];
-    const textsA = results[1];
-    const textsB = results[2];
-    const texts  = Object.assign({}, textsA, textsB);
+    console.log('✅ Meta e justificativas obtidas');
 
-    // Garante fallbacks para pilares sem evidência ou campos faltando
-    ALL_PILLARS.forEach(function(p) {
+    const texts = { ...textsA, ...textsB };
+
+    // Fallbacks
+    ALL_PILLARS.forEach(p => {
       const k = p[0];
       if (numbers['nota_' + k] === null) {
         texts['porque_'   + k] = 'Sem evidência na transcrição.';
@@ -406,7 +384,6 @@ export default async function handler(req, res) {
       }
     });
 
-    // Fallbacks para meta
     meta.resumo_executivo = meta.resumo_executivo || 'Reunião de onboarding realizada.';
     meta.saude_cliente    = meta.saude_cliente    || 'Não avaliado.';
     meta.risco_churn      = meta.risco_churn      || 'Não avaliado.';
@@ -414,20 +391,26 @@ export default async function handler(req, res) {
     meta.pontos_fortes    = meta.pontos_fortes    || [];
     meta.pontos_atencao   = meta.pontos_atencao   || [];
 
-    // 3. Relatório (com retry) - agora passando o coordenador
     const justificativa_detalhada = await withRetry(
-      function() { return getRelatorio(numbers, meta, texts, coordinator); }, 'getRelatorio'
+      () => getRelatorio(numbers, meta, texts, coordinator),
+      'getRelatorio',
+      2
     );
+    console.log('✅ Análise completa!');
 
-    return res.status(200).json(
-      Object.assign({}, numbers, meta, texts, { 
-        justificativa_detalhada: justificativa_detalhada,
-        coordinator: coordinator 
-      })
-    );
+    return res.status(200).json({
+      ...numbers,
+      ...meta,
+      ...texts,
+      justificativa_detalhada,
+      coordinator
+    });
 
   } catch (error) {
-    console.error('Erro na API:', error);
-    return res.status(500).json({ error: 'Erro: ' + error.message });
+    console.error('❌ Erro na API:', error.message);
+    return res.status(500).json({ 
+      error: error.message || 'Erro ao analisar transcrição',
+      details: error.message
+    });
   }
 }
