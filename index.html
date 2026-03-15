@@ -369,6 +369,7 @@ function saveToHistory(data) {
 }
 
 // ─── PDF Upload e Visualização ────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 pdfjsLib.getDocument = pdfjsLib.getDocument || pdfjsLib.default.getDocument;
 
 document.getElementById('pdf-upload').addEventListener('change', async function(e) {
@@ -548,6 +549,21 @@ async function handleAnalysis() {
         renderDashboard(data);
         saveToHistory(data);
 
+        // Salva no servidor (Supabase)
+        try {
+            const saveRes = await fetch('/api/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ analise: data, coordenador: coordinator })
+            });
+            if (!saveRes.ok) {
+                const err = await saveRes.json().catch(() => ({}));
+                console.warn('Aviso: análise não salva no servidor:', err.error || saveRes.status);
+            }
+        } catch (e) {
+            console.warn('Aviso: erro ao salvar análise no servidor:', e.message);
+        }
+
     } catch (err) {
         alert('Erro na análise: ' + err.message);
         document.getElementById('results-section').classList.add('hidden');
@@ -710,7 +726,11 @@ analyzeBtn.addEventListener('click', handleAnalysis);
 
 // ─── Export & Save ────────────────────────────────────────────────────────
 document.getElementById('save-report-btn').addEventListener('click', () => {
-    alert('Relatório salvo no histórico com sucesso!');
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-50';
+    toast.textContent = '✅ Análise já salva automaticamente!';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
 });
 
 document.getElementById('export-pdf-btn').addEventListener('click', () => {
