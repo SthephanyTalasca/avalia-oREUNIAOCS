@@ -10,7 +10,7 @@ function getSession(req) {
         if (s.exp && Date.now() > s.exp) return null;
         if (s.email.toLowerCase().split('@')[1] !== 'nibo.com.br') return null;
         return s;
-    } catch (e) { console.error('getSession error:', e); return null; }
+    } catch { return null; }
 }
 
 export default async function handler(req, res) {
@@ -23,12 +23,14 @@ export default async function handler(req, res) {
     try {
         const row = {
             coordenador:         coordenador || null,
-            analista_nome:       analise.analista_nome      || 'Não identificado',
-            media_final:         analise.media_final        || null,
-            saude_cliente:       analise.saude_cliente      || null,
-            risco_churn:         analise.risco_churn        || null,
-            tempo_fala_cs:       analise.tempo_fala_cs      || null,
-            tempo_fala_cliente:  analise.tempo_fala_cliente || null,
+            // ✨ NOVO: nome do cliente extraído pela IA da transcrição
+            nome_cliente:        analise.nome_cliente        || 'Não identificado',
+            analista_nome:       analise.analista_nome       || 'Não identificado',
+            media_final:         analise.media_final         || null,
+            saude_cliente:       analise.saude_cliente       || null,
+            risco_churn:         analise.risco_churn         || null,
+            tempo_fala_cs:       analise.tempo_fala_cs       || null,
+            tempo_fala_cliente:  analise.tempo_fala_cliente  || null,
             nota_consultividade:    analise.nota_consultividade    || null,
             nota_escuta_ativa:      analise.nota_escuta_ativa      || null,
             nota_jornada_cliente:   analise.nota_jornada_cliente   || null,
@@ -51,13 +53,24 @@ export default async function handler(req, res) {
 
         const r = await fetch(`${SUPABASE_URL}/rest/v1/cs_reunioes`, {
             method: 'POST',
-            headers: { 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, Prefer:'return=representation' },
+            headers: {
+                'Content-Type': 'application/json',
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+                Prefer: 'return=representation'
+            },
             body: JSON.stringify(row)
         });
 
-        if (!r.ok) { const err = await r.text(); console.error('Supabase:', err); return res.status(500).json({ error: err }); }
+        if (!r.ok) {
+            const err = await r.text();
+            console.error('Supabase:', err);
+            return res.status(500).json({ error: err });
+        }
+
         const saved = await r.json();
         return res.status(200).json({ ok: true, id: saved[0]?.id });
+
     } catch (e) {
         return res.status(500).json({ error: e.message });
     }
