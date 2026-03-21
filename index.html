@@ -87,6 +87,7 @@
             </div>
             <div class="flex gap-2">
                 <button onclick="abrirEdicao()" class="bg-blue-50 hover:bg-blue-100 p-2.5 rounded-full transition-colors" title="Editar"><i data-lucide="pencil" class="w-4 h-4 text-blue-600"></i></button>
+                <button onclick="excluirRegistroModal()" class="bg-red-50 hover:bg-red-100 p-2.5 rounded-full transition-colors" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i></button>
                 <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
             </div>
         </div>
@@ -835,8 +836,9 @@ function renderReunioes() {
             <td><span class="tag-${churnCls}">${churnLabel}</span></td>
             <td><span class="${isAuto?'tag-auto':'tag-manual'}">${isAuto?'Auto':'Manual'}</span></td>
             <td class="flex gap-1">
-                <button onclick="openModalId(${r.id})" class="text-slate-400 hover:text-blue-600 p-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                <button onclick="abrirEdicaoId(${r.id})" class="text-slate-400 hover:text-emerald-600 p-1"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                <button onclick="openModalId(${r.id})" class="text-slate-400 hover:text-blue-600 p-1" title="Ver"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                <button onclick="abrirEdicaoId(${r.id})" class="text-slate-400 hover:text-emerald-600 p-1" title="Editar"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                <button onclick="excluirRegistro(${r.id},'${analistaNome.replace(/'/g,"\\'")}')" class="text-slate-400 hover:text-red-600 p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </td>
         </tr>`;
     }).join('');
@@ -845,46 +847,98 @@ function renderReunioes() {
 
 // ── PERFIL DO ANALISTA ────────────────────────────────────────────────────
 function abrirPerfil(nome) {
-    if(!nome||nome==='—'||nome.toLowerCase().includes('identificado')) return;
-    // FIX: busca em todasReunioes (sem filtro de data) para mostrar histórico completo
-    const reunioes=todasReunioes.filter(r=>(r.analista_nome||'').toLowerCase()===nome.toLowerCase());
-    if(!reunioes.length){alert('Sem avaliações encontradas para '+nome);return;}
+    if(!nome || nome==='—' || nome.toLowerCase().includes('identificado')) return;
 
-    document.getElementById('perfil-avatar').textContent=nome.trim()[0].toUpperCase();
-    document.getElementById('perfil-nome').textContent=nome;
-    document.getElementById('perfil-coord').textContent=reunioes[0]?.coordenador||'—';
+    const nLower = nome.toLowerCase().trim();
 
-    const medias=reunioes.map(r=>r.media_final).filter(Boolean);
-    document.getElementById('perfil-media').textContent=medias.length?avgArr(medias).toFixed(1):'—';
-    document.getElementById('perfil-total').textContent=reunioes.length;
-    document.getElementById('perfil-melhor').textContent=medias.length?Math.max(...medias).toFixed(1):'—';
-    document.getElementById('perfil-pior').textContent=medias.length?Math.min(...medias).toFixed(1):'—';
+    // Busca em todasReunioes primeiro (histórico completo), depois fallback em allReunioes
+    let reunioes = todasReunioes.filter(r => (r.analista_nome||'').toLowerCase().trim() === nLower);
 
-    const pilaresComMedia=PILLARS.map(p=>{const vals=reunioes.map(r=>r['nota_'+p.k]).filter(v=>v!=null);return{...p,val:vals.length?+avgArr(vals).toFixed(1):null};}).filter(p=>p.val!==null).sort((a,b)=>b.val-a.val);
-    document.getElementById('perfil-pilares').innerHTML=pilaresComMedia.map((p,i)=>{
-        const pct=(p.val/5)*100;const color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';
-        const isMelhor=i===0,isPior=i===pilaresComMedia.length-1;
-        const badge=isMelhor?'<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>':isPior?'<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>':'';
-        const rowStyle=isMelhor?'background:rgba(16,185,129,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':isPior?'background:rgba(239,68,68,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':'';
-        return `<div style="display:flex;align-items:center;gap:0.75rem;${rowStyle}"><span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:9rem;text-align:right">${p.l}${badge}</span><div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div><span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${p.val}</span></div>`;
+    // Se não achou (pode ser registro do Drive com nome levemente diferente), tenta allReunioes
+    if (!reunioes.length) {
+        reunioes = allReunioes.filter(r => (r.analista_nome||'').toLowerCase().trim() === nLower);
+    }
+
+    // Último recurso: busca parcial (tolera espaço duplo, acento diferente etc.)
+    if (!reunioes.length) {
+        const todos = [...todasReunioes, ...allReunioes];
+        // remove duplicatas por id
+        const uniq = Object.values(Object.fromEntries(todos.map(r => [r.id, r])));
+        reunioes = uniq.filter(r => {
+            const rn = (r.analista_nome||'').toLowerCase().trim();
+            return rn.includes(nLower) || nLower.includes(rn);
+        });
+    }
+
+    if (!reunioes.length) {
+        alert('Sem avaliações encontradas para ' + nome);
+        return;
+    }
+
+    // Remove duplicatas (pode ter vindo dos dois arrays)
+    reunioes = Object.values(Object.fromEntries(reunioes.map(r => [r.id, r])));
+    // Ordena por data mais recente primeiro
+    reunioes.sort((a, b) => new Date(b.data_reuniao||b.created_at) - new Date(a.data_reuniao||a.created_at));
+
+    document.getElementById('perfil-avatar').textContent = nome.trim()[0].toUpperCase();
+    document.getElementById('perfil-nome').textContent = nome;
+    document.getElementById('perfil-coord').textContent = reunioes[0]?.coordenador || '—';
+
+    const medias = reunioes.map(r=>r.media_final).filter(Boolean);
+    document.getElementById('perfil-media').textContent = medias.length ? avgArr(medias).toFixed(1) : '—';
+    document.getElementById('perfil-total').textContent = reunioes.length;
+    document.getElementById('perfil-melhor').textContent = medias.length ? Math.max(...medias).toFixed(1) : '—';
+    document.getElementById('perfil-pior').textContent = medias.length ? Math.min(...medias).toFixed(1) : '—';
+
+    const pilaresComMedia = PILLARS.map(p => {
+        const vals = reunioes.map(r=>r['nota_'+p.k]).filter(v=>v!=null);
+        return {...p, val: vals.length ? +avgArr(vals).toFixed(1) : null};
+    }).filter(p=>p.val!==null).sort((a,b)=>b.val-a.val);
+
+    document.getElementById('perfil-pilares').innerHTML = pilaresComMedia.map((p,i) => {
+        const pct=(p.val/5)*100, color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';
+        const isMelhor=i===0, isPior=i===pilaresComMedia.length-1;
+        const badge = isMelhor ? '<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>'
+                    : isPior   ? '<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>' : '';
+        const rowStyle = isMelhor ? 'background:rgba(16,185,129,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;'
+                       : isPior   ? 'background:rgba(239,68,68,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;' : '';
+        return `<div style="display:flex;align-items:center;gap:0.75rem;${rowStyle}">
+            <span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:9rem;text-align:right">${p.l}${badge}</span>
+            <div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+            <span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${p.val}</span>
+        </div>`;
     }).join('');
 
-    const ctx=document.getElementById('perfil-radar').getContext('2d');
-    if(perfilRadar) perfilRadar.destroy();
-    perfilRadar=new Chart(ctx,{type:'radar',data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Média',data:PILLARS.map(p=>{const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;}),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1e3a8a'}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}});
+    const ctx = document.getElementById('perfil-radar').getContext('2d');
+    if (perfilRadar) perfilRadar.destroy();
+    perfilRadar = new Chart(ctx, {
+        type:'radar',
+        data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Média',data:PILLARS.map(p=>{
+            const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);
+            return v.length ? +avgArr(v).toFixed(1) : 0;
+        }),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1e3a8a'}]},
+        options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}
+    });
 
-    document.getElementById('perfil-badge-total').textContent=reunioes.length+' avaliações';
-    document.getElementById('perfil-tbody').innerHTML=reunioes.map(r=>{
-        const media=r.media_final??0;const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
+    document.getElementById('perfil-badge-total').textContent = reunioes.length + ' avaliações';
+    document.getElementById('perfil-tbody').innerHTML = reunioes.map(r => {
+        const media=r.media_final??0;
+        const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
         const cv=(r.risco_churn||'').toLowerCase();
         const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';
         const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
-        const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
-        return `<tr onclick="openModalId(${r.id})" style="cursor:pointer"><td class="text-slate-500 font-semibold">${data}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td></tr>`;
+        const dataStr=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
+        return `<tr onclick="openModalId(${r.id})" style="cursor:pointer">
+            <td class="text-slate-500 font-semibold">${dataStr}</td>
+            <td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td>
+            <td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td>
+            <td><span class="tag-${churnCls}">${churnLabel}</span></td>
+            <td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td>
+        </tr>`;
     }).join('');
 
     document.getElementById('perfil-overlay').classList.add('open');
-    document.getElementById('perfil-overlay').scrollTop=0;
+    document.getElementById('perfil-overlay').scrollTop = 0;
     lucide.createIcons();
 }
 
@@ -1051,6 +1105,29 @@ function renderModal(r){
     document.getElementById('modal-overlay').classList.add('open');
     document.getElementById('modal-overlay').querySelector('.modal-box').scrollTop = 0;
     lucide.createIcons();
+}
+
+async function excluirRegistro(id, nome) {
+    if (!confirm(`Excluir a avaliação de "${nome}"?\n\nEssa ação não pode ser desfeita.`)) return;
+    try {
+        const res = await fetch('/api/records', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modo: 'single', id })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        showToast('🗑️ Avaliação excluída.');
+        await loadData();
+    } catch(err) { alert('Erro ao excluir: ' + err.message); }
+}
+
+async function excluirRegistroModal() {
+    if (!editandoId) return;
+    const r = findReuniaoById(editandoId);
+    const nome = r?.analista_nome || 'este registro';
+    closeModal();
+    await excluirRegistro(editandoId, nome);
 }
 
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
