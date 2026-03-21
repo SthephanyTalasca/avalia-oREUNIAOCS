@@ -597,7 +597,22 @@ function renderModal(r) {
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
-loadData();
+// Substitui o "loadData();" no final do <script> do index.html por isso:
+
+async function checkAuthAndLoad() {
+    try {
+        const me = await fetch('/api/me');
+        if (me.status === 401 || me.status === 403) {
+            window.location.href = '/api/auth';
+            return;
+        }
+        loadData();
+    } catch(e) {
+        window.location.href = '/api/auth';
+    }
+}
+
+checkAuthAndLoad();
 </script>
 </body>
 </html>
