@@ -1,742 +1,603 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nibo AI - Auditoria de CS</title>
+    <title>Dashboard de Avaliações — Nibo CS Auditor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #0f172a; }
         .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: all 0.3s ease; }
         .glass-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        @keyframes pulse-opacity { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .pulse-text { animation: pulse-opacity 1.8s ease-in-out infinite; }
-        .markdown-content h1, .markdown-content h2 { font-weight: 800; color: #1e3a8a; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1rem; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; }
-        .markdown-content p { margin-bottom: 1rem; color: #475569; line-height: 1.6; font-size: 0.9rem; }
-        .markdown-content ul { list-style-type: none; padding-left: 0; margin-bottom: 1.25rem; }
-        .markdown-content li { position: relative; padding-left: 1.5rem; margin-bottom: 0.4rem; color: #475569; font-size: 0.85rem; }
-        .markdown-content li::before { content: "•"; position: absolute; left: 0; color: #2563eb; font-weight: bold; }
-        select { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
+        select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
+
+        /* loading */
+        #loading-overlay { position:fixed;inset:0;background:rgba(0,45,114,0.6);backdrop-filter:blur(4px);z-index:999;display:flex;align-items:center;justify-content:center; }
+        .spinner { width:3rem;height:3rem;border:3px solid rgba(255,255,255,0.25);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 1rem; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        /* pilar bars */
+        .pilar-bar-bg { flex:1;height:6px;background:#f1f5f9;border-radius:999px;overflow:hidden; }
+        .pilar-bar-fill { height:100%;border-radius:999px;transition:width 0.8s ease; }
+
+        /* score pills */
+        .score-pill { display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;padding:0.2rem 0.65rem;border-radius:999px;min-width:2.5rem; }
+        .score-high { background:#dcfce7;color:#16a34a; }
+        .score-mid  { background:#fef9c3;color:#854d0e; }
+        .score-low  { background:#fee2e2;color:#dc2626; }
+
+        /* churn tags */
+        .tag-alto  { background:#fee2e2;color:#dc2626;font-size:0.65rem;font-weight:700;padding:0.15rem 0.6rem;border-radius:999px; }
+        .tag-medio { background:#fef9c3;color:#92400e;font-size:0.65rem;font-weight:700;padding:0.15rem 0.6rem;border-radius:999px; }
+        .tag-baixo { background:#dcfce7;color:#15803d;font-size:0.65rem;font-weight:700;padding:0.15rem 0.6rem;border-radius:999px; }
+        .tag-nd    { background:#f1f5f9;color:#64748b;font-size:0.65rem;font-weight:700;padding:0.15rem 0.6rem;border-radius:999px; }
+
+        /* origem */
+        .tag-auto   { background:#ede9fe;color:#6d28d9;font-size:0.6rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;text-transform:uppercase;letter-spacing:0.04em; }
+        .tag-manual { background:#f1f5f9;color:#64748b;font-size:0.6rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;text-transform:uppercase;letter-spacing:0.04em; }
+
+        /* checklist */
+        .ck-row { display:flex;align-items:center;justify-content:space-between;padding:0.55rem 0;border-bottom:1px solid #f1f5f9;font-size:0.78rem; }
+        .ck-row:last-child { border-bottom:none; }
+        .ck-bar-bg { width:60px;height:5px;background:#f1f5f9;border-radius:999px;margin:0 0.75rem;overflow:hidden; }
+        .ck-bar-fill { height:100%;border-radius:999px; }
+
+        /* tables */
+        .tbl th { text-align:left;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:#94a3b8;padding:0.55rem 0.75rem;border-bottom:1px solid #f1f5f9; }
+        .tbl td { padding:0.75rem;font-size:0.8rem;border-bottom:1px solid #f8fafc;vertical-align:middle; }
+        .tbl tr:last-child td { border-bottom:none; }
+        .tbl tr:hover td { background:#f8fafc; }
+
+        .rtbl th { text-align:left;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:#94a3b8;padding:0.6rem 1rem;border-bottom:1px solid #e2e8f0;background:#f8fafc; }
+        .rtbl td { padding:0.85rem 1rem;font-size:0.8rem;border-bottom:1px solid #f1f5f9;vertical-align:middle; }
+        .rtbl tr:last-child td { border-bottom:none; }
+        .rtbl tr:hover td { background:#f8fafc;cursor:pointer; }
+
+        /* modal */
+        #modal-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.5);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem; }
+        #modal-overlay.open { display:flex; }
+        .modal-box { background:white;border-radius:2.5rem;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,0.2); }
+        .modal-box::-webkit-scrollbar { width:4px; }
+        .modal-box::-webkit-scrollbar-thumb { background:#e2e8f0;border-radius:999px; }
+
+        /* markdown no modal */
+        .md h2 { font-weight:800;color:#1e3a8a;margin-top:1.25rem;margin-bottom:0.5rem;font-size:0.85rem;text-transform:uppercase;border-bottom:2px solid #2563eb;padding-bottom:0.4rem; }
+        .md p  { margin-bottom:0.75rem;color:#475569;line-height:1.6;font-size:0.85rem; }
+        .md ul { list-style:none;padding:0;margin-bottom:1rem; }
+        .md li { position:relative;padding-left:1.25rem;margin-bottom:0.3rem;color:#475569;font-size:0.82rem; }
+        .md li::before { content:"•";position:absolute;left:0;color:#2563eb;font-weight:bold; }
     </style>
 </head>
 <body class="pb-20 antialiased">
 
-<!-- NAVBAR CORRIGIDA -->
-<nav class="bg-[#002d72] text-white py-4 px-8 sticky top-0 z-50 shadow-xl border-b border-blue-400">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-        <!-- LOGO -->
-        <div class="flex items-center gap-3">
-            <div class="bg-white p-2.5 rounded-2xl shadow-inner">
-                <i data-lucide="headset" class="text-[#002d72] w-6 h-6"></i>
-            </div>
+<!-- LOADING -->
+<div id="loading-overlay">
+    <div class="text-center text-white">
+        <div class="spinner"></div>
+        <p class="font-bold text-sm uppercase tracking-widest">Carregando avaliações...</p>
+    </div>
+</div>
+
+<!-- MODAL DETALHE -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal-box">
+        <div class="sticky top-0 bg-white px-8 py-6 border-b border-slate-100 rounded-t-[2.5rem] flex justify-between items-start z-10">
             <div>
-                <h1 class="font-extrabold text-lg uppercase tracking-tight">Nibo <span class="text-blue-400">Auditor de CS</span></h1>
-                <p class="text-[9px] text-blue-200 uppercase tracking-widest font-bold mt-1">Análise de Implementação e Onboarding</p>
+                <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Detalhe da Avaliação</span>
+                <h2 id="modal-analista" class="font-extrabold text-xl text-[#002d72]">—</h2>
+                <p id="modal-meta" class="text-sm text-slate-500 mt-0.5">—</p>
+            </div>
+            <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors ml-4 flex-shrink-0">
+                <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
+            </button>
+        </div>
+        <div class="p-8 space-y-8">
+            <!-- Hero -->
+            <div class="bg-gradient-to-br from-[#002d72] to-blue-700 rounded-3xl p-8 text-white flex items-center gap-6">
+                <div class="flex-shrink-0">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-blue-200 block mb-1">Média CS (máx 5)</span>
+                    <div id="modal-media" class="text-6xl font-black leading-none">—</div>
+                    <div id="modal-status-tag" class="mt-2 inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/20">—</div>
+                </div>
+                <div class="flex-1 border-l border-white/20 pl-6">
+                    <p id="modal-resumo" class="text-sm text-blue-100 leading-snug mb-4">—</p>
+                    <div class="flex gap-3">
+                        <div class="flex-1 bg-white/10 rounded-2xl p-3 border border-white/20">
+                            <span class="text-[8px] font-black text-blue-300 uppercase tracking-widest block mb-1">Saúde</span>
+                            <p id="modal-saude" class="text-sm font-bold">—</p>
+                        </div>
+                        <div class="flex-1 bg-red-500/20 rounded-2xl p-3 border border-red-400/30">
+                            <span class="text-[8px] font-black text-red-300 uppercase tracking-widest block mb-1">Churn</span>
+                            <p id="modal-churn" class="text-sm font-bold">—</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Pilares -->
+            <div>
+                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-4">Notas por Pilar</span>
+                <div id="modal-pilares" class="grid grid-cols-3 gap-3"></div>
+            </div>
+            <!-- Listas -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-emerald-50 rounded-3xl p-6 border border-emerald-100">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-emerald-700 block mb-3">Pontos Fortes</span>
+                    <ul id="modal-fortes" class="space-y-1.5 text-xs font-semibold text-emerald-900"></ul>
+                </div>
+                <div class="bg-amber-50 rounded-3xl p-6 border border-amber-100">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-amber-700 block mb-3">Oportunidades</span>
+                    <ul id="modal-atencao" class="space-y-1.5 text-xs font-semibold text-amber-900"></ul>
+                </div>
+            </div>
+            <!-- Relatório -->
+            <div>
+                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-4 border-b pb-3">Relatório de Auditoria</span>
+                <div id="modal-relatorio" class="md"></div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- CONTROLES (Analista, Coordenador, Botões) -->
-        <div class="flex items-center gap-4 flex-wrap justify-center md:justify-end">
-            <!-- Input Analista -->
-            <div class="relative">
-                <i data-lucide="user" class="absolute left-3 top-2.5 w-4 h-4 text-blue-300"></i>
-                <input type="text" id="cc-name-input" placeholder="Analista de CS"
-                    class="pl-10 pr-5 py-2 rounded-xl bg-blue-900/40 border border-blue-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-blue-300 transition-all" />
+<!-- NAVBAR -->
+<nav class="bg-[#002d72] text-white py-4 px-8 sticky top-0 z-50 shadow-xl border-b border-blue-400">
+    <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-white p-2.5 rounded-2xl shadow-inner">
+                <i data-lucide="bar-chart-3" class="text-[#002d72] w-6 h-6"></i>
             </div>
-            
-            <!-- Select Coordenador -->
-            <div class="relative">
-                <i data-lucide="shield" class="absolute left-3 top-2.5 w-4 h-4 text-amber-300"></i>
-                <select id="coordinator-select" 
-                    class="pl-10 pr-5 py-2 rounded-xl bg-amber-900/40 border border-amber-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-amber-300 transition-all cursor-pointer">
-                    <option value="">Selecione Coordenador...</option>
-                    <option value="Sayuri">Sayuri</option>
-                    <option value="Tayanara">Tayanara</option>
-                    <option value="Túlio">Túlio</option>
-                    <option value="Michel">Michel</option>
-                    <option value="Jéssica">Jéssica</option>
-                </select>
+            <div>
+                <h1 class="font-extrabold text-lg uppercase tracking-tight">Nibo <span class="text-blue-400">CS Intelligence</span></h1>
+                <p class="text-[9px] text-blue-200 uppercase tracking-widest font-bold mt-1">Dashboard de Avaliações</p>
             </div>
-
-            <!-- Botão Dashboard -->
-            <a href="/dashboard.html" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-900/40 border border-indigo-400/50 text-indigo-200 text-sm hover:border-indigo-300 transition-all" title="Ver Dashboard de Avaliações">
-                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-                <span class="hidden md:inline">Dashboard</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <span id="last-sync" class="text-xs text-blue-300 hidden md:block"></span>
+            <button onclick="loadData()" class="flex items-center gap-2 px-4 py-2 bg-blue-800 hover:bg-blue-900 rounded-xl text-sm font-bold transition-all border border-blue-600">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span class="hidden md:inline">Atualizar</span>
+            </button>
+            <a href="/avaliar.html" class="flex items-center gap-2 px-4 py-2 bg-white text-[#002d72] rounded-xl text-sm font-bold hover:bg-blue-50 transition-all shadow">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                Avaliação Manual
             </a>
         </div>
     </div>
 </nav>
 
-<main class="max-w-7xl mx-auto px-4 mt-8">
+<main class="max-w-7xl mx-auto px-4 mt-8 space-y-6">
 
-    <!-- Input -->
-    <section class="mb-10">
-        <div class="glass-card p-8 md:p-10">
-            <div class="flex items-center gap-3 mb-6">
-                <i data-lucide="message-square" class="text-blue-600"></i>
-                <h2 class="font-bold text-slate-800 text-lg">Submeter Transcrição do Cliente</h2>
+    <!-- FILTROS -->
+    <div class="glass-card p-6">
+        <div class="flex items-center gap-2 mb-4">
+            <i data-lucide="filter" class="w-4 h-4 text-slate-500"></i>
+            <span class="font-bold text-slate-700 text-sm">Filtros</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <select id="f-periodo" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50">
+                <option value="0">Todas as datas</option>
+                <option value="7">Últimos 7 dias</option>
+                <option value="30" selected>Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+            </select>
+            <select id="f-coordenador" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50">
+                <option value="">Todos os coordenadores</option>
+            </select>
+            <select id="f-analista" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50">
+                <option value="">Todos os analistas</option>
+            </select>
+            <select id="f-origem" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50">
+                <option value="">Todas as origens</option>
+                <option value="auto">Automático (Drive)</option>
+                <option value="manual">Manual</option>
+            </select>
+            <button onclick="loadData()" class="bg-blue-600 hover:bg-[#002d72] text-white font-bold py-2.5 rounded-xl transition-all text-sm">
+                Aplicar
+            </button>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="glass-card p-8 text-center border-t-4 border-blue-600">
+            <i data-lucide="file-text" class="w-7 h-7 text-blue-600 mx-auto mb-3"></i>
+            <div class="text-4xl font-black text-blue-700 mb-1" id="kpi-total">—</div>
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Total de Avaliações</div>
+        </div>
+        <div class="glass-card p-8 text-center border-t-4 border-emerald-500">
+            <i data-lucide="trending-up" class="w-7 h-7 text-emerald-500 mx-auto mb-3"></i>
+            <div class="text-4xl font-black text-emerald-600 mb-1" id="kpi-media">—</div>
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Média Geral /5</div>
+        </div>
+        <div class="glass-card p-8 text-center border-t-4 border-pink-500">
+            <i data-lucide="heart" class="w-7 h-7 text-pink-500 mx-auto mb-3"></i>
+            <div class="text-4xl font-black text-pink-600 mb-1" id="kpi-saude">—</div>
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Clientes Saudáveis</div>
+        </div>
+        <div class="glass-card p-8 text-center border-t-4 border-red-500">
+            <i data-lucide="alert-circle" class="w-7 h-7 text-red-500 mx-auto mb-3"></i>
+            <div class="text-4xl font-black text-red-600 mb-1" id="kpi-churn">—</div>
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Alto Risco de Churn</div>
+        </div>
+    </div>
+
+    <!-- EVOLUÇÃO + SAÚDE/CHURN -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 glass-card p-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>
+                    Evolução Semanal
+                </h2>
+                <span class="text-xs text-slate-400 font-semibold" id="badge-semanas">—</span>
             </div>
-            <textarea id="transcript-input" rows="6"
-                class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:ring-4 ring-blue-500/5 focus:outline-none transition-all text-sm resize-none"
-                placeholder="Cole aqui o diálogo da reunião de Onboarding..."></textarea>
-            <div class="flex items-center justify-between mt-3 mb-6 px-1">
-                <div class="text-[11px] font-bold text-slate-400">
-                    <span id="char-count">0</span> caracteres
+            <div style="height:220px"><canvas id="chart-evo"></canvas></div>
+        </div>
+        <div class="glass-card p-8">
+            <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                <i data-lucide="heart-pulse" class="w-4 h-4 text-pink-500"></i>
+                Saúde &amp; Churn
+            </h2>
+            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Saúde do Cliente</p>
+            <div class="grid grid-cols-2 gap-2 mb-5">
+                <div class="bg-emerald-50 rounded-2xl p-3 text-center border border-emerald-100">
+                    <div class="text-2xl font-black text-emerald-600" id="s-saudavel">—</div>
+                    <div class="text-[9px] font-bold text-emerald-700 uppercase tracking-wide mt-0.5">Saudável</div>
                 </div>
-                <label class="text-[11px] font-bold text-slate-400 cursor-pointer hover:text-blue-600 transition-colors flex items-center gap-2">
-                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                    Ou carregar PDF anterior
-                    <input type="file" id="pdf-upload" accept=".pdf" class="hidden" />
-                </label>
+                <div class="bg-amber-50 rounded-2xl p-3 text-center border border-amber-100">
+                    <div class="text-2xl font-black text-amber-600" id="s-risco">—</div>
+                    <div class="text-[9px] font-bold text-amber-700 uppercase tracking-wide mt-0.5">Em Risco</div>
+                </div>
+                <div class="bg-red-50 rounded-2xl p-3 text-center border border-red-100">
+                    <div class="text-2xl font-black text-red-600" id="s-critico">—</div>
+                    <div class="text-[9px] font-bold text-red-700 uppercase tracking-wide mt-0.5">Crítico</div>
+                </div>
+                <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-200">
+                    <div class="text-2xl font-black text-slate-400" id="s-nd">—</div>
+                    <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Indefinido</div>
+                </div>
             </div>
-            <div class="flex justify-end">
-                <button id="analyze-btn"
-                    class="flex items-center gap-3 bg-blue-600 hover:bg-[#002d72] text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span id="btn-text">Analisar Sucesso do Cliente</span>
-                    <i data-lucide="zap" class="w-4 h-4"></i>
-                </button>
+            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Risco de Churn</p>
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-red-50 rounded-2xl p-3 text-center border border-red-100">
+                    <div class="text-2xl font-black text-red-600" id="c-alto">—</div>
+                    <div class="text-[9px] font-bold text-red-700 uppercase tracking-wide mt-0.5">Alto</div>
+                </div>
+                <div class="bg-amber-50 rounded-2xl p-3 text-center border border-amber-100">
+                    <div class="text-2xl font-black text-amber-600" id="c-medio">—</div>
+                    <div class="text-[9px] font-bold text-amber-700 uppercase tracking-wide mt-0.5">Médio</div>
+                </div>
+                <div class="bg-emerald-50 rounded-2xl p-3 text-center border border-emerald-100">
+                    <div class="text-2xl font-black text-emerald-600" id="c-baixo">—</div>
+                    <div class="text-[9px] font-bold text-emerald-700 uppercase tracking-wide mt-0.5">Baixo</div>
+                </div>
+                <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-200">
+                    <div class="text-2xl font-black text-slate-400" id="c-nd">—</div>
+                    <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Indefinido</div>
+                </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Results -->
-    <div id="results-section" class="hidden space-y-8">
-
-        <!-- Loading -->
-        <div id="loading-spinner" class="glass-card p-12">
-            <div class="max-w-lg mx-auto space-y-6">
-                <div id="step-scores" class="flex items-center gap-4 transition-opacity duration-500">
-                    <div id="step-scores-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-500"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                            <span>Avaliando os 17 pilares</span>
-                            <span id="step-scores-pct">—</span>
-                        </div>
-                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div id="bar-scores" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width:0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="step-report" class="flex items-center gap-4 opacity-30 transition-opacity duration-500">
-                    <div id="step-report-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="scroll-text" class="w-4 h-4 text-blue-500"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                            <span>Gerando relatório de auditoria</span>
-                            <span id="step-report-pct">—</span>
-                        </div>
-                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div id="bar-report" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width:0%"></div>
-                        </div>
-                    </div>
+    <!-- RANKING + PILARES -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass-card overflow-hidden">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i>
+                    Ranking de Analistas
+                </h2>
+                <span class="text-xs text-slate-400 font-semibold" id="badge-ranking">—</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="tbl w-full border-collapse">
+                    <thead><tr>
+                        <th>#</th><th>Analista</th><th>Coord.</th><th>Reuniões</th><th>Média</th>
+                    </tr></thead>
+                    <tbody id="tbody-ranking"></tbody>
+                </table>
+                <div id="empty-ranking" class="hidden text-center py-8">
+                    <i data-lucide="inbox" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i>
+                    <p class="text-sm text-slate-400">Nenhum dado disponível</p>
                 </div>
             </div>
-
-            <p id="loading-label" class="text-center text-slate-400 font-bold text-xs uppercase tracking-widest mt-10 pulse-text">Iniciando...</p>
         </div>
+        <div class="glass-card p-8">
+            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>
+                Média do Time por Pilar
+            </h2>
+            <div id="pilares-list" class="space-y-3"></div>
+        </div>
+    </div>
 
-        <!-- Analysis -->
-        <div id="analysis-content" class="hidden space-y-8">
+    <!-- COORD + CHECKLIST -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass-card p-8">
+            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <i data-lucide="users" class="w-4 h-4 text-indigo-500"></i>
+                Performance por Coordenador
+            </h2>
+            <div style="height:260px"><canvas id="chart-coord"></canvas></div>
+        </div>
+        <div class="glass-card p-8">
+            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <i data-lucide="list-checks" class="w-4 h-4 text-blue-600"></i>
+                Checklist de Onboarding
+                <span class="ml-auto text-[9px] font-bold text-slate-400 uppercase tracking-wide">% cumprimento</span>
+            </h2>
+            <div id="ck-list" class="space-y-1"></div>
+        </div>
+    </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center border-b-[10px] border-blue-600">
-                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Média de CS (Máx 5)</span>
-                    <div id="media-final" class="text-7xl font-black text-[#002d72] mb-3">0.0</div>
-                    <div id="status-tag" class="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-3">---</div>
-                </div>
-                <div class="lg:col-span-3 glass-card p-10 bg-gradient-to-br from-blue-700 to-blue-900 text-white flex flex-col justify-center">
-                    <div id="concorrentes-tags" class="flex flex-wrap gap-2 mb-4"></div>
-                    <h3 class="font-bold text-blue-200 text-[10px] uppercase tracking-widest mb-4">Diagnóstico da Implementação</h3>
-                    <p id="resumo-text" class="text-xl md:text-2xl font-bold leading-tight mb-8"></p>
-                    <div class="flex gap-4">
-                        <div class="p-4 bg-white/10 rounded-2xl border border-white/20 flex-1">
-                            <span class="text-[9px] font-black text-blue-300 uppercase block mb-1 tracking-widest italic">Saúde do Cliente:</span>
-                            <p id="saude-text" class="text-base font-bold text-white"></p>
-                        </div>
-                        <div class="p-4 bg-red-500/20 rounded-2xl border border-red-400/30 flex-1">
-                            <span class="text-[9px] font-black text-red-300 uppercase block mb-1 tracking-widest italic">Risco de Churn:</span>
-                            <p id="churn-text" class="text-base font-bold text-white"></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="notas-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-4"></div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="glass-card p-8 min-h-[400px] flex items-center justify-center">
-                    <canvas id="radarChart"></canvas>
-                </div>
-                <div class="space-y-6">
-                    <div class="glass-card p-8">
-                        <h4 class="text-[10px] font-black uppercase text-slate-400 mb-8 tracking-widest">Tempo de Fala (Analista vs Cliente)</h4>
-                        <div id="talk-time-container" class="space-y-8"></div>
-                    </div>
-                    <div class="glass-card p-8">
-                        <h3 class="font-bold text-slate-800 text-[14px] mb-6 flex items-center gap-3">
-                            <i data-lucide="list-checks" class="text-blue-600 w-5 h-5"></i>
-                            Checklist de Onboarding
-                        </h3>
-                        <div id="checklist-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-emerald-50/60 p-8 rounded-[2rem] border border-emerald-100 shadow-sm">
-                    <h4 class="text-[10px] font-black text-emerald-700 mb-6 uppercase tracking-widest flex items-center gap-2">
-                        <i data-lucide="trending-up" class="w-4 h-4"></i> Pontos Fortes
-                    </h4>
-                    <ul id="lista-fortes" class="space-y-3 text-[12px] font-bold text-emerald-900"></ul>
-                </div>
-                <div class="bg-amber-50/60 p-8 rounded-[2rem] border border-amber-100 shadow-sm">
-                    <h4 class="text-[10px] font-black text-amber-700 mb-6 uppercase tracking-widest flex items-center gap-2">
-                        <i data-lucide="target" class="w-4 h-4"></i> Oportunidades de Melhoria
-                    </h4>
-                    <ul id="lista-atencao" class="space-y-3 text-[12px] font-bold text-amber-900"></ul>
-                </div>
-            </div>
-
-            <div class="glass-card p-12 md:p-16 shadow-2xl border-t-[10px] border-[#002d72] flex justify-between items-start">
-                <div class="flex-1">
-                    <h3 class="text-xl font-extrabold text-[#002d72] uppercase tracking-widest mb-10 border-b pb-6 flex items-center gap-4">
-                        <i data-lucide="scroll-text"></i>
-                        Relatório de Auditoria de CS
-                    </h3>
-                    <div id="markdown-body" class="markdown-content"></div>
-                </div>
-                <div class="flex gap-2 ml-4">
-                    <button id="save-report-btn" class="flex items-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all" title="Salvar relatório">
-                        <i data-lucide="save" class="w-4 h-4"></i>
-                        <span class="hidden md:inline">Salvar</span>
-                    </button>
-                    <button id="export-pdf-btn" class="flex items-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all" title="Exportar como PDF">
-                        <i data-lucide="file-pdf" class="w-4 h-4"></i>
-                        <span class="hidden md:inline">PDF</span>
-                    </button>
-                </div>
+    <!-- TABELA COMPLETA -->
+    <div class="glass-card overflow-hidden">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                <i data-lucide="list" class="w-4 h-4 text-slate-500"></i>
+                Todas as Avaliações
+            </h2>
+            <span class="text-xs text-slate-400 font-semibold" id="badge-total">—</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="rtbl w-full border-collapse">
+                <thead><tr>
+                    <th>Data</th><th>Analista</th><th>Coordenador</th>
+                    <th>Média CS</th><th>Saúde</th><th>Churn</th><th>Origem</th><th></th>
+                </tr></thead>
+                <tbody id="tbody-reunioes"></tbody>
+            </table>
+            <div id="empty-reunioes" class="hidden text-center py-12">
+                <i data-lucide="inbox" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i>
+                <p class="text-slate-400 font-semibold">Nenhuma avaliação encontrada</p>
             </div>
         </div>
     </div>
 
 </main>
 
-<!-- Modal de Detalhes de Avaliação -->
-<div id="justification-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
-    <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col" id="modal-content-box">
-        <div class="flex justify-between items-start mb-6">
-            <div>
-                <span id="modal-title" class="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-2 block">Pilar</span>
-                <div id="modal-score" class="text-5xl font-black leading-none">0</div>
-            </div>
-            <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full text-slate-500 transition-colors">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
-        <div class="w-full h-px bg-slate-100 mb-6"></div>
-        <div class="mb-5">
-            <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest block mb-2">Justificativa da Nota</span>
-            <p id="modal-text" class="text-[13px] text-slate-600 font-medium leading-relaxed"></p>
-        </div>
-        <div id="modal-improvement-container" class="rounded-2xl p-4 border mt-2">
-            <div class="flex items-center gap-2 mb-2">
-                <i id="modal-improvement-icon" data-lucide="target" class="w-4 h-4"></i>
-                <span id="modal-improvement-label" class="text-[9px] font-bold uppercase tracking-widest block">O que faltou para o 5?</span>
-            </div>
-            <p id="modal-improvement-text" class="text-[12px] leading-relaxed font-medium"></p>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Leitor de PDF -->
-<div id="pdf-viewer-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
-    <div class="bg-white rounded-[2rem] p-6 max-w-4xl w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]" id="pdf-viewer-content">
-        <div class="flex justify-between items-center mb-4 sticky top-0 bg-white pb-4 border-b">
-            <h2 class="text-lg font-black text-[#002d72] uppercase" id="pdf-title">PDF Viewer</h2>
-            <button onclick="closePdfViewer()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full text-slate-500 transition-colors">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-        <div id="pdf-container" class="flex-1 overflow-y-auto bg-slate-50 rounded-xl p-4">
-            <div id="pdf-pages" class="space-y-4"></div>
-            <p id="pdf-loading" class="text-center text-slate-500 py-8">Carregando PDF...</p>
-        </div>
-    </div>
-</div>
-
 <script>
 lucide.createIcons();
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAPEAMENTO CS → COORDENADOR (AUTO-DETECT)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const CS_TO_COORDINATOR = {
-  // TIME SAYURI
-  'brayan santos': 'Sayuri', 'brayan': 'Sayuri',
-  'camille vaz': 'Sayuri', 'camille': 'Sayuri',
-  'carolina miranda': 'Sayuri', 'carolina': 'Sayuri',
-  'isaque silva': 'Sayuri', 'isaque': 'Sayuri',
-  'larissa mota': 'Sayuri',
-  'nat vieira': 'Sayuri', 'nat': 'Sayuri',
-  'vinícius oliveira': 'Sayuri', 'vinicius': 'Sayuri',
-
-  // TIME TAYANARA
-  'ana de battisti': 'Tayanara', 'ana battisti': 'Tayanara', 'ana': 'Tayanara',
-  'denis silva': 'Tayanara', 'denis': 'Tayanara',
-  'larissa teixeira': 'Tayanara',
-  'lorrayne moreira': 'Tayanara', 'lorrayne': 'Tayanara',
-  'micaelle martins': 'Tayanara', 'micaelle': 'Tayanara',
-  'sthephany talasca': 'Tayanara', 'sthephany': 'Tayanara', 'sthe': 'Tayanara',
-  'thais silva': 'Tayanara', 'thais': 'Tayanara',
-  'willian martins': 'Tayanara', 'willian': 'Tayanara',
-  'yuri santos': 'Tayanara', 'yuri': 'Tayanara',
-
-  // TIME MICHEL
-  'aline almeida': 'Michel', 'aline': 'Michel',
-  'bianca kim': 'Michel', 'bianca': 'Michel',
-  'jéssica barreiro': 'Michel', 'jessica barreiro': 'Michel', 'jessica': 'Michel',
-  'julia rodrigues': 'Michel', 'julia': 'Michel',
-  'maria fernanda costa': 'Michel', 'mafê': 'Michel',
-  'maryana alves': 'Michel', 'maryana': 'Michel',
-  'rafaele oliveira': 'Michel', 'rafaele': 'Michel',
-  'túlio morgado': 'Michel', 'túlio': 'Michel', 'tulio': 'Michel',
+const PILLARS = [
+    {k:'consultividade',l:'Consultividade'},{k:'escuta_ativa',l:'Escuta Ativa'},
+    {k:'jornada_cliente',l:'Jornada do Cliente'},{k:'encantamento',l:'Encantamento'},
+    {k:'objecoes',l:'Objeções/Bugs'},{k:'rapport',l:'Rapport'},
+    {k:'autoridade',l:'Autoridade'},{k:'postura',l:'Postura'},
+    {k:'gestao_tempo',l:'Gestão de Tempo'},{k:'contextualizacao',l:'Contextualização'},
+    {k:'clareza',l:'Clareza'},{k:'objetividade',l:'Objetividade'},
+    {k:'flexibilidade',l:'Flexibilidade'},{k:'dominio_produto',l:'Dom. Produto'},
+    {k:'dominio_negocio',l:'Dom. Negócio'},{k:'ecossistema_nibo',l:'Ecossistema Nibo'},
+    {k:'universo_contabil',l:'Univ. Contábil'},
+];
+const CK_LABELS = {
+    definiu_prazo_implementacao:'Prazo de Implantação',
+    alinhou_dever_de_casa:'Dever de Casa Alinhado',
+    validou_certificado_digital:'Certificado Digital',
+    agendou_proximo_passo:'Próxima Reunião Agendada',
+    conectou_com_dor_vendas:'Conectou com Dor de Vendas',
+    explicou_canal_suporte:'Explicou Canal de Suporte',
 };
 
-function detectCSAndCoordinator(transcript) {
-  if (!transcript) return { cs: null, coordinator: null };
-  const lowerTranscript = transcript.toLowerCase();
-  for (const [name, coordinator] of Object.entries(CS_TO_COORDINATOR)) {
-    if (lowerTranscript.includes(name)) {
-      return { cs: name, coordinator: coordinator };
-    }
-  }
-  return { cs: null, coordinator: null };
-}
+let allReunioes=[], statsData={}, chartEvo=null, chartCoord=null;
 
-// Detecta ao digitar
-document.getElementById('transcript-input').addEventListener('input', function() {
-  const transcript = this.value;
-  const { cs, coordinator } = detectCSAndCoordinator(transcript);
-  if (coordinator) {
-    document.getElementById('coordinator-select').value = coordinator;
-  }
-});
-
-// Detecta ao colar
-document.getElementById('transcript-input').addEventListener('paste', function() {
-  setTimeout(() => {
-    const transcript = this.value;
-    const { cs, coordinator } = detectCSAndCoordinator(transcript);
-    if (coordinator) {
-      document.getElementById('coordinator-select').value = coordinator;
-      const toast = document.createElement('div');
-      toast.className = 'fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-50';
-      toast.textContent = `✅ ${coordinator} atribuído a ${cs}`;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-  }, 100);
-});
-
-// ─── Local Storage ─────────────────────────────────────────────────────────
-const STORAGE_KEY = 'nibo_auditor_history';
-
-function saveToHistory(data) {
-    const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    const entry = {
-        id: Date.now(),
-        timestamp: new Date().toLocaleString('pt-BR'),
-        analista: document.getElementById('cc-name-input').value || 'Sem nome',
-        coordenador: document.getElementById('coordinator-select').value || 'Não informado',
-        media: data.media_final,
-        resumo: data.resumo_executivo,
-        data: data
-    };
-    history.unshift(entry);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-    return entry.id;
-}
-
-// ─── PDF Upload e Visualização ────────────────────────────────────────────
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-pdfjsLib.getDocument = pdfjsLib.getDocument || pdfjsLib.default.getDocument;
-
-document.getElementById('pdf-upload').addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = async function(event) {
-        const data = new Uint8Array(event.target.result);
-        openPdfViewer(data, file.name);
-    };
-    reader.readAsArrayBuffer(file);
-});
-
-async function openPdfViewer(pdfData, filename) {
-    document.getElementById('pdf-title').textContent = filename;
-    document.getElementById('pdf-pages').innerHTML = '';
-    document.getElementById('pdf-loading').style.display = 'block';
-    
-    const modal = document.getElementById('pdf-viewer-modal');
-    modal.classList.replace('hidden', 'flex');
-    setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        document.getElementById('pdf-viewer-content').classList.replace('scale-95', 'scale-100');
-    }, 10);
-
+async function loadData() {
+    showLoading(true);
     try {
-        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        const container = document.getElementById('pdf-pages');
-        
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            const viewport = page.getViewport({ scale: 2 });
-            
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            
-            await page.render({
-                canvasContext: context,
-                viewport: viewport
-            }).promise;
-            
-            const pageDiv = document.createElement('div');
-            pageDiv.className = 'bg-white rounded-lg shadow-md overflow-hidden';
-            pageDiv.appendChild(canvas);
-            container.appendChild(pageDiv);
-        }
-        
-        document.getElementById('pdf-loading').style.display = 'none';
-    } catch (error) {
-        console.error('Erro ao carregar PDF:', error);
-        document.getElementById('pdf-pages').innerHTML = '<p class="text-red-600 font-bold">Erro ao carregar o PDF. Tente outro arquivo.</p>';
-        document.getElementById('pdf-loading').style.display = 'none';
-    }
-}
+        const p     = document.getElementById('f-periodo').value;
+        const coord = document.getElementById('f-coordenador').value;
+        const anal  = document.getElementById('f-analista').value;
+        const params = new URLSearchParams();
+        if (p && p!=='0') params.append('periodo',p);
+        if (coord) params.append('coordenador',coord);
+        if (anal)  params.append('analista',anal);
 
-function closePdfViewer() {
-    const modal = document.getElementById('pdf-viewer-modal');
-    modal.classList.add('opacity-0');
-    document.getElementById('pdf-viewer-content').classList.replace('scale-100', 'scale-95');
-    setTimeout(() => { modal.classList.replace('flex', 'hidden'); }, 300);
-}
+        const res  = await fetch('/api/dashboard?'+params.toString());
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
 
-// ─── Pillar Store ──────────────────────────────────────────────────────────
-const pillarStore = {};
-let radarChartInstance = null;
+        allReunioes = data.reunioes || [];
+        statsData   = data.stats   || {};
 
-const fields = [
-    { l: 'Consultividade',  k: 'consultividade' },
-    { l: 'Escuta Ativa',    k: 'escuta_ativa' },
-    { l: 'Jornada',         k: 'jornada_cliente' },
-    { l: 'Encantamento',    k: 'encantamento' },
-    { l: 'Objeções/Bugs',   k: 'objecoes' },
-    { l: 'Rapport',         k: 'rapport' },
-    { l: 'Autoridade',      k: 'autoridade' },
-    { l: 'Postura',         k: 'postura' },
-    { l: 'Gestão de Tempo', k: 'gestao_tempo' },
-    { l: 'Contextualiz.',   k: 'contextualizacao' },
-    { l: 'Clareza',         k: 'clareza' },
-    { l: 'Objetividade',    k: 'objetividade' },
-    { l: 'Flexibilidade',   k: 'flexibilidade' },
-    { l: 'Dom. Produto',    k: 'dominio_produto' },
-    { l: 'Dom. Negócio',    k: 'dominio_negocio' },
-    { l: 'Ecossistema',     k: 'ecossistema_nibo' },
-    { l: 'Univ. Contábil',  k: 'universo_contabil' }
-];
+        const origem = document.getElementById('f-origem').value;
+        if (origem==='auto')   allReunioes = allReunioes.filter(r=>r.analise_json?.origem==='drive_automatico');
+        if (origem==='manual') allReunioes = allReunioes.filter(r=>r.analise_json?.origem!=='drive_automatico');
 
-// ─── Character Counter ─────────────────────────────────────────────────────
-const transcriptInput = document.getElementById('transcript-input');
-transcriptInput.addEventListener('input', () => {
-    const len = transcriptInput.value.length;
-    document.getElementById('char-count').textContent = len.toLocaleString('pt-BR');
-});
-
-// ─── Progress Bar Helper ──────────────────────────────────────────────────
-function animateTo(barId, pctId, target, durationMs) {
-    return new Promise(resolve => {
-        const bar = document.getElementById(barId);
-        const pct = document.getElementById(pctId);
-        const start = parseFloat(bar.style.width) || 0;
-        const steps = 40;
-        const step = (target - start) / steps;
-        const delay = durationMs / steps;
-        let cur = start, i = 0;
-        const t = setInterval(() => {
-            cur = Math.min(cur + step, target);
-            bar.style.width = cur + '%';
-            if (pct) pct.textContent = Math.round(cur) + '%';
-            if (++i >= steps) { clearInterval(t); resolve(); }
-        }, delay);
-    });
-}
-
-function markDone(iconId) {
-    const el = document.getElementById(iconId);
-    if (el) el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-4 h-4 text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>`;
-}
-
-function activate(rowId) {
-    document.getElementById(rowId)?.classList.remove('opacity-30');
-}
-
-function setLabel(text) {
-    document.getElementById('loading-label').textContent = text;
-}
-
-// ─── Main Analysis ────────────────────────────────────────────────────────
-const analyzeBtn = document.getElementById('analyze-btn');
-
-async function handleAnalysis() {
-    const prompt = transcriptInput.value.trim();
-    if (!prompt) return;
-
-    const coordinator = document.getElementById('coordinator-select').value;
-    if (!coordinator) {
-        alert('Por favor, selecione um coordenador antes de analisar.');
-        return;
-    }
-
-    document.getElementById('results-section').classList.remove('hidden');
-    document.getElementById('loading-spinner').classList.remove('hidden');
-    document.getElementById('analysis-content').classList.add('hidden');
-    ['bar-scores','bar-report'].forEach(id => document.getElementById(id).style.width = '0%');
-    activate('step-scores');
-
-    analyzeBtn.disabled = true;
-    document.getElementById('btn-text').textContent = 'Analisando...';
-
-    setLabel('Lendo transcrição e avaliando os 17 pilares...');
-    animateTo('bar-scores', 'step-scores-pct', 88, 25000);
-
-    try {
-        const response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, coordinator })
-        });
-
-        let data;
-        try {
-            data = await response.json();
-        } catch {
-            throw new Error('Erro de comunicação com o servidor.');
-        }
-        if (data.error) throw new Error(data.error);
-
-        await animateTo('bar-scores', 'step-scores-pct', 100, 300);
-        markDone('step-scores-icon');
-        activate('step-report');
-        await animateTo('bar-report', 'step-report-pct', 100, 400);
-        markDone('step-report-icon');
-        setLabel('Análise concluída!');
-
-        await new Promise(r => setTimeout(r, 500));
-        renderDashboard(data);
-        saveToHistory(data);
-
-        // Salva no servidor (Supabase)
-        try {
-            const saveRes = await fetch('/api/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ analise: data, coordenador: coordinator })
-            });
-            if (!saveRes.ok) {
-                const err = await saveRes.json().catch(() => ({}));
-                console.warn('Aviso: análise não salva no servidor:', err.error || saveRes.status);
-            }
-        } catch (e) {
-            console.warn('Aviso: erro ao salvar análise no servidor:', e.message);
-        }
-
-    } catch (err) {
-        alert('Erro na análise: ' + err.message);
-        document.getElementById('results-section').classList.add('hidden');
+        populateFilters();
+        renderAll();
+        document.getElementById('last-sync').textContent =
+            '⟳ '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    } catch(e) {
+        console.error(e);
+        alert('Erro ao carregar dados: '+e.message);
     } finally {
-        analyzeBtn.disabled = false;
-        document.getElementById('btn-text').textContent = 'Analisar Sucesso do Cliente';
+        showLoading(false);
     }
 }
 
-// ─── Render Dashboard ─────────────────────────────────────────────────────
-function renderDashboard(data) {
-    document.getElementById('loading-spinner').classList.add('hidden');
-    document.getElementById('analysis-content').classList.remove('hidden');
+function showLoading(v) {
+    document.getElementById('loading-overlay').style.display = v ? 'flex' : 'none';
+}
 
-    const media = data.media_final || 0;
-    document.getElementById('media-final').textContent = media.toFixed(1);
-    document.getElementById('resumo-text').textContent = data.resumo_executivo || '—';
-    document.getElementById('saude-text').textContent  = data.saude_cliente    || 'N/A';
-    document.getElementById('churn-text').textContent  = data.risco_churn      || 'N/A';
+function populateFilters() {
+    const coords   = [...new Set(allReunioes.map(r=>r.coordenador).filter(Boolean))].sort();
+    const analistas = [...new Set(allReunioes.map(r=>r.analista_nome).filter(Boolean))].sort();
+    const cf=document.getElementById('f-coordenador'), af=document.getElementById('f-analista');
+    const cc=cf.value, ca=af.value;
+    cf.innerHTML='<option value="">Todos os coordenadores</option>'+coords.map(c=>`<option value="${c}"${c===cc?' selected':''}>${c}</option>`).join('');
+    af.innerHTML='<option value="">Todos os analistas</option>'+analistas.map(a=>`<option value="${a}"${a===ca?' selected':''}>${a}</option>`).join('');
+}
 
-    document.getElementById('concorrentes-tags').innerHTML = (data.sistemas_citados || []).map(c => `
-        <span class="px-3 py-1 bg-slate-800 text-blue-200 text-[9px] font-black rounded-lg shadow uppercase tracking-widest flex items-center gap-1.5">
-            <i data-lucide="cpu" class="w-3 h-3"></i> ${c}
-        </span>`).join('');
-
-    const status = document.getElementById('status-tag');
-    if (media >= 4.5)      { status.textContent = 'Elite CS';         status.className = 'px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg'; }
-    else if (media >= 3.5) { status.textContent = 'Alta Performance'; status.className = 'px-5 py-2 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-700'; }
-    else                   { status.textContent = 'Acompanhamento';   status.className = 'px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700'; }
-
-    const grid = document.getElementById('notas-grid');
-    grid.innerHTML = fields.map(f => {
-        const raw = data[`nota_${f.k}`];
-        const hasScore = raw !== null && raw !== undefined;
-        const n = hasScore ? raw : null;
-        const p = data[`porque_${f.k}`]   || (hasScore ? 'Sem justificativa.' : 'Sem evidência na transcrição.');
-        const m = data[`melhoria_${f.k}`] || 'Critério de excelência atingido.';
-        const c = !hasScore ? 'text-slate-300' : n >= 4 ? 'text-emerald-500' : n >= 3 ? 'text-blue-600' : 'text-red-500';
-        pillarStore[f.k] = { label: f.l, score: n, hasScore, colorClass: c, porque: p, melhoria: m };
-        return `
-            <div data-pillar="${f.k}" class="pillar-card glass-card p-3 flex flex-col items-center text-center justify-center ${hasScore ? 'cursor-pointer hover:-translate-y-1 hover:border-blue-300' : 'opacity-50 cursor-default'} transition-all group relative">
-                ${hasScore ? '<i data-lucide="zoom-in" class="absolute top-2 right-2 w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors"></i>' : '<i data-lucide="minus" class="absolute top-2 right-2 w-3 h-3 text-slate-300"></i>'}
-                <span class="text-[7.5px] font-black text-slate-400 uppercase mb-1 tracking-widest leading-tight mt-1">${f.l}</span>
-                <div class="text-xl font-black ${c} mb-1 leading-none">${hasScore ? n : '—'}</div>
-                <p class="text-[7.5px] text-slate-500 italic leading-tight font-medium max-w-[95%] truncate">${p}</p>
-            </div>`;
-    }).join('');
-
-    grid.addEventListener('click', e => {
-        const card = e.target.closest('.pillar-card');
-        if (card && pillarStore[card.dataset.pillar]?.hasScore) openModal(pillarStore[card.dataset.pillar]);
-    });
-
-    const tCS  = parseFloat(data.tempo_fala_cs     || 0);
-    const tCli = parseFloat(data.tempo_fala_cliente || 0);
-    document.getElementById('talk-time-container').innerHTML = `
-        <div>
-            <div class="flex justify-between text-[11px] font-bold mb-2"><span>Analista CS</span><span class="text-blue-600">${data.tempo_fala_cs || '0%'}</span></div>
-            <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-600 transition-all duration-1000" style="width:${tCS}%"></div></div>
-        </div>
-        <div>
-            <div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente</span><span class="text-emerald-500">${data.tempo_fala_cliente || '0%'}</span></div>
-            <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 transition-all duration-1000" style="width:${tCli}%"></div></div>
-        </div>`;
-
-    const ck = data.checklist_cs || {};
-    const ckLabels = {
-        definiu_prazo_implementacao:   'Prazo de Implantação',
-        alinhou_dever_de_casa:         'Dever de Casa Alinhado',
-        validou_certificado_digital:   'Certificado A1 / Acesso',
-        agendou_proximo_passo:         'Próxima Reunião Agendada',
-        conectou_com_dor_vendas:       'Retomou Dor de Vendas',
-        explicou_canal_suporte:        'Explicou Canal de Suporte'
-    };
-    document.getElementById('checklist-container').innerHTML = Object.entries(ckLabels).map(([key, label]) => `
-        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span class="text-[9px] font-bold text-slate-600 uppercase tracking-tight">${label}</span>
-            <div class="w-5 h-5 rounded-full flex items-center justify-center ${ck[key] ? 'bg-emerald-500' : 'bg-slate-300'}">
-                <i data-lucide="${ck[key] ? 'check' : 'minus'}" class="text-white w-3 h-3"></i>
-            </div>
-        </div>`).join('');
-
-    document.getElementById('lista-fortes').innerHTML  = (data.pontos_fortes  || []).map(i => `<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
-    document.getElementById('lista-atencao').innerHTML = (data.pontos_atencao || []).map(i => `<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
-    document.getElementById('markdown-body').innerHTML = marked.parse(data.justificativa_detalhada || '');
-
-    renderRadar(data);
+function renderAll() {
+    renderKPIs(); renderSaudeChurn(); renderEvo();
+    renderRanking(); renderPilares(); renderCoord();
+    renderChecklist(); renderReunioes();
     lucide.createIcons();
 }
 
-function renderRadar(data) {
-    const ctx = document.getElementById('radarChart').getContext('2d');
-    if (radarChartInstance) radarChartInstance.destroy();
-    radarChartInstance = new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: fields.map(f => f.l),
-            datasets: [{ label: 'Nota de CS', data: fields.map(f => data[`nota_${f.k}`] ?? 0),
-                backgroundColor: 'rgba(37,99,235,0.15)', borderColor: '#2563eb',
-                borderWidth: 1.5, pointRadius: 2, pointBackgroundColor: '#1e3a8a' }]
-        },
-        options: {
-            scales: { r: { min:0, max:5, ticks:{stepSize:1,display:false},
-                grid:{color:'#e2e8f0'}, angleLines:{color:'#e2e8f0'},
-                pointLabels:{font:{size:8,weight:'700'},color:'#475569'} } },
-            plugins: { legend: { display: false } },
-            maintainAspectRatio: false
-        }
+function renderKPIs() {
+    const s=statsData;
+    document.getElementById('kpi-total').textContent = s.total??'—';
+    document.getElementById('kpi-media').textContent = s.media_geral!=null?s.media_geral.toFixed(1):'—';
+    document.getElementById('kpi-saude').textContent = s.saudeStats?.saudavel??'—';
+    document.getElementById('kpi-churn').textContent = s.churnStats?.alto??'—';
+}
+
+function renderSaudeChurn() {
+    const ss=statsData.saudeStats||{}, cs=statsData.churnStats||{};
+    document.getElementById('s-saudavel').textContent=ss.saudavel??'—';
+    document.getElementById('s-risco').textContent=ss.risco??'—';
+    document.getElementById('s-critico').textContent=ss.critico??'—';
+    document.getElementById('s-nd').textContent=ss.indefinido??'—';
+    document.getElementById('c-alto').textContent=cs.alto??'—';
+    document.getElementById('c-medio').textContent=cs.medio??'—';
+    document.getElementById('c-baixo').textContent=cs.baixo??'—';
+    document.getElementById('c-nd').textContent=cs.indefinido??'—';
+}
+
+function renderEvo() {
+    const evo=statsData.evolucao||[];
+    document.getElementById('badge-semanas').textContent=evo.length+' semanas';
+    const labels=evo.map(e=>new Date(e.semana).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}));
+    const vals=evo.map(e=>e.media);
+    if(chartEvo) chartEvo.destroy();
+    chartEvo=new Chart(document.getElementById('chart-evo').getContext('2d'),{
+        type:'line',
+        data:{labels,datasets:[{label:'Média Semanal',data:vals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#2563eb',pointBorderColor:'#fff',pointBorderWidth:2,fill:true,tension:0.4}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}
     });
 }
 
-// ─── Modal ────────────────────────────────────────────────────────────────
-function openModal({ label, score, colorClass, porque, melhoria }) {
-    document.getElementById('modal-title').textContent = label;
-    const scoreEl = document.getElementById('modal-score');
-    scoreEl.textContent = score;
-    scoreEl.className = `text-5xl font-black leading-none ${colorClass}`;
-    document.getElementById('modal-text').textContent = porque;
-
-    const container = document.getElementById('modal-improvement-container');
-    const labelEl   = document.getElementById('modal-improvement-label');
-    const textEl    = document.getElementById('modal-improvement-text');
-    const iconEl    = document.getElementById('modal-improvement-icon');
-    textEl.textContent = melhoria;
-
-    if (score >= 5) {
-        container.className = 'rounded-2xl p-4 border border-emerald-100 bg-emerald-50 mt-2';
-        labelEl.className   = 'text-[9px] font-bold uppercase tracking-widest block text-emerald-700';
-        labelEl.textContent = 'Excelente!';
-        textEl.className    = 'text-[12px] leading-relaxed font-medium text-emerald-900';
-        iconEl.setAttribute('data-lucide', 'check-circle');
-    } else {
-        container.className = 'rounded-2xl p-4 border border-amber-100 bg-amber-50 mt-2';
-        labelEl.className   = 'text-[9px] font-bold uppercase tracking-widest block text-amber-700';
-        labelEl.textContent = 'O que faltou para o 5?';
-        textEl.className    = 'text-[12px] leading-relaxed font-medium text-amber-900';
-        iconEl.setAttribute('data-lucide', 'target');
-    }
-
-    const modal    = document.getElementById('justification-modal');
-    const modalBox = document.getElementById('modal-content-box');
-    modal.classList.replace('hidden', 'flex');
-    setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        modalBox.classList.replace('scale-95','scale-100');
-        lucide.createIcons();
-    }, 10);
+function renderRanking() {
+    const ranking=statsData.ranking||[];
+    document.getElementById('badge-ranking').textContent=ranking.length+' analistas';
+    const tbody=document.getElementById('tbody-ranking'), empty=document.getElementById('empty-ranking');
+    if(!ranking.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
+    empty.classList.add('hidden');
+    const medals=['🥇','🥈','🥉'];
+    tbody.innerHTML=ranking.map((a,i)=>{
+        const pos=medals[i]||(i+1);
+        const cls=a.media>=4?'score-high':a.media>=3?'score-mid':'score-low';
+        return `<tr onclick="openModalAnalista('${a.nome.replace(/'/g,"\\\'")}')" style="cursor:pointer">
+            <td><span class="font-black text-xl">${pos}</span></td>
+            <td><span class="font-bold">${a.nome}</span></td>
+            <td class="text-slate-500 text-xs">${a.coordenador||'—'}</td>
+            <td class="text-slate-600">${a.total}</td>
+            <td><span class="score-pill ${cls}">${a.media.toFixed(1)}</span></td>
+        </tr>`;
+    }).join('');
 }
 
-function closeModal() {
-    const modal    = document.getElementById('justification-modal');
-    const modalBox = document.getElementById('modal-content-box');
-    modal.classList.add('opacity-0');
-    modalBox.classList.replace('scale-100','scale-95');
-    setTimeout(() => { modal.classList.replace('flex','hidden'); }, 300);
+function renderPilares() {
+    const pt=statsData.pilaresTime||{};
+    document.getElementById('pilares-list').innerHTML=PILLARS.map(p=>{
+        const val=pt[p.k]||0, pct=(val/5)*100;
+        const color=val<3?'#ef4444':val<4?'#f59e0b':'#10b981';
+        return `<div style="display:flex;align-items:center;gap:0.75rem">
+            <span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:8rem;text-align:right">${p.l}</span>
+            <div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+            <span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${val>0?val.toFixed(1):'—'}</span>
+        </div>`;
+    }).join('');
 }
 
-document.getElementById('justification-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
-analyzeBtn.addEventListener('click', handleAnalysis);
+function renderCoord() {
+    const pc=statsData.porCoordenador||{};
+    const labels=Object.keys(pc), vals=labels.map(k=>pc[k].media), totals=labels.map(k=>pc[k].total);
+    const colors=['#2563eb','#7c3aed','#db2777','#059669','#d97706'];
+    if(chartCoord) chartCoord.destroy();
+    chartCoord=new Chart(document.getElementById('chart-coord').getContext('2d'),{
+        type:'bar',
+        data:{labels,datasets:[{label:'Média CS',data:vals,backgroundColor:labels.map((_,i)=>colors[i%colors.length]+'22'),borderColor:labels.map((_,i)=>colors[i%colors.length]),borderWidth:2,borderRadius:8,borderSkipped:false}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:ctx=>`Reuniões: ${totals[ctx.dataIndex]}`}}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:11,weight:'700'}},grid:{display:false}}}}
+    });
+}
 
-// ─── Export & Save ────────────────────────────────────────────────────────
-document.getElementById('save-report-btn').addEventListener('click', () => {
-    const toast = document.createElement('div');
-    toast.className = 'fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-50';
-    toast.textContent = '✅ Análise já salva automaticamente!';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-});
+function renderChecklist() {
+    const ck=statsData.ckRates||{};
+    document.getElementById('ck-list').innerHTML=Object.entries(CK_LABELS).map(([key,label])=>{
+        const pct=ck[key]??0;
+        const color=pct<50?'#ef4444':pct<75?'#f59e0b':'#10b981';
+        return `<div class="ck-row">
+            <span style="font-weight:600">${label}</span>
+            <div style="display:flex;align-items:center">
+                <div class="ck-bar-bg"><div class="ck-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+                <span style="font-weight:800;font-size:0.78rem;color:${color};min-width:2.5rem;text-align:right">${pct}%</span>
+            </div>
+        </div>`;
+    }).join('');
+}
 
-document.getElementById('export-pdf-btn').addEventListener('click', () => {
-    alert('Funcionalidade de exportar PDF em desenvolvimento. Você pode usar Ctrl+P para imprimir como PDF.');
-});
+function renderReunioes() {
+    const tbody=document.getElementById('tbody-reunioes'), empty=document.getElementById('empty-reunioes');
+    document.getElementById('badge-total').textContent=allReunioes.length+' registros';
+    if(!allReunioes.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
+    empty.classList.add('hidden');
+    tbody.innerHTML=allReunioes.map(r=>{
+        const media=r.media_final??0;
+        const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
+        const cv=(r.risco_churn||'').toLowerCase();
+        const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';
+        const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
+        const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
+        const isAuto=r.analise_json?.origem==='drive_automatico';
+        return `<tr onclick="openModalId(${r.id})">
+            <td class="text-slate-500">${data}</td>
+            <td><strong>${r.analista_nome||'—'}</strong></td>
+            <td class="text-slate-500">${r.coordenador||'—'}</td>
+            <td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td>
+            <td class="text-slate-600 text-xs max-w-xs truncate">${r.saude_cliente||'—'}</td>
+            <td><span class="tag-${churnCls}">${churnLabel}</span></td>
+            <td><span class="${isAuto?'tag-auto':'tag-manual'}">${isAuto?'Auto':'Manual'}</span></td>
+            <td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td>
+        </tr>`;
+    }).join('');
+    lucide.createIcons();
+}
+
+// Modal
+function openModalId(id){const r=allReunioes.find(x=>x.id===id);if(r)renderModal(r);}
+function openModalAnalista(nome){const r=allReunioes.find(x=>x.analista_nome===nome);if(r)renderModal(r);}
+
+function renderModal(r) {
+    const aj=r.analise_json||{}, media=r.media_final??0;
+    const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+    document.getElementById('modal-analista').textContent=r.analista_nome||'—';
+    document.getElementById('modal-meta').textContent=`${r.coordenador||'—'} · ${data}`;
+    document.getElementById('modal-media').textContent=media.toFixed(1);
+    document.getElementById('modal-resumo').textContent=aj.resumo_executivo||'—';
+    document.getElementById('modal-saude').textContent=r.saude_cliente||'—';
+    document.getElementById('modal-churn').textContent=r.risco_churn||'—';
+    const tag=document.getElementById('modal-status-tag');
+    tag.textContent=media>=4.5?'Elite CS':media>=3.5?'Alta Performance':'Acompanhamento';
+
+    document.getElementById('modal-pilares').innerHTML=PILLARS.map(p=>{
+        const val=r['nota_'+p.k], hasVal=val!=null;
+        const bg=!hasVal?'bg-slate-50':val>=4?'bg-emerald-50':val>=3?'bg-blue-50':'bg-red-50';
+        const tc=!hasVal?'text-slate-300':val>=4?'text-emerald-600':val>=3?'text-blue-600':'text-red-600';
+        return `<div class="${bg} rounded-2xl p-3 text-center border border-slate-100">
+            <div class="text-[8px] font-bold uppercase tracking-wide text-slate-400 mb-1">${p.l}</div>
+            <div class="text-xl font-black ${tc}">${hasVal?val:'—'}</div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('modal-fortes').innerHTML=(aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
+    document.getElementById('modal-atencao').innerHTML=(aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
+
+    const rel=aj.justificativa_detalhada||'';
+    document.getElementById('modal-relatorio').innerHTML=rel
+        ?rel.replace(/## (.+)/g,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>')
+        :'<p class="text-slate-400">Relatório não disponível.</p>';
+
+    document.getElementById('modal-overlay').classList.add('open');
+    lucide.createIcons();
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+loadData();
 </script>
-
 </body>
 </html>
