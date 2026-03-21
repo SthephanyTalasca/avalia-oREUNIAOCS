@@ -38,7 +38,7 @@ export default async function handler(req, res) {
         const emailParts = (user.email || '').toLowerCase().split('@');
         const domain = emailParts.length === 2 ? emailParts[1] : '';
         if (domain !== 'nibo.com.br') {
-            return res.redirect(`/?auth_error=dominio_invalido&email=${encodeURIComponent(user.email)}`);
+            return (`/?auth_error=dominio_invalido&email=${encodeURIComponent(user.email)}`);
         }
 
         const session = Buffer.from(JSON.stringify({
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
         res.setHeader('Set-Cookie',
             `nibo_cs_session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`
         );
-        return res.redirect('/');
+return res.redirect('/login-success.html');
     } catch (err) {
         console.error('Auth error:', err);
         return res.redirect('/?auth_error=erro_interno');
