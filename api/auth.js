@@ -38,7 +38,7 @@ export default async function handler(req, res) {
         const emailParts = (user.email || '').toLowerCase().split('@');
         const domain = emailParts.length === 2 ? emailParts[1] : '';
         if (domain !== 'nibo.com.br') {
-            return (`/?auth_error=dominio_invalido&email=${encodeURIComponent(user.email)}`);
+            return res.redirect(`/?auth_error=dominio_invalido&email=${encodeURIComponent(user.email)}`);
         }
 
         const session = Buffer.from(JSON.stringify({
@@ -48,10 +48,20 @@ export default async function handler(req, res) {
             exp:     Date.now() + 24 * 60 * 60 * 1000
         })).toString('base64');
 
-        res.setHeader('Set-Cookie',
-            `nibo_cs_session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`
-        );
-return res.redirect('/login-success.html');
+        const cookie = `nibo_cs_session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`;
+
+        // Usa HTML com JS redirect em vez de res.redirect()
+        // Garante que o browser salva o cookie ANTES de navegar
+        res.setHeader('Set-Cookie', cookie);
+        res.setHeader('Content-Type', 'text/html');
+        return res.status(200).send(`<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Entrando...</title></head>
+<body>
+<script>window.location.replace('/');</script>
+</body>
+</html>`);
+
     } catch (err) {
         console.error('Auth error:', err);
         return res.redirect('/?auth_error=erro_interno');
