@@ -234,9 +234,19 @@ async function getNumbers(transcript) {
 
     const parsed = safeParse(res.text, 'getNumbers');
 
+    // Converte notas inválidas (0 ou -1) para null — não entram na média
     ALL_PILLARS.forEach(function(p) {
-        if (parsed['nota_' + p[0]] === -1) parsed['nota_' + p[0]] = null;
+        const val = parsed['nota_' + p[0]];
+        if (val === -1 || val === 0 || val == null) parsed['nota_' + p[0]] = null;
     });
+
+    // Recalcula media_final ignorando nulls (não confia no valor da IA)
+    const notasValidas = ALL_PILLARS
+        .map(p => parsed['nota_' + p[0]])
+        .filter(v => v !== null && v > 0 && v <= 5);
+    parsed.media_final = notasValidas.length
+        ? Math.round((notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length) * 10) / 10
+        : null;
 
     parsed.tempo_fala_cs      = (parsed.tempo_fala_cs_pct      || 50) + '%';
     parsed.tempo_fala_cliente = (parsed.tempo_fala_cliente_pct || 50) + '%';
