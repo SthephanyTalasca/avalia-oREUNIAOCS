@@ -10,22 +10,25 @@ function getSession(req) {
         if (s.exp && Date.now() > s.exp) return null;
         if (s.email.toLowerCase().split('@')[1] !== 'nibo.com.br') return null;
         return s;
-    } catch (e) { console.error('getSession error:', e); return null; }
+    } catch (e) { return null; }
 }
 
 export default async function handler(req, res) {
     if (req.method !== 'PATCH') return res.status(405).json({ error: 'Método não permitido' });
     if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
 
-    const { reuniao_id, analista_nome } = req.body;
+    const { reuniao_id, analista_nome, coordenador_nome } = req.body;
     if (!reuniao_id || !analista_nome?.trim())
         return res.status(400).json({ error: 'reuniao_id e analista_nome obrigatórios' });
+
+    const updates = { analista_nome: analista_nome.trim() };
+    if (coordenador_nome !== undefined) updates.coordenador = coordenador_nome.trim() || null;
 
     try {
         const r = await fetch(`${SUPABASE_URL}/rest/v1/cs_reunioes?id=eq.${reuniao_id}`, {
             method: 'PATCH',
-            headers: { 'Content-Type':'application/json',apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,Prefer:'return=representation' },
-            body: JSON.stringify({ analista_nome: analista_nome.trim() })
+            headers: { 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, Prefer:'return=representation' },
+            body: JSON.stringify(updates)
         });
         if (!r.ok) return res.status(500).json({ error: 'Erro ao reatribuir: ' + await r.text() });
         return res.status(200).json({ ok: true, updated: (await r.json())[0] });
