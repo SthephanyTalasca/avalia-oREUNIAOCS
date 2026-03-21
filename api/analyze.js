@@ -1,12 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 
 export const maxDuration = 300;
-
-export const config = {
-  api: {
-    bodyParser: { sizeLimit: '20mb' }
-  }
-};
+export const config = { api: { bodyParser: { sizeLimit: '20mb' } } };
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -30,119 +25,103 @@ const ALL_PILLARS = [
   ['universo_contabil', 'Universo Contábil'],
 ];
 
-// ─── Extração robusta de texto - cobre todas as variações da API Gemini ─────
-function extractText(response) {
-  console.log('🔎 Tipo da resposta:', typeof response);
-  console.log('🔎 Keys da resposta:', response ? Object.keys(response) : 'null');
-  
-  // 1. response.text como função (SDK mais recente)
-  if (typeof response?.text === 'function') {
-    try {
-      const result = response.text();
-      console.log('✅ Extraído via response.text()');
-      return result;
-    } catch (e) {
-      console.warn('⚠️ response.text() falhou:', e.message);
+// ── Base de conhecimento por produto ─────────────────────────────────────────
+// Cada produto tem: env var com o conteúdo + palavras-chave para detecção
+const KNOWLEDGE_MAP = [
+  {
+    key: 'BPO / Gestão Financeira',
+    envVar: 'CONHECIMENTO_BPO',
+    keywords: ['bpo', 'gestão financeira', 'gestao financeira', 'financeiro', 'fluxo de caixa',
+               'contas a pagar', 'contas a receber', 'lançamento', 'conciliação manual',
+               'recebimento', 'pagamento', 'relatório financeiro'],
+  },
+  {
+    key: 'Conciliador / Open Finance',
+    envVar: 'CONHECIMENTO_CONCILIADOR',
+    keywords: ['conciliador', 'open finance', 'ofx', 'importar extrato', 'extrato bancário',
+               'conciliação automática', 'conciliacao automatica', 'sincronizar banco'],
+  },
+  {
+    key: 'Radar e-CAC',
+    envVar: 'CONHECIMENTO_RADAR',
+    keywords: ['radar', 'e-cac', 'ecac', 'certidão', 'situação fiscal', 'pendência fiscal',
+               'obrigações fiscais', 'receita federal'],
+  },
+  {
+    key: 'Nibo via WhatsApp',
+    envVar: 'CONHECIMENTO_WHATSAPP',
+    keywords: ['whatsapp', 'whats', 'zap', 'notificação por mensagem', 'mensagem automática'],
+  },
+  {
+    key: 'Nibo Obrigações Plus',
+    envVar: 'CONHECIMENTO_OBRIGACOES',
+    keywords: ['obrigações', 'obrigacoes', 'obrigações plus', 'declaração', 'sped',
+               'guias', 'competência fiscal', 'dctf', 'defis', 'das', 'obrigação acessória'],
+  },
+  {
+    key: 'Emissor de Notas (NFS-e)',
+    envVar: 'CONHECIMENTO_EMISSOR',
+    keywords: ['emissor', 'nota fiscal', 'nfs-e', 'nfse', 'nota de serviço',
+               'emitir nota', 'prefeitura', 'rps'],
+  },
+];
+
+// Detecta quais produtos aparecem na transcrição e monta contexto de conhecimento
+function buildKnowledgeContext(transcript) {
+  const lower = transcript.toLowerCase();
+  const found = [];
+
+  for (const produto of KNOWLEDGE_MAP) {
+    const detected = produto.keywords.some(kw => lower.includes(kw));
+    if (!detected) continue;
+
+    const conteudo = process.env[produto.envVar];
+    if (!conteudo) {
+      console.warn(`⚠️ Produto detectado "${produto.key}" mas env var ${produto.envVar} não está configurada.`);
+      continue;
     }
+
+    found.push({ nome: produto.key, conteudo });
+    console.log(`📚 Produto detectado: ${produto.key}`);
   }
-  
-  // 2. response.text como string
-  if (typeof response?.text === 'string') {
-    console.log('✅ Extraído via response.text (string)');
-    return response.text;
+
+  if (found.length === 0) {
+    console.log('📚 Nenhum produto específico detectado — avaliando sem base de conhecimento de produto.');
+    return '';
   }
-  
-  // 3. response.response.text() - estrutura aninhada
-  if (typeof response?.response?.text === 'function') {
-    try {
-      const result = response.response.text();
-      console.log('✅ Extraído via response.response.text()');
-      return result;
-    } catch (e) {
-      console.warn('⚠️ response.response.text() falhou:', e.message);
-    }
-  }
-  
-  // 4. response.candidates (formato antigo/alternativo)
-  if (Array.isArray(response?.candidates) && response.candidates.length > 0) {
-    const candidate = response.candidates[0];
-    if (candidate?.content?.parts?.[0]?.text) {
-      console.log('✅ Extraído via response.candidates[0].content.parts[0].text');
-      return candidate.content.parts[0].text;
-    }
-  }
-  
-  // 5. Se for array de content blocks
-  if (Array.isArray(response)) {
-    const textBlock = response.find(c => c?.type === 'text' || c?.text);
-    if (textBlock?.text) {
-      console.log('✅ Extraído via array de content blocks');
-      return textBlock.text;
-    }
-  }
-  
-  // 6. response.content
-  if (response?.content) {
-    if (typeof response.content === 'string') {
-      console.log('✅ Extraído via response.content (string)');
-      return response.content;
-    }
-    if (Array.isArray(response.content)) {
-      const textBlock = response.content.find(c => c?.text);
-      if (textBlock?.text) {
-        console.log('✅ Extraído via response.content array');
-        return textBlock.text;
-      }
-    }
-  }
-  
-  // 7. String direto
-  if (typeof response === 'string') {
-    console.log('✅ Resposta já é string');
-    return response;
-  }
-  
-  // 8. Último recurso - stringify
-  console.error('❌ Não conseguiu extrair texto. Estrutura completa:');
-  console.error(JSON.stringify(response, null, 2).substring(0, 2000));
-  throw new Error('EXTRACT_TEXT_FAILED: Não foi possível extrair texto da resposta do Gemini');
+
+  const blocos = found.map(f =>
+    `=== BASE DE CONHECIMENTO: ${f.nome} ===\n${f.conteudo}\n=== FIM: ${f.nome} ===`
+  ).join('\n\n');
+
+  return `\n\n---\nCONTEXTO DOS PRODUTOS NIBO MENCIONADOS NA REUNIÃO (use para avaliar Domínio de Produto, Ecossistema Nibo e Domínio de Negócio):\n${blocos}\n---\n`;
 }
 
-// ─── Limpa markdown e extrai JSON puro ────────────────────────────────────
+// ── Helpers JSON ──────────────────────────────────────────────────────────────
+function extractText(response) {
+  if (typeof response?.text === 'function') { try { return response.text(); } catch {} }
+  if (typeof response?.text === 'string') return response.text;
+  if (typeof response?.response?.text === 'function') { try { return response.response.text(); } catch {} }
+  if (Array.isArray(response?.candidates) && response.candidates[0]?.content?.parts?.[0]?.text)
+    return response.candidates[0].content.parts[0].text;
+  if (typeof response === 'string') return response;
+  throw new Error('EXTRACT_TEXT_FAILED');
+}
+
 function cleanJsonResponse(text) {
   if (!text || typeof text !== 'string') return '';
-  
   let s = text.trim();
-  
-  // Remove blocos de código markdown
-  const codeBlockMatch = s.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  if (codeBlockMatch) {
-    s = codeBlockMatch[1].trim();
-  }
-  
-  // Remove backticks soltos
+  const m = s.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (m) s = m[1].trim();
   s = s.replace(/^`+|`+$/g, '');
-  
-  // Extrai apenas o JSON (do primeiro { ao último })
-  const firstBrace = s.indexOf('{');
-  const lastBrace = s.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    s = s.substring(firstBrace, lastBrace + 1);
-  }
-  
+  const a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a !== -1 && b !== -1 && b > a) s = s.substring(a, b + 1);
   return s.trim();
 }
 
-// ─── Repara JSON truncado ─────────────────────────────────────────────────
 function repairJson(raw) {
-  if (!raw || typeof raw !== 'string') return '{}';
-  
-  let s = raw.trimEnd();
-  s = s.replace(/,\s*$/, '');
-  s = s.replace(/"[^"]*$/, '');
-  s = s.replace(/:\s*$/, '');
-  s = s.replace(/,\s*$/, '');
-  
+  if (!raw) return '{}';
+  let s = raw.trimEnd().replace(/,\s*$/, '').replace(/"[^"]*$/, '').replace(/:\s*$/, '').replace(/,\s*$/, '');
   let braces = 0, brackets = 0, inStr = false, esc = false;
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];
@@ -162,54 +141,32 @@ function repairJson(raw) {
 
 function safeParse(text, label) {
   if (!text) throw new Error(`${label}: texto vazio`);
-  
   const cleaned = cleanJsonResponse(text);
-  console.log(`🔍 ${label} - Texto limpo (200 chars):`, cleaned.substring(0, 200));
-  
-  if (!cleaned) throw new Error(`${label}: texto vazio após limpeza`);
-  
-  try {
-    return JSON.parse(cleaned);
-  } catch (e1) {
-    console.warn(`⚠️ ${label} JSON inválido, tentando reparar...`);
-    try {
-      const repaired = repairJson(cleaned);
-      const result = JSON.parse(repaired);
-      console.log(`✅ ${label} reparado com sucesso`);
-      return result;
-    } catch (e2) {
-      console.error(`❌ ${label} falhou. Texto original (500 chars):`, text.substring(0, 500));
-      throw new Error(`JSON_PARSE_FAILED: ${label}`);
-    }
+  if (!cleaned) throw new Error(`${label}: vazio após limpeza`);
+  try { return JSON.parse(cleaned); } catch {
+    try { return JSON.parse(repairJson(cleaned)); }
+    catch { throw new Error(`JSON_PARSE_FAILED: ${label}`); }
   }
 }
 
 async function withRetry(fn, label, attempts = 3) {
   let lastErr;
   for (let i = 0; i < attempts; i++) {
-    try {
-      return await fn();
-    } catch (e) {
+    try { return await fn(); } catch (e) {
       lastErr = e;
-      console.error(`⚠️ ${label} tentativa ${i + 1}/${attempts} falhou:`, e.message);
-      if (i < attempts - 1) {
-        await new Promise(r => setTimeout(r, 1500 * (i + 1)));
-      }
+      if (i < attempts - 1) await new Promise(r => setTimeout(r, 1500 * (i + 1)));
     }
   }
   throw lastErr;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// CHAMADA 1: NOTAS NUMÉRICAS
-// ═══════════════════════════════════════════════════════════════════════════════
-async function getNumbers(transcript) {
-  const userPrompt = `Analise esta transcrição de reunião de CS e retorne as notas.
+// ── CHAMADA 1: Notas numéricas ─────────────────────────────────────────────
+async function getNumbers(transcript, knowledgeContext) {
+  const prompt = `Você é um avaliador especialista em Customer Success da Nibo.
+Avalie a reunião de CS abaixo com base nos 17 pilares de qualidade.${knowledgeContext}
 
 TRANSCRIÇÃO:
 ${transcript}
-
----
 
 Retorne APENAS este JSON (sem texto adicional, sem markdown):
 {
@@ -241,84 +198,57 @@ Retorne APENAS este JSON (sem texto adicional, sem markdown):
   "ck_suporte": true
 }
 
-Use -1 quando não houver evidência. Notas de 1 a 5 (inteiros). media_final = média das notas válidas.`;
+Use -1 quando não houver evidência suficiente. Notas de 1 a 5 (inteiros).
+Para dominio_produto e ecossistema_nibo: use a base de conhecimento fornecida para verificar se o CS explicou corretamente os módulos, funcionalidades e fluxos do produto.
+media_final = média das notas válidas (excluindo -1).`;
 
-  console.log('📤 Chamando Gemini para getNumbers...');
-  
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-    generationConfig: {
-      temperature: 0,
-      maxOutputTokens: 2048,
-      responseMimeType: 'application/json',
-    },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0, maxOutputTokens: 2048, responseMimeType: 'application/json' },
   });
 
-  console.log('📥 Resposta recebida do Gemini');
-  
-  const text = extractText(res);
-  console.log('📦 Texto extraído (500 chars):', text.substring(0, 500));
-  
-  const parsed = safeParse(text, 'getNumbers');
+  const parsed = safeParse(extractText(res), 'getNumbers');
 
-  // Converte -1 para null
-  ALL_PILLARS.forEach(p => {
-    const val = parsed['nota_' + p[0]];
-    if (val === -1 || val === '-1') parsed['nota_' + p[0]] = null;
-  });
-
-  // Validação das notas
-  ALL_PILLARS.forEach(p => {
-    const k = p[0];
+  ALL_PILLARS.forEach(([k]) => {
     let n = parsed['nota_' + k];
+    if (n === -1 || n === '-1') { parsed['nota_' + k] = null; return; }
     if (n !== null && n !== undefined) {
-      n = Number(n);
-      if (isNaN(n)) n = null;
-      else {
-        if (n < 1) n = 1;
-        if (n > 5) n = 5;
-        n = Math.round(n);
-      }
-      parsed['nota_' + k] = n;
+      n = Math.min(5, Math.max(1, Math.round(Number(n))));
+      parsed['nota_' + k] = isNaN(n) ? null : n;
     }
   });
 
-  parsed.tempo_fala_cs = (parsed.tempo_fala_cs_pct || 50) + '%';
+  parsed.tempo_fala_cs      = (parsed.tempo_fala_cs_pct || 50) + '%';
   parsed.tempo_fala_cliente = (parsed.tempo_fala_cliente_pct || 50) + '%';
-
   parsed.checklist_cs = {
     definiu_prazo_implementacao: Boolean(parsed.ck_prazo),
-    alinhou_dever_de_casa: Boolean(parsed.ck_dever_casa),
+    alinhou_dever_de_casa:       Boolean(parsed.ck_dever_casa),
     validou_certificado_digital: Boolean(parsed.ck_certificado),
-    agendou_proximo_passo: Boolean(parsed.ck_proximo_passo),
-    conectou_com_dor_vendas: Boolean(parsed.ck_dor_vendas),
-    explicou_canal_suporte: Boolean(parsed.ck_suporte),
+    agendou_proximo_passo:       Boolean(parsed.ck_proximo_passo),
+    conectou_com_dor_vendas:     Boolean(parsed.ck_dor_vendas),
+    explicou_canal_suporte:      Boolean(parsed.ck_suporte),
   };
-
   return parsed;
 }
 
-// ─── CHAMADA 2: Meta-textos ────────────────────────────────────────────────
-async function getMeta(transcript, numbers) {
+// ── CHAMADA 2: Meta-textos ─────────────────────────────────────────────────
+async function getMeta(transcript, numbers, knowledgeContext) {
   const notasStr = ALL_PILLARS
-    .filter(p => numbers['nota_' + p[0]] !== null)
-    .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
-    .join(', ');
+    .filter(([k]) => numbers['nota_' + k] !== null)
+    .map(([k, l]) => `${l}: ${numbers['nota_' + k]}/5`).join(', ');
 
-  const prompt = `Analise esta transcrição de CS. Notas: ${notasStr}.
+  const prompt = `Analise esta transcrição de CS da Nibo. Notas: ${notasStr}.${knowledgeContext}
 
 TRANSCRIÇÃO:
 ${transcript}
-
----
 
 Retorne APENAS este JSON:
 {
   "resumo_executivo": "Uma frase resumindo o onboarding",
   "saude_cliente": "Uma frase sobre saúde do cliente",
   "risco_churn": "Uma frase sobre risco de churn",
-  "sistemas_citados": ["sistema1", "sistema2"],
+  "sistemas_citados": ["nome do produto Nibo mencionado"],
   "pontos_fortes": ["ponto forte 1", "ponto forte 2"],
   "pontos_atencao": ["ponto de atenção 1"]
 }`;
@@ -326,127 +256,83 @@ Retorne APENAS este JSON:
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: {
-      temperature: 0.1,
-      maxOutputTokens: 2048,
-      responseMimeType: 'application/json',
-    },
+    generationConfig: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: 'application/json' },
   });
-
-  const text = extractText(res);
-  return safeParse(text, 'getMeta');
+  return safeParse(extractText(res), 'getMeta');
 }
 
-// ─── CHAMADA 3: Justificativas (pilares 1-9) ──────────────────────────────
-async function getTextsA(transcript, numbers) {
+// ── CHAMADA 3: Justificativas pilares 1-9 ─────────────────────────────────
+async function getTextsA(transcript, numbers, knowledgeContext) {
   const group = ALL_PILLARS.slice(0, 9);
-  const notasStr = group
-    .filter(p => numbers['nota_' + p[0]] !== null)
-    .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
-    .join(', ');
+  const notasStr = group.filter(([k]) => numbers['nota_' + k] !== null)
+    .map(([k, l]) => `${l}: ${numbers['nota_' + k]}/5`).join(', ');
 
-  const prompt = `Justifique as notas de CS: ${notasStr}
+  const prompt = `Justifique as notas de CS: ${notasStr}.${knowledgeContext}
 
 TRANSCRIÇÃO:
 ${transcript}
-
----
-
-Retorne APENAS este JSON com porque_ e melhoria_ para os 9 pilares:
-{
-  "porque_consultividade": "justificativa",
-  "melhoria_consultividade": "sugestão",
-  "porque_escuta_ativa": "justificativa",
-  "melhoria_escuta_ativa": "sugestão",
-  "porque_jornada_cliente": "justificativa",
-  "melhoria_jornada_cliente": "sugestão",
-  "porque_encantamento": "justificativa",
-  "melhoria_encantamento": "sugestão",
-  "porque_objecoes": "justificativa",
-  "melhoria_objecoes": "sugestão",
-  "porque_rapport": "justificativa",
-  "melhoria_rapport": "sugestão",
-  "porque_autoridade": "justificativa",
-  "melhoria_autoridade": "sugestão",
-  "porque_postura": "justificativa",
-  "melhoria_postura": "sugestão",
-  "porque_gestao_tempo": "justificativa",
-  "melhoria_gestao_tempo": "sugestão"
-}`;
-
-  const res = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: {
-      temperature: 0.1,
-      maxOutputTokens: 3000,
-      responseMimeType: 'application/json',
-    },
-  });
-
-  const text = extractText(res);
-  return safeParse(text, 'getTextsA');
-}
-
-// ─── CHAMADA 4: Justificativas (pilares 10-17) ────────────────────────────
-async function getTextsB(transcript, numbers) {
-  const group = ALL_PILLARS.slice(9);
-  const notasStr = group
-    .filter(p => numbers['nota_' + p[0]] !== null)
-    .map(p => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
-    .join(', ');
-
-  const prompt = `Justifique as notas de CS: ${notasStr}
-
-TRANSCRIÇÃO:
-${transcript}
-
----
 
 Retorne APENAS este JSON:
 {
-  "porque_contextualizacao": "justificativa",
-  "melhoria_contextualizacao": "sugestão",
-  "porque_clareza": "justificativa",
-  "melhoria_clareza": "sugestão",
-  "porque_objetividade": "justificativa",
-  "melhoria_objetividade": "sugestão",
-  "porque_flexibilidade": "justificativa",
-  "melhoria_flexibilidade": "sugestão",
-  "porque_dominio_produto": "justificativa",
-  "melhoria_dominio_produto": "sugestão",
-  "porque_dominio_negocio": "justificativa",
-  "melhoria_dominio_negocio": "sugestão",
-  "porque_ecossistema_nibo": "justificativa",
-  "melhoria_ecossistema_nibo": "sugestão",
-  "porque_universo_contabil": "justificativa",
-  "melhoria_universo_contabil": "sugestão"
+  "porque_consultividade":"justificativa","melhoria_consultividade":"sugestão",
+  "porque_escuta_ativa":"justificativa","melhoria_escuta_ativa":"sugestão",
+  "porque_jornada_cliente":"justificativa","melhoria_jornada_cliente":"sugestão",
+  "porque_encantamento":"justificativa","melhoria_encantamento":"sugestão",
+  "porque_objecoes":"justificativa","melhoria_objecoes":"sugestão",
+  "porque_rapport":"justificativa","melhoria_rapport":"sugestão",
+  "porque_autoridade":"justificativa","melhoria_autoridade":"sugestão",
+  "porque_postura":"justificativa","melhoria_postura":"sugestão",
+  "porque_gestao_tempo":"justificativa","melhoria_gestao_tempo":"sugestão"
 }`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: {
-      temperature: 0.1,
-      maxOutputTokens: 3000,
-      responseMimeType: 'application/json',
-    },
+    generationConfig: { temperature: 0.1, maxOutputTokens: 3000, responseMimeType: 'application/json' },
   });
-
-  const text = extractText(res);
-  return safeParse(text, 'getTextsB');
+  return safeParse(extractText(res), 'getTextsA');
 }
 
-// ─── CHAMADA 5: Relatório ─────────────────────────────────────────────────
+// ── CHAMADA 4: Justificativas pilares 10-17 ────────────────────────────────
+async function getTextsB(transcript, numbers, knowledgeContext) {
+  const group = ALL_PILLARS.slice(9);
+  const notasStr = group.filter(([k]) => numbers['nota_' + k] !== null)
+    .map(([k, l]) => `${l}: ${numbers['nota_' + k]}/5`).join(', ');
+
+  const prompt = `Justifique as notas de CS: ${notasStr}.${knowledgeContext}
+
+TRANSCRIÇÃO:
+${transcript}
+
+Retorne APENAS este JSON:
+{
+  "porque_contextualizacao":"justificativa","melhoria_contextualizacao":"sugestão",
+  "porque_clareza":"justificativa","melhoria_clareza":"sugestão",
+  "porque_objetividade":"justificativa","melhoria_objetividade":"sugestão",
+  "porque_flexibilidade":"justificativa","melhoria_flexibilidade":"sugestão",
+  "porque_dominio_produto":"justificativa","melhoria_dominio_produto":"sugestão",
+  "porque_dominio_negocio":"justificativa","melhoria_dominio_negocio":"sugestão",
+  "porque_ecossistema_nibo":"justificativa","melhoria_ecossistema_nibo":"sugestão",
+  "porque_universo_contabil":"justificativa","melhoria_universo_contabil":"sugestão"
+}`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 3000, responseMimeType: 'application/json' },
+  });
+  return safeParse(extractText(res), 'getTextsB');
+}
+
+// ── CHAMADA 5: Relatório ───────────────────────────────────────────────────
 async function getRelatorio(numbers, meta, texts, coordinator) {
-  const linhas = ALL_PILLARS.map(p => {
-    const k = p[0];
+  const linhas = ALL_PILLARS.map(([k, l]) => {
     const nota = numbers['nota_' + k];
     if (nota === null) return null;
     const pq = texts['porque_' + k] || '';
     const ml = texts['melhoria_' + k] || '';
     const suf = (ml && ml !== 'Excelência atingida.') ? ' | Melhoria: ' + ml : '';
-    return '- **' + p[1] + '**: ' + nota + '/5 — ' + pq + suf;
+    return `- **${l}**: ${nota}/5 — ${pq}${suf}`;
   }).filter(Boolean).join('\n');
 
   const coordinatorLine = coordinator ? `Coordenador: **${coordinator}**\n\n` : '';
@@ -458,7 +344,6 @@ ${linhas}
 Média: ${numbers.media_final}/5
 Saúde: ${meta.saude_cliente}
 Churn: ${meta.risco_churn}
-
 Fortes: ${(meta.pontos_fortes || []).join('; ')}
 Atenção: ${(meta.pontos_atencao || []).join('; ')}
 
@@ -471,48 +356,39 @@ Use esta estrutura:
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: {
-      temperature: 0.2,
-      maxOutputTokens: 4096,
-    },
+    generationConfig: { temperature: 0.2, maxOutputTokens: 4096 },
   });
-
   return extractText(res);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// HANDLER
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── HANDLER ────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido.' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido.' });
 
   const { prompt, coordinator } = req.body || {};
-
-  if (!prompt) {
-    return res.status(400).json({ error: 'Transcrição obrigatória.' });
-  }
+  if (!prompt) return res.status(400).json({ error: 'Transcrição obrigatória.' });
 
   try {
     console.log('📝 Iniciando análise...');
     console.log('📏 Tamanho da transcrição:', prompt.length, 'caracteres');
 
-    const numbers = await withRetry(() => getNumbers(prompt), 'getNumbers', 3);
+    // Detecta produtos e monta contexto de conhecimento
+    const knowledgeContext = buildKnowledgeContext(prompt);
+
+    const numbers = await withRetry(() => getNumbers(prompt, knowledgeContext), 'getNumbers', 3);
     console.log('✅ Notas obtidas. Média:', numbers.media_final);
 
     const [meta, textsA, textsB] = await Promise.all([
-      withRetry(() => getMeta(prompt, numbers), 'getMeta', 2),
-      withRetry(() => getTextsA(prompt, numbers), 'getTextsA', 2),
-      withRetry(() => getTextsB(prompt, numbers), 'getTextsB', 2),
+      withRetry(() => getMeta(prompt, numbers, knowledgeContext), 'getMeta', 2),
+      withRetry(() => getTextsA(prompt, numbers, knowledgeContext), 'getTextsA', 2),
+      withRetry(() => getTextsB(prompt, numbers, knowledgeContext), 'getTextsB', 2),
     ]);
     console.log('✅ Meta e justificativas obtidas');
 
     const texts = { ...textsA, ...textsB };
 
     // Fallbacks
-    ALL_PILLARS.forEach(p => {
-      const k = p[0];
+    ALL_PILLARS.forEach(([k]) => {
       if (numbers['nota_' + k] === null) {
         texts['porque_' + k] = texts['porque_' + k] || 'Sem evidência na transcrição.';
         texts['melhoria_' + k] = '';
@@ -523,32 +399,25 @@ export default async function handler(req, res) {
     });
 
     meta.resumo_executivo = meta.resumo_executivo || 'Reunião de onboarding realizada.';
-    meta.saude_cliente = meta.saude_cliente || 'Não avaliado.';
-    meta.risco_churn = meta.risco_churn || 'Não avaliado.';
+    meta.saude_cliente    = meta.saude_cliente    || 'Não avaliado.';
+    meta.risco_churn      = meta.risco_churn      || 'Não avaliado.';
     meta.sistemas_citados = meta.sistemas_citados || [];
-    meta.pontos_fortes = meta.pontos_fortes || [];
-    meta.pontos_atencao = meta.pontos_atencao || [];
+    meta.pontos_fortes    = meta.pontos_fortes    || [];
+    meta.pontos_atencao   = meta.pontos_atencao   || [];
 
     const justificativa_detalhada = await withRetry(
-      () => getRelatorio(numbers, meta, texts, coordinator),
-      'getRelatorio',
-      2
+      () => getRelatorio(numbers, meta, texts, coordinator), 'getRelatorio', 2
     );
     console.log('✅ Análise completa!');
 
     return res.status(200).json({
-      ...numbers,
-      ...meta,
-      ...texts,
+      ...numbers, ...meta, ...texts,
       justificativa_detalhada,
-      coordinator
+      coordinator,
     });
 
   } catch (error) {
     console.error('❌ Erro na análise:', error.message);
-    console.error('Stack:', error.stack);
-    return res.status(500).json({
-      error: error.message || 'Erro ao analisar transcrição'
-    });
+    return res.status(500).json({ error: error.message || 'Erro ao analisar transcrição' });
   }
 }
