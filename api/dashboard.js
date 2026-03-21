@@ -10,7 +10,7 @@ function getSession(req) {
         if (s.exp && Date.now() > s.exp) return null;
         if (s.email.toLowerCase().split('@')[1] !== 'nibo.com.br') return null;
         return s;
-    } catch (e) { console.error('getSession error:', e); return null; }
+    } catch { return null; }
 }
 
 export default async function handler(req, res) {
@@ -27,7 +27,8 @@ export default async function handler(req, res) {
             filter += `&analista_nome=ilike.*${encodeURIComponent(analista.split(' ')[0])}*`;
         if (periodo && periodo !== 'todos' && !data_inicio) {
             const since = new Date(Date.now() - parseInt(periodo) * 86400000).toISOString();
-            filter += `&created_at=gte.${since}`;
+            // Usa data_reuniao se existir, senão created_at
+            filter += `&or=(data_reuniao.gte.${since.slice(0,10)},and(data_reuniao.is.null,created_at.gte.${since}))`;
         }
         if (data_inicio) filter += `&created_at=gte.${new Date(data_inicio).toISOString()}`;
         if (data_fim) {
@@ -58,10 +59,16 @@ const PILLARS = [
     'ecossistema_nibo','universo_contabil'
 ];
 
+// Média ignorando 0, -1 e null
+function avg(arr) {
+    const valid = arr.filter(v => v != null && v > 0 && v <= 5);
+    return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+}
+
 function calcStats(reunioes) {
-    const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
     const total  = reunioes.length;
-    const medias = reunioes.map(r => r.media_final).filter(Boolean);
+    // Usa media_final do banco, mas ignora 0
+    const medias = reunioes.map(r => r.media_final).filter(v => v != null && v > 0);
 
     // ── Por coordenador ──────────────────────────────────────────────────
     const porCoordenador = {};
@@ -70,7 +77,7 @@ function calcStats(reunioes) {
             porCoordenador[r.coordenador] = { total:0, medias:[], churn_alto:0 };
         const c = porCoordenador[r.coordenador];
         c.total++;
-        if (r.media_final) c.medias.push(r.media_final);
+        if (r.media_final && r.media_final > 0) c.medias.push(r.media_final);
         if ((r.risco_churn || '').toLowerCase().includes('alto') ||
             (r.risco_churn || '').toLowerCase().includes('crítico')) c.churn_alto++;
     }
@@ -85,40 +92,47 @@ function calcStats(reunioes) {
             porAnalista[r.analista_nome] = { nome: r.analista_nome, coordenador: r.coordenador, total:0, medias:{} };
         const a = porAnalista[r.analista_nome];
         a.total++;
-        if (r.media_final) { a.medias._all = a.medias._all || []; a.medias._all.push(r.media_final); }
+        if (r.media_final && r.media_final > 0) {
+            a.medias._all = a.medias._all || [];
+            a.medias._all.push(r.media_final);
+        }
         PILLARS.forEach(p => {
-            if (r['nota_'+p]) { a.medias[p] = a.medias[p] || []; a.medias[p].push(r['nota_'+p]); }
+            const val = r['nota_' + p];
+            if (val != null && val > 0) {
+                a.medias[p] = a.medias[p] || [];
+                a.medias[p].push(val);
+            }
         });
     }
     const ranking = Object.values(porAnalista).map(a => {
         const res = { ...a, media: +avg(a.medias._all || []).toFixed(1) };
-        PILLARS.forEach(p => { res['avg_'+p] = +avg(a.medias[p] || []).toFixed(1); });
+        PILLARS.forEach(p => { res['avg_' + p] = +avg(a.medias[p] || []).toFixed(1); });
         delete res.medias;
         return res;
-    }).sort((a,b) => b.media - a.media);
+    }).sort((a, b) => b.media - a.media);
 
-    // ── Médias por pilar (frontend usa stats.pilaresTime) ────────────────
+    // ── Médias por pilar ─────────────────────────────────────────────────
     const pilaresTime = {};
     PILLARS.forEach(p => {
-        const vals = reunioes.map(r => r['nota_'+p]).filter(Boolean);
+        const vals = reunioes.map(r => r['nota_' + p]).filter(v => v != null && v > 0);
         pilaresTime[p] = +avg(vals).toFixed(1);
     });
 
     // ── Evolução semanal ─────────────────────────────────────────────────
     const porSemana = {};
     for (const r of reunioes) {
-        const d = new Date(r.created_at);
+        const d = new Date(r.data_reuniao || r.created_at);
         const mon = new Date(d); mon.setDate(d.getDate() - d.getDay());
         const key = mon.toISOString().split('T')[0];
         if (!porSemana[key]) porSemana[key] = { semana:key, medias:[], total:0 };
         porSemana[key].total++;
-        if (r.media_final) porSemana[key].medias.push(r.media_final);
+        if (r.media_final && r.media_final > 0) porSemana[key].medias.push(r.media_final);
     }
     const evolucao = Object.values(porSemana)
         .map(s => ({ semana:s.semana, media: +avg(s.medias).toFixed(1), total:s.total }))
-        .sort((a,b) => a.semana.localeCompare(b.semana));
+        .sort((a, b) => a.semana.localeCompare(b.semana));
 
-    // ── Saúde do Cliente (frontend usa stats.saudeStats) ─────────────────
+    // ── Saúde do Cliente ─────────────────────────────────────────────────
     const saudeStats = { saudavel: 0, risco: 0, critico: 0, indefinido: 0 };
     for (const r of reunioes) {
         const v = (r.saude_cliente || '').toLowerCase();
@@ -132,7 +146,7 @@ function calcStats(reunioes) {
             saudeStats.indefinido++;
     }
 
-    // ── Risco de Churn (frontend usa stats.churnStats) ───────────────────
+    // ── Risco de Churn ───────────────────────────────────────────────────
     const churnStats = { alto: 0, medio: 0, baixo: 0, indefinido: 0 };
     for (const r of reunioes) {
         const v = (r.risco_churn || '').toLowerCase();
@@ -146,7 +160,7 @@ function calcStats(reunioes) {
             churnStats.indefinido++;
     }
 
-    // ── Checklist completion rate ─────────────────────────────────────────
+    // ── Checklist ────────────────────────────────────────────────────────
     const ckKeys = ['definiu_prazo_implementacao','alinhou_dever_de_casa','validou_certificado_digital',
                     'agendou_proximo_passo','conectou_com_dor_vendas','explicou_canal_suporte'];
     const ckRates = {};
