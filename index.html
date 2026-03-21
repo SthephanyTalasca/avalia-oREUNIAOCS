@@ -40,11 +40,16 @@
         .rtbl td { padding:0.85rem 1rem;font-size:0.8rem;border-bottom:1px solid #f1f5f9;vertical-align:middle; }
         .rtbl tr:last-child td { border-bottom:none; }
         .rtbl tr:hover td { background:#f8fafc;cursor:pointer; }
+        /* modal avaliação */
         #modal-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.5);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem; }
         #modal-overlay.open { display:flex; }
         .modal-box { background:white;border-radius:2.5rem;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,0.2); }
         .modal-box::-webkit-scrollbar { width:4px; }
         .modal-box::-webkit-scrollbar-thumb { background:#e2e8f0;border-radius:999px; }
+        /* modal perfil analista */
+        #perfil-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto; }
+        #perfil-overlay.open { display:flex; }
+        #perfil-box { background:#f1f5f9;border-radius:2.5rem;width:100%;max-width:900px;margin:auto;box-shadow:0 32px 80px rgba(0,0,0,0.3); }
         .md h2 { font-weight:800;color:#1e3a8a;margin-top:1.25rem;margin-bottom:0.5rem;font-size:0.85rem;text-transform:uppercase;border-bottom:2px solid #2563eb;padding-bottom:0.4rem; }
         .md p  { margin-bottom:0.75rem;color:#475569;line-height:1.6;font-size:0.85rem; }
         .md ul { list-style:none;padding:0;margin-bottom:1rem; }
@@ -54,6 +59,7 @@
 </head>
 <body class="pb-20 antialiased">
 
+<!-- LOADING -->
 <div id="loading-overlay">
     <div class="text-center text-white">
         <div class="spinner"></div>
@@ -61,6 +67,7 @@
     </div>
 </div>
 
+<!-- MODAL DETALHE AVALIAÇÃO -->
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal-box">
         <div class="sticky top-0 bg-white px-8 py-6 border-b border-slate-100 rounded-t-[2.5rem] flex justify-between items-start z-10">
@@ -116,6 +123,79 @@
     </div>
 </div>
 
+<!-- MODAL PERFIL ANALISTA -->
+<div id="perfil-overlay" onclick="if(event.target===this)closePerfil()">
+    <div id="perfil-box" class="space-y-6 p-6">
+        <!-- Header perfil -->
+        <div class="bg-gradient-to-br from-[#002d72] to-blue-800 rounded-3xl p-8 text-white">
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="closePerfil()" class="bg-white/20 hover:bg-white/30 p-2.5 rounded-2xl transition-all">
+                    <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
+                </button>
+                <span class="text-[10px] font-black uppercase tracking-widest text-blue-200">Perfil do Analista</span>
+                <div class="w-10"></div>
+            </div>
+            <div class="flex items-center gap-6">
+                <div id="perfil-avatar" class="w-20 h-20 rounded-3xl bg-white/20 flex items-center justify-center text-3xl font-black text-white">—</div>
+                <div class="flex-1">
+                    <h2 id="perfil-nome" class="text-3xl font-extrabold mb-1">—</h2>
+                    <p id="perfil-coord" class="text-blue-200 text-sm font-bold uppercase tracking-widest">—</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Média Geral</div>
+                    <div id="perfil-media" class="text-6xl font-black">—</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4 mt-6">
+                <div class="bg-white/10 rounded-2xl p-4 text-center border border-white/20">
+                    <div id="perfil-total" class="text-3xl font-black">—</div>
+                    <div class="text-[9px] font-bold text-blue-200 uppercase tracking-wide mt-1">Avaliações</div>
+                </div>
+                <div class="bg-emerald-500/20 rounded-2xl p-4 text-center border border-emerald-400/30">
+                    <div id="perfil-melhor" class="text-3xl font-black text-emerald-300">—</div>
+                    <div class="text-[9px] font-bold text-emerald-200 uppercase tracking-wide mt-1">Melhor Nota</div>
+                </div>
+                <div class="bg-red-500/20 rounded-2xl p-4 text-center border border-red-400/30">
+                    <div id="perfil-pior" class="text-3xl font-black text-red-300">—</div>
+                    <div class="text-[9px] font-bold text-red-200 uppercase tracking-wide mt-1">Menor Nota</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Radar + Pilares -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="glass-card p-8 flex items-center justify-center" style="min-height:320px">
+                <canvas id="perfil-radar"></canvas>
+            </div>
+            <div class="glass-card p-8">
+                <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>
+                    Média por Pilar
+                </h3>
+                <div id="perfil-pilares" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- Histórico de avaliações -->
+        <div class="glass-card overflow-hidden">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="list" class="w-4 h-4 text-slate-500"></i>
+                    Todas as Avaliações
+                </h3>
+                <span id="perfil-badge-total" class="text-xs text-slate-400 font-semibold">—</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="rtbl w-full border-collapse">
+                    <thead><tr><th>Data</th><th>Média CS</th><th>Saúde</th><th>Churn</th><th></th></tr></thead>
+                    <tbody id="perfil-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NAVBAR -->
 <nav class="bg-[#002d72] text-white py-4 px-8 sticky top-0 z-50 shadow-xl border-b border-blue-400">
     <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
         <div class="flex items-center gap-3">
@@ -147,6 +227,7 @@
 
 <main class="max-w-7xl mx-auto px-4 mt-8 space-y-6">
 
+    <!-- FILTROS -->
     <div class="glass-card p-6">
         <div class="flex items-center gap-2 mb-4">
             <i data-lucide="filter" class="w-4 h-4 text-slate-500"></i>
@@ -159,12 +240,8 @@
                 <option value="30" selected>Últimos 30 dias</option>
                 <option value="90">Últimos 90 dias</option>
             </select>
-            <select id="f-coordenador" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50">
-                <option value="">Todos os coordenadores</option>
-            </select>
-            <select id="f-analista" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50">
-                <option value="">Todos os analistas</option>
-            </select>
+            <select id="f-coordenador" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50"><option value="">Todos os coordenadores</option></select>
+            <select id="f-analista" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50"><option value="">Todos os analistas</option></select>
             <select id="f-origem" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50">
                 <option value="">Todas as origens</option>
                 <option value="auto">Automático (Drive)</option>
@@ -174,6 +251,7 @@
         </div>
     </div>
 
+    <!-- KPIs -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="glass-card p-8 text-center border-t-4 border-blue-600">
             <i data-lucide="file-text" class="w-7 h-7 text-blue-600 mx-auto mb-3"></i>
@@ -197,6 +275,39 @@
         </div>
     </div>
 
+    <!-- DESTAQUES DO MÊS E SEMANA -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-card p-8 border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 cursor-pointer hover:shadow-xl transition-all" onclick="abrirPerfilDestaque('mes')" id="destaque-mes-card">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 bg-amber-400 rounded-2xl flex items-center justify-center shadow-md">
+                    <i data-lucide="star" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-amber-600">⭐ Melhor CS do Mês</p>
+                    <p class="text-[9px] text-amber-500">Maior média nos últimos 30 dias</p>
+                </div>
+            </div>
+            <div id="destaque-mes-nome" class="text-2xl font-black text-[#002d72] mb-1">—</div>
+            <div id="destaque-mes-info" class="text-xs text-slate-500 mb-3">—</div>
+            <div id="destaque-mes-media" class="text-5xl font-black text-amber-400">—</div>
+        </div>
+        <div class="glass-card p-8 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 cursor-pointer hover:shadow-xl transition-all" onclick="abrirPerfilDestaque('semana')" id="destaque-semana-card">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 bg-blue-500 rounded-2xl flex items-center justify-center shadow-md">
+                    <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-blue-600">⚡ Melhor CS da Semana</p>
+                    <p class="text-[9px] text-blue-400">Maior média nos últimos 7 dias</p>
+                </div>
+            </div>
+            <div id="destaque-semana-nome" class="text-2xl font-black text-[#002d72] mb-1">—</div>
+            <div id="destaque-semana-info" class="text-xs text-slate-500 mb-3">—</div>
+            <div id="destaque-semana-media" class="text-5xl font-black text-blue-400">—</div>
+        </div>
+    </div>
+
+    <!-- EVOLUÇÃO + SAÚDE/CHURN -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 glass-card p-8">
             <div class="flex items-center justify-between mb-6">
@@ -224,6 +335,7 @@
         </div>
     </div>
 
+    <!-- RANKING + PILARES -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="glass-card overflow-hidden">
             <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
@@ -244,6 +356,7 @@
         </div>
     </div>
 
+    <!-- COORD + CHECKLIST -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="glass-card p-8">
             <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-indigo-500"></i>Performance por Coordenador</h2>
@@ -255,6 +368,7 @@
         </div>
     </div>
 
+    <!-- TABELA COMPLETA -->
     <div class="glass-card overflow-hidden">
         <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
             <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-slate-500"></i>Todas as Avaliações</h2>
@@ -294,7 +408,10 @@ const CK_LABELS = {
     explicou_canal_suporte:'Explicou Canal de Suporte',
 };
 
-let allReunioes=[], statsData={}, chartEvo=null, chartCoord=null;
+let allReunioes=[], todasReunioes=[], statsData={}, chartEvo=null, chartCoord=null, perfilRadar=null;
+let destaquesMes=null, destaquesSemana=null;
+
+function avgArr(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 
 async function loadData() {
     showLoading(true);
@@ -306,14 +423,24 @@ async function loadData() {
         if(p&&p!=='0') params.append('periodo',p);
         if(coord) params.append('coordenador',coord);
         if(anal) params.append('analista',anal);
-        const res=await fetch('/api/dashboard?'+params.toString());
+
+        const [res, resTodas] = await Promise.all([
+            fetch('/api/dashboard?'+params.toString()),
+            fetch('/api/dashboard?periodo=0')
+        ]);
         if(!res.ok) throw new Error('HTTP '+res.status);
         const data=await res.json();
+        const dataTodas=await resTodas.json();
+
         allReunioes=data.reunioes||[];
         statsData=data.stats||{};
+        todasReunioes=dataTodas.reunioes||[];
+
         const origem=document.getElementById('f-origem').value;
         if(origem==='auto') allReunioes=allReunioes.filter(r=>r.analise_json?.origem==='drive_automatico');
         if(origem==='manual') allReunioes=allReunioes.filter(r=>r.analise_json?.origem!=='drive_automatico');
+
+        calcDestaques();
         populateFilters();
         renderAll();
         document.getElementById('last-sync').textContent='⟳ '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -325,7 +452,45 @@ async function loadData() {
     }
 }
 
-function showLoading(v) { document.getElementById('loading-overlay').style.display=v?'flex':'none'; }
+function calcDestaques() {
+    const agora = Date.now();
+    const umMes = 30*24*60*60*1000;
+    const umaSemana = 7*24*60*60*1000;
+
+    function melhorCS(arr) {
+        const por = {};
+        for(const r of arr) {
+            if(!r.analista_nome||!r.media_final) continue;
+            if(!por[r.analista_nome]) por[r.analista_nome]={nome:r.analista_nome,coord:r.coordenador,medias:[]};
+            por[r.analista_nome].medias.push(r.media_final);
+        }
+        return Object.values(por)
+            .map(a=>({...a, media:avgArr(a.medias), total:a.medias.length}))
+            .sort((a,b)=>b.media-a.media)[0]||null;
+    }
+
+    const doMes = todasReunioes.filter(r=>agora-new Date(r.data_reuniao||r.created_at).getTime()<=umMes);
+    const daSemana = todasReunioes.filter(r=>agora-new Date(r.data_reuniao||r.created_at).getTime()<=umaSemana);
+
+    destaquesMes = melhorCS(doMes);
+    destaquesSemana = melhorCS(daSemana);
+
+    function renderCard(d, prefixo) {
+        if(d) {
+            document.getElementById(prefixo+'-nome').textContent=d.nome;
+            document.getElementById(prefixo+'-info').textContent=(d.coord||'')+(d.coord?' · ':'')+d.total+' avaliações';
+            document.getElementById(prefixo+'-media').textContent=d.media.toFixed(1)+'/5';
+        } else {
+            document.getElementById(prefixo+'-nome').textContent='Sem dados no período';
+            document.getElementById(prefixo+'-info').textContent='—';
+            document.getElementById(prefixo+'-media').textContent='';
+        }
+    }
+    renderCard(destaquesMes,'destaque-mes');
+    renderCard(destaquesSemana,'destaque-semana');
+}
+
+function showLoading(v){ document.getElementById('loading-overlay').style.display=v?'flex':'none'; }
 
 function populateFilters() {
     const coords=[...new Set(allReunioes.map(r=>r.coordenador).filter(Boolean))].sort();
@@ -386,9 +551,9 @@ function renderRanking() {
     tbody.innerHTML=ranking.map((a,i)=>{
         const pos=medals[i]||(i+1);
         const cls=a.media>=4?'score-high':a.media>=3?'score-mid':'score-low';
-        return `<tr onclick="openModalAnalista('${a.nome.replace(/'/g,"\\\'")}')" style="cursor:pointer">
+        return `<tr onclick="abrirPerfil('${a.nome.replace(/'/g,"\\\'")}')" style="cursor:pointer">
             <td><span class="font-black text-xl">${pos}</span></td>
-            <td><span class="font-bold">${a.nome}</span></td>
+            <td><span class="font-bold text-blue-600 hover:underline">${a.nome}</span></td>
             <td class="text-slate-500 text-xs">${a.coordenador||'—'}</td>
             <td class="text-slate-600">${a.total}</td>
             <td><span class="score-pill ${cls}">${a.media.toFixed(1)}</span></td>
@@ -398,13 +563,27 @@ function renderRanking() {
 
 function renderPilares() {
     const pt=statsData.pilaresTime||{};
-    document.getElementById('pilares-list').innerHTML=PILLARS.map(p=>{
-        const val=pt[p.k]||0,pct=(val/5)*100;
-        const color=val<3?'#ef4444':val<4?'#f59e0b':'#10b981';
-        return `<div style="display:flex;align-items:center;gap:0.75rem">
-            <span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:8rem;text-align:right">${p.l}</span>
+    // Ordena do melhor para o pior, só com dados
+    const ordenados = PILLARS
+        .map(p=>({...p, val:pt[p.k]||0}))
+        .filter(p=>p.val>0)
+        .sort((a,b)=>b.val-a.val);
+
+    document.getElementById('pilares-list').innerHTML = ordenados.map((p,i)=>{
+        const pct=(p.val/5)*100;
+        const color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';
+        const isMelhor=i===0, isPior=i===ordenados.length-1;
+        const badge=isMelhor
+            ?'<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>'
+            :isPior
+            ?'<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>'
+            :'';
+        const rowStyle=isMelhor?'background:rgba(16,185,129,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;'
+                      :isPior?'background:rgba(239,68,68,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':'';
+        return `<div style="display:flex;align-items:center;gap:0.75rem;${rowStyle}">
+            <span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:9rem;text-align:right">${p.l}${badge}</span>
             <div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-            <span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${val>0?val.toFixed(1):'—'}</span>
+            <span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${p.val.toFixed(1)}</span>
         </div>`;
     }).join('');
 }
@@ -449,22 +628,109 @@ function renderReunioes() {
         const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
         const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
         const isAuto=r.analise_json?.origem==='drive_automatico';
-        return `<tr onclick="openModalId(${r.id})">
+        return `<tr>
             <td class="text-slate-500">${data}</td>
-            <td><strong>${r.analista_nome||'—'}</strong></td>
+            <td><button onclick="abrirPerfil('${(r.analista_nome||'').replace(/'/g,"\\\'")}')" class="font-bold text-blue-600 hover:underline text-left">${r.analista_nome||'—'}</button></td>
             <td class="text-slate-500">${r.coordenador||'—'}</td>
             <td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td>
             <td class="text-slate-600 text-xs max-w-xs truncate">${r.saude_cliente||'—'}</td>
             <td><span class="tag-${churnCls}">${churnLabel}</span></td>
             <td><span class="${isAuto?'tag-auto':'tag-manual'}">${isAuto?'Auto':'Manual'}</span></td>
-            <td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td>
+            <td><button onclick="openModalId(${r.id})" class="text-slate-400 hover:text-blue-600"><i data-lucide="eye" class="w-4 h-4"></i></button></td>
         </tr>`;
     }).join('');
     lucide.createIcons();
 }
 
-function openModalId(id){const r=allReunioes.find(x=>x.id===id);if(r)renderModal(r);}
-function openModalAnalista(nome){const r=allReunioes.find(x=>x.analista_nome===nome);if(r)renderModal(r);}
+// ── PERFIL DO ANALISTA ────────────────────────────────────────────────────
+function abrirPerfil(nome) {
+    if(!nome||nome==='—') return;
+    const reunioes = todasReunioes.filter(r=>(r.analista_nome||'').toLowerCase()===nome.toLowerCase());
+    if(!reunioes.length) { alert('Sem avaliações encontradas para '+nome); return; }
+
+    // Hero
+    document.getElementById('perfil-avatar').textContent = nome.trim()[0].toUpperCase();
+    document.getElementById('perfil-nome').textContent = nome;
+    document.getElementById('perfil-coord').textContent = reunioes[0]?.coordenador || '—';
+
+    const medias = reunioes.map(r=>r.media_final).filter(Boolean);
+    document.getElementById('perfil-media').textContent = medias.length ? avgArr(medias).toFixed(1) : '—';
+    document.getElementById('perfil-total').textContent = reunioes.length;
+    document.getElementById('perfil-melhor').textContent = medias.length ? Math.max(...medias).toFixed(1) : '—';
+    document.getElementById('perfil-pior').textContent = medias.length ? Math.min(...medias).toFixed(1) : '—';
+
+    // Pilares ordenados
+    const pilaresComMedia = PILLARS.map(p=>{
+        const vals = reunioes.map(r=>r['nota_'+p.k]).filter(v=>v!=null);
+        return {...p, val: vals.length ? +avgArr(vals).toFixed(1) : null};
+    }).filter(p=>p.val!==null).sort((a,b)=>b.val-a.val);
+
+    document.getElementById('perfil-pilares').innerHTML = pilaresComMedia.map((p,i)=>{
+        const pct=(p.val/5)*100;
+        const color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';
+        const isMelhor=i===0,isPior=i===pilaresComMedia.length-1;
+        const badge=isMelhor
+            ?'<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>'
+            :isPior
+            ?'<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>'
+            :'';
+        const rowStyle=isMelhor?'background:rgba(16,185,129,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;'
+                      :isPior?'background:rgba(239,68,68,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':'';
+        return `<div style="display:flex;align-items:center;gap:0.75rem;${rowStyle}">
+            <span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:9rem;text-align:right">${p.l}${badge}</span>
+            <div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+            <span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${p.val}</span>
+        </div>`;
+    }).join('');
+
+    // Radar
+    const ctx = document.getElementById('perfil-radar').getContext('2d');
+    if(perfilRadar) perfilRadar.destroy();
+    const radarVals = PILLARS.map(p=>{
+        const v = reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);
+        return v.length ? +avgArr(v).toFixed(1) : 0;
+    });
+    perfilRadar = new Chart(ctx, {
+        type:'radar',
+        data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Média',data:radarVals,backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1e3a8a'}]},
+        options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}
+    });
+
+    // Tabela de avaliações
+    document.getElementById('perfil-badge-total').textContent = reunioes.length+' avaliações';
+    document.getElementById('perfil-tbody').innerHTML = reunioes.map(r=>{
+        const media=r.media_final??0;
+        const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
+        const cv=(r.risco_churn||'').toLowerCase();
+        const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';
+        const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
+        const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
+        return `<tr onclick="openModalId(${r.id})" style="cursor:pointer">
+            <td class="text-slate-500 font-semibold">${data}</td>
+            <td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td>
+            <td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td>
+            <td><span class="tag-${churnCls}">${churnLabel}</span></td>
+            <td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('perfil-overlay').classList.add('open');
+    document.getElementById('perfil-overlay').scrollTop=0;
+    lucide.createIcons();
+}
+
+function closePerfil() { document.getElementById('perfil-overlay').classList.remove('open'); }
+
+function abrirPerfilDestaque(tipo) {
+    const d = tipo==='mes' ? destaquesMes : destaquesSemana;
+    if(d) abrirPerfil(d.nome);
+}
+
+// ── MODAL AVALIAÇÃO ────────────────────────────────────────────────────────
+function openModalId(id) {
+    const r = todasReunioes.find(x=>x.id===id) || allReunioes.find(x=>x.id===id);
+    if(r) renderModal(r);
+}
 
 function renderModal(r) {
     const aj=r.analise_json||{},media=r.media_final??0;
@@ -490,8 +756,8 @@ function renderModal(r) {
     lucide.createIcons();
 }
 
-function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); closePerfil(); } });
 
 async function checkAuthAndLoad() {
     try {
@@ -519,7 +785,6 @@ async function clearAllData() {
     } catch(err){alert('Erro: '+err.message);}
 }
 
-// ← ISSO É O QUE FALTAVA: chama a função ao carregar a página
 checkAuthAndLoad();
 </script>
 </body>
