@@ -30,7 +30,67 @@ const ALL_PILLARS = [
     ['universo_contabil', 'Universo Contábil'],
 ];
 
-// ─── Repara JSON truncado fechando estruturas abertas ─────────────────────────
+// ─── Mapeamento analista → coordenador ───────────────────────────────────────
+// Chaves em lowercase, mais específicas primeiro para evitar falsos positivos
+const CS_MAP = [
+    ['sthephany talasca', 'Sthephany Talasca', 'Tayanara'],
+    ['lorrayne moreira',  'Lorrayne Moreira',  'Tayanara'],
+    ['micaelle martins',  'Micaelle Martins',  'Tayanara'],
+    ['willian martins',   'Willian Martins',   'Tayanara'],
+    ['larissa teixeira',  'Larissa Teixeira',  'Tayanara'],
+    ['ana de battisti',   'Ana De Battisti',   'Tayanara'],
+    ['ana battisti',      'Ana Battisti',      'Tayanara'],
+    ['denis silva',       'Denis Silva',       'Tayanara'],
+    ['thais silva',       'Thais Silva',       'Tayanara'],
+    ['yuri santos',       'Yuri Santos',       'Tayanara'],
+    ['brayan santos',     'Brayan Santos',     'Sayuri'],
+    ['camille vaz',       'Camille Vaz',       'Sayuri'],
+    ['carolina miranda',  'Carolina Miranda',  'Sayuri'],
+    ['isaque silva',      'Isaque Silva',      'Sayuri'],
+    ['larissa mota',      'Larissa Mota',      'Sayuri'],
+    ['nat vieira',        'Nat Vieira',        'Sayuri'],
+    ['vinícius oliveira', 'Vinícius Oliveira', 'Sayuri'],
+    ['vinicius oliveira', 'Vinícius Oliveira', 'Sayuri'],
+    ['jéssica barreiro',  'Jéssica Barreiro',  'Michel'],
+    ['jessica barreiro',  'Jéssica Barreiro',  'Michel'],
+    ['maria fernanda',    'Maria Fernanda',    'Michel'],
+    ['maryana alves',     'Maryana Alves',     'Michel'],
+    ['rafaele oliveira',  'Rafaele Oliveira',  'Michel'],
+    ['aline almeida',     'Aline Almeida',     'Michel'],
+    ['bianca kim',        'Bianca Kim',        'Michel'],
+    ['julia rodrigues',   'Julia Rodrigues',   'Michel'],
+    ['túlio morgado',     'Túlio Morgado',     'Michel'],
+    ['tulio morgado',     'Túlio Morgado',     'Michel'],
+    // aliases curtos por último (mais genéricos)
+    ['sthephany',   'Sthephany',   'Tayanara'],
+    ['lorrayne',    'Lorrayne',    'Tayanara'],
+    ['micaelle',    'Micaelle',    'Tayanara'],
+    ['willian',     'Willian',     'Tayanara'],
+    ['denis',       'Denis',       'Tayanara'],
+    ['brayan',      'Brayan',      'Sayuri'],
+    ['camille',     'Camille',     'Sayuri'],
+    ['isaque',      'Isaque',      'Sayuri'],
+    ['rafaele',     'Rafaele',     'Michel'],
+    ['maryana',     'Maryana',     'Michel'],
+];
+
+function detectAnalista(transcript, coordinator) {
+    const lower = (transcript || '').toLowerCase();
+    for (const [alias, nomeFormatado, coord] of CS_MAP) {
+        if (lower.includes(alias)) {
+            return {
+                analista_nome: nomeFormatado,
+                coordinator_detectado: coordinator || coord,
+            };
+        }
+    }
+    return {
+        analista_nome: 'Não identificado',
+        coordinator_detectado: coordinator || null,
+    };
+}
+
+// ─── Helpers JSON ─────────────────────────────────────────────────────────────
 function repairJson(raw) {
     let s = (raw || '').trimEnd();
     s = s.replace(/,\s*$/, '');
@@ -67,7 +127,6 @@ function safeParse(text, label) {
     }
 }
 
-// ─── Monta schema de justificativas para N pilares ────────────────────────────
 function makeTextSchema(pairs) {
     const props = {};
     const req   = [];
@@ -80,7 +139,6 @@ function makeTextSchema(pairs) {
     return { type: Type.OBJECT, properties: props, required: req };
 }
 
-// ─── Retry automático para chamadas à API ─────────────────────────────────────
 async function withRetry(fn, label, attempts) {
     attempts = attempts || 3;
     let lastErr;
@@ -104,7 +162,7 @@ async function getNumbers(transcript) {
         model: 'gemini-2.5-flash',
         contents: transcript,
         config: {
-            temperature: 0,                        // ← sem aleatoriedade
+            temperature: 0,
             responseMimeType: 'application/json',
             maxOutputTokens: 8192,
             systemInstruction:
@@ -188,7 +246,7 @@ async function getMeta(transcript, numbers) {
         model: 'gemini-2.5-flash',
         contents: transcript,
         config: {
-            temperature: 0,                        // ← sem aleatoriedade
+            temperature: 0,
             responseMimeType: 'application/json',
             maxOutputTokens: 2048,
             systemInstruction:
@@ -234,7 +292,7 @@ async function getTextsA(transcript, numbers) {
         model: 'gemini-2.5-flash',
         contents: transcript,
         config: {
-            temperature: 0,                        // ← sem aleatoriedade
+            temperature: 0,
             responseMimeType: 'application/json',
             maxOutputTokens: 3000,
             systemInstruction: instruction,
@@ -263,7 +321,7 @@ async function getTextsB(transcript, numbers) {
         model: 'gemini-2.5-flash',
         contents: transcript,
         config: {
-            temperature: 0,                        // ← sem aleatoriedade
+            temperature: 0,
             responseMimeType: 'application/json',
             maxOutputTokens: 3000,
             systemInstruction: instruction,
@@ -275,7 +333,7 @@ async function getTextsB(transcript, numbers) {
 }
 
 // ─── CHAMADA 4: relatório do coordenador ─────────────────────────────────────
-async function getRelatorio(numbers, meta, texts, coordinator) {
+async function getRelatorio(numbers, meta, texts, coordinator, analistaNome) {
     const linhas = ALL_PILLARS.map(function(p) {
         const k    = p[0];
         const nota = numbers['nota_' + k];
@@ -286,11 +344,15 @@ async function getRelatorio(numbers, meta, texts, coordinator) {
         return '- **' + p[1] + '**: ' + nota + '/5 — ' + pq + suf;
     }).filter(Boolean).join('\n');
 
-    const coordinatorLine = coordinator ? `Coordenador responsável: **${coordinator}**\n\n` : '';
+    const coordinatorLine = coordinator ? `Coordenador responsável: **${coordinator}**\n` : '';
+    const analistaLine    = analistaNome && analistaNome !== 'Não identificado'
+        ? `Analista avaliado: **${analistaNome}**\n\n`
+        : '\n';
 
     const prompt =
         'Coordenador de CS do Nibo — feedback sobre o analista desta reunião.\n\n' +
         coordinatorLine +
+        analistaLine +
         'NOTAS:\n' + linhas + '\n\n' +
         'Média: ' + (numbers.media_final || '?') + '/5' +
         ' | Saúde: ' + (meta.saude_cliente || '') +
@@ -306,7 +368,7 @@ async function getRelatorio(numbers, meta, texts, coordinator) {
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
-            temperature: 0,                        // ← sem aleatoriedade
+            temperature: 0,
             maxOutputTokens: 4096,
             systemInstruction:
                 'Coordenador sênior de CS do Nibo. Markdown puro, linguagem direta e humana. ' +
@@ -333,10 +395,14 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 1. Notas numéricas (com retry)
+        // ── Detecta analista e coordenador pela transcrição ──────────────────
+        const { analista_nome, coordinator_detectado } = detectAnalista(prompt, coordinator);
+        console.log('👤 Analista detectado:', analista_nome, '| Coord:', coordinator_detectado);
+
+        // 1. Notas numéricas
         const numbers = await withRetry(function() { return getNumbers(prompt); }, 'getNumbers');
 
-        // 2. Meta-textos + justificativas A e B em paralelo (com retry individual)
+        // 2. Meta + justificativas em paralelo
         const results = await Promise.all([
             withRetry(function() { return getMeta(prompt, numbers);   }, 'getMeta'),
             withRetry(function() { return getTextsA(prompt, numbers); }, 'getTextsA'),
@@ -347,7 +413,7 @@ export default async function handler(req, res) {
         const textsB = results[2];
         const texts  = Object.assign({}, textsA, textsB);
 
-        // Garante fallbacks para pilares sem evidência ou campos faltando
+        // Fallbacks
         ALL_PILLARS.forEach(function(p) {
             const k = p[0];
             if (numbers['nota_' + k] === null) {
@@ -359,7 +425,6 @@ export default async function handler(req, res) {
             }
         });
 
-        // Fallbacks para meta
         meta.resumo_executivo = meta.resumo_executivo || 'Reunião de onboarding realizada.';
         meta.saude_cliente    = meta.saude_cliente    || 'Não avaliado.';
         meta.risco_churn      = meta.risco_churn      || 'Não avaliado.';
@@ -367,15 +432,18 @@ export default async function handler(req, res) {
         meta.pontos_fortes    = meta.pontos_fortes    || [];
         meta.pontos_atencao   = meta.pontos_atencao   || [];
 
-        // 3. Relatório (com retry)
+        // 3. Relatório (passa analista detectado)
         const justificativa_detalhada = await withRetry(
-            function() { return getRelatorio(numbers, meta, texts, coordinator); }, 'getRelatorio'
+            function() { return getRelatorio(numbers, meta, texts, coordinator_detectado, analista_nome); },
+            'getRelatorio'
         );
 
+        // ── Retorna tudo incluindo analista_nome detectado ───────────────────
         return res.status(200).json(
             Object.assign({}, numbers, meta, texts, {
-                justificativa_detalhada: justificativa_detalhada,
-                coordinator: coordinator
+                justificativa_detalhada,
+                coordinator: coordinator_detectado,
+                analista_nome,                        // ← NOVO: nome detectado
             })
         );
 
