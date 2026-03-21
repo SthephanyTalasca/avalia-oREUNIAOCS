@@ -6,64 +6,45 @@
     <title>Dashboard de Avaliações — Nibo CS Auditor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #0f172a; }
         .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: all 0.3s ease; }
         .glass-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
-
-        /* loading */
         #loading-overlay { position:fixed;inset:0;background:rgba(0,45,114,0.6);backdrop-filter:blur(4px);z-index:999;display:flex;align-items:center;justify-content:center; }
         .spinner { width:3rem;height:3rem;border:3px solid rgba(255,255,255,0.25);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 1rem; }
         @keyframes spin { to { transform:rotate(360deg); } }
-
-        /* pilar bars */
         .pilar-bar-bg { flex:1;height:6px;background:#f1f5f9;border-radius:999px;overflow:hidden; }
         .pilar-bar-fill { height:100%;border-radius:999px;transition:width 0.8s ease; }
-
-        /* score pills */
         .score-pill { display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;padding:0.2rem 0.65rem;border-radius:999px;min-width:2.5rem; }
         .score-high { background:#dcfce7;color:#16a34a; }
         .score-mid  { background:#fef9c3;color:#854d0e; }
         .score-low  { background:#fee2e2;color:#dc2626; }
-
-        /* churn tags */
         .tag-alto  { background:#fee2e2;color:#dc2626;font-size:0.65rem;font-weight:700;padding:0.15rem 0.6rem;border-radius:999px; }
         .tag-medio { background:#fef9c3;color:#92400e;font-size:0.65rem;font-weight:700;padding:0.15rem 0.6rem;border-radius:999px; }
         .tag-baixo { background:#dcfce7;color:#15803d;font-size:0.65rem;font-weight:700;padding:0.15rem 0.6rem;border-radius:999px; }
         .tag-nd    { background:#f1f5f9;color:#64748b;font-size:0.65rem;font-weight:700;padding:0.15rem 0.6rem;border-radius:999px; }
-
-        /* origem */
         .tag-auto   { background:#ede9fe;color:#6d28d9;font-size:0.6rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;text-transform:uppercase;letter-spacing:0.04em; }
         .tag-manual { background:#f1f5f9;color:#64748b;font-size:0.6rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;text-transform:uppercase;letter-spacing:0.04em; }
-
-        /* checklist */
         .ck-row { display:flex;align-items:center;justify-content:space-between;padding:0.55rem 0;border-bottom:1px solid #f1f5f9;font-size:0.78rem; }
         .ck-row:last-child { border-bottom:none; }
         .ck-bar-bg { width:60px;height:5px;background:#f1f5f9;border-radius:999px;margin:0 0.75rem;overflow:hidden; }
         .ck-bar-fill { height:100%;border-radius:999px; }
-
-        /* tables */
         .tbl th { text-align:left;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:#94a3b8;padding:0.55rem 0.75rem;border-bottom:1px solid #f1f5f9; }
         .tbl td { padding:0.75rem;font-size:0.8rem;border-bottom:1px solid #f8fafc;vertical-align:middle; }
         .tbl tr:last-child td { border-bottom:none; }
         .tbl tr:hover td { background:#f8fafc; }
-
         .rtbl th { text-align:left;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:#94a3b8;padding:0.6rem 1rem;border-bottom:1px solid #e2e8f0;background:#f8fafc; }
         .rtbl td { padding:0.85rem 1rem;font-size:0.8rem;border-bottom:1px solid #f1f5f9;vertical-align:middle; }
         .rtbl tr:last-child td { border-bottom:none; }
         .rtbl tr:hover td { background:#f8fafc;cursor:pointer; }
-
-        /* modal */
         #modal-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.5);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem; }
         #modal-overlay.open { display:flex; }
         .modal-box { background:white;border-radius:2.5rem;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,0.2); }
         .modal-box::-webkit-scrollbar { width:4px; }
         .modal-box::-webkit-scrollbar-thumb { background:#e2e8f0;border-radius:999px; }
-
-        /* markdown no modal */
         .md h2 { font-weight:800;color:#1e3a8a;margin-top:1.25rem;margin-bottom:0.5rem;font-size:0.85rem;text-transform:uppercase;border-bottom:2px solid #2563eb;padding-bottom:0.4rem; }
         .md p  { margin-bottom:0.75rem;color:#475569;line-height:1.6;font-size:0.85rem; }
         .md ul { list-style:none;padding:0;margin-bottom:1rem; }
@@ -73,7 +54,6 @@
 </head>
 <body class="pb-20 antialiased">
 
-<!-- LOADING -->
 <div id="loading-overlay">
     <div class="text-center text-white">
         <div class="spinner"></div>
@@ -81,7 +61,6 @@
     </div>
 </div>
 
-<!-- MODAL DETALHE -->
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal-box">
         <div class="sticky top-0 bg-white px-8 py-6 border-b border-slate-100 rounded-t-[2.5rem] flex justify-between items-start z-10">
@@ -95,7 +74,6 @@
             </button>
         </div>
         <div class="p-8 space-y-8">
-            <!-- Hero -->
             <div class="bg-gradient-to-br from-[#002d72] to-blue-700 rounded-3xl p-8 text-white flex items-center gap-6">
                 <div class="flex-shrink-0">
                     <span class="text-[9px] font-black uppercase tracking-widest text-blue-200 block mb-1">Média CS (máx 5)</span>
@@ -116,12 +94,10 @@
                     </div>
                 </div>
             </div>
-            <!-- Pilares -->
             <div>
                 <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-4">Notas por Pilar</span>
                 <div id="modal-pilares" class="grid grid-cols-3 gap-3"></div>
             </div>
-            <!-- Listas -->
             <div class="grid grid-cols-2 gap-4">
                 <div class="bg-emerald-50 rounded-3xl p-6 border border-emerald-100">
                     <span class="text-[9px] font-black uppercase tracking-widest text-emerald-700 block mb-3">Pontos Fortes</span>
@@ -132,7 +108,6 @@
                     <ul id="modal-atencao" class="space-y-1.5 text-xs font-semibold text-amber-900"></ul>
                 </div>
             </div>
-            <!-- Relatório -->
             <div>
                 <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-4 border-b pb-3">Relatório de Auditoria</span>
                 <div id="modal-relatorio" class="md"></div>
@@ -141,7 +116,6 @@
     </div>
 </div>
 
-<!-- NAVBAR -->
 <nav class="bg-[#002d72] text-white py-4 px-8 sticky top-0 z-50 shadow-xl border-b border-blue-400">
     <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
         <div class="flex items-center gap-3">
@@ -162,18 +136,17 @@
             <a href="/avaliar.html" class="flex items-center gap-2 px-4 py-2 bg-white text-[#002d72] rounded-xl text-sm font-bold hover:bg-blue-50 transition-all shadow">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 Avaliação Manual
-              <button id="btn-clear-all" class="hidden items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow" onclick="clearAllData()">
-    <i data-lucide="trash-2" class="w-4 h-4"></i>
-    Limpar tudo
-</button>
             </a>
+            <button id="btn-clear-all" class="hidden items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow" onclick="clearAllData()">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                Limpar tudo
+            </button>
         </div>
     </div>
 </nav>
 
 <main class="max-w-7xl mx-auto px-4 mt-8 space-y-6">
 
-    <!-- FILTROS -->
     <div class="glass-card p-6">
         <div class="flex items-center gap-2 mb-4">
             <i data-lucide="filter" class="w-4 h-4 text-slate-500"></i>
@@ -197,13 +170,10 @@
                 <option value="auto">Automático (Drive)</option>
                 <option value="manual">Manual</option>
             </select>
-            <button onclick="loadData()" class="bg-blue-600 hover:bg-[#002d72] text-white font-bold py-2.5 rounded-xl transition-all text-sm">
-                Aplicar
-            </button>
+            <button onclick="loadData()" class="bg-blue-600 hover:bg-[#002d72] text-white font-bold py-2.5 rounded-xl transition-all text-sm">Aplicar</button>
         </div>
     </div>
 
-    <!-- KPIs -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="glass-card p-8 text-center border-t-4 border-blue-600">
             <i data-lucide="file-text" class="w-7 h-7 text-blue-600 mx-auto mb-3"></i>
@@ -227,136 +197,75 @@
         </div>
     </div>
 
-    <!-- EVOLUÇÃO + SAÚDE/CHURN -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 glass-card p-8">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="font-bold text-slate-800 flex items-center gap-2">
-                    <i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>
-                    Evolução Semanal
-                </h2>
+                <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>Evolução Semanal</h2>
                 <span class="text-xs text-slate-400 font-semibold" id="badge-semanas">—</span>
             </div>
             <div style="height:220px"><canvas id="chart-evo"></canvas></div>
         </div>
         <div class="glass-card p-8">
-            <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
-                <i data-lucide="heart-pulse" class="w-4 h-4 text-pink-500"></i>
-                Saúde &amp; Churn
-            </h2>
+            <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2"><i data-lucide="heart-pulse" class="w-4 h-4 text-pink-500"></i>Saúde &amp; Churn</h2>
             <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Saúde do Cliente</p>
             <div class="grid grid-cols-2 gap-2 mb-5">
-                <div class="bg-emerald-50 rounded-2xl p-3 text-center border border-emerald-100">
-                    <div class="text-2xl font-black text-emerald-600" id="s-saudavel">—</div>
-                    <div class="text-[9px] font-bold text-emerald-700 uppercase tracking-wide mt-0.5">Saudável</div>
-                </div>
-                <div class="bg-amber-50 rounded-2xl p-3 text-center border border-amber-100">
-                    <div class="text-2xl font-black text-amber-600" id="s-risco">—</div>
-                    <div class="text-[9px] font-bold text-amber-700 uppercase tracking-wide mt-0.5">Em Risco</div>
-                </div>
-                <div class="bg-red-50 rounded-2xl p-3 text-center border border-red-100">
-                    <div class="text-2xl font-black text-red-600" id="s-critico">—</div>
-                    <div class="text-[9px] font-bold text-red-700 uppercase tracking-wide mt-0.5">Crítico</div>
-                </div>
-                <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-200">
-                    <div class="text-2xl font-black text-slate-400" id="s-nd">—</div>
-                    <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Indefinido</div>
-                </div>
+                <div class="bg-emerald-50 rounded-2xl p-3 text-center border border-emerald-100"><div class="text-2xl font-black text-emerald-600" id="s-saudavel">—</div><div class="text-[9px] font-bold text-emerald-700 uppercase tracking-wide mt-0.5">Saudável</div></div>
+                <div class="bg-amber-50 rounded-2xl p-3 text-center border border-amber-100"><div class="text-2xl font-black text-amber-600" id="s-risco">—</div><div class="text-[9px] font-bold text-amber-700 uppercase tracking-wide mt-0.5">Em Risco</div></div>
+                <div class="bg-red-50 rounded-2xl p-3 text-center border border-red-100"><div class="text-2xl font-black text-red-600" id="s-critico">—</div><div class="text-[9px] font-bold text-red-700 uppercase tracking-wide mt-0.5">Crítico</div></div>
+                <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-200"><div class="text-2xl font-black text-slate-400" id="s-nd">—</div><div class="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Indefinido</div></div>
             </div>
             <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Risco de Churn</p>
             <div class="grid grid-cols-2 gap-2">
-                <div class="bg-red-50 rounded-2xl p-3 text-center border border-red-100">
-                    <div class="text-2xl font-black text-red-600" id="c-alto">—</div>
-                    <div class="text-[9px] font-bold text-red-700 uppercase tracking-wide mt-0.5">Alto</div>
-                </div>
-                <div class="bg-amber-50 rounded-2xl p-3 text-center border border-amber-100">
-                    <div class="text-2xl font-black text-amber-600" id="c-medio">—</div>
-                    <div class="text-[9px] font-bold text-amber-700 uppercase tracking-wide mt-0.5">Médio</div>
-                </div>
-                <div class="bg-emerald-50 rounded-2xl p-3 text-center border border-emerald-100">
-                    <div class="text-2xl font-black text-emerald-600" id="c-baixo">—</div>
-                    <div class="text-[9px] font-bold text-emerald-700 uppercase tracking-wide mt-0.5">Baixo</div>
-                </div>
-                <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-200">
-                    <div class="text-2xl font-black text-slate-400" id="c-nd">—</div>
-                    <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Indefinido</div>
-                </div>
+                <div class="bg-red-50 rounded-2xl p-3 text-center border border-red-100"><div class="text-2xl font-black text-red-600" id="c-alto">—</div><div class="text-[9px] font-bold text-red-700 uppercase tracking-wide mt-0.5">Alto</div></div>
+                <div class="bg-amber-50 rounded-2xl p-3 text-center border border-amber-100"><div class="text-2xl font-black text-amber-600" id="c-medio">—</div><div class="text-[9px] font-bold text-amber-700 uppercase tracking-wide mt-0.5">Médio</div></div>
+                <div class="bg-emerald-50 rounded-2xl p-3 text-center border border-emerald-100"><div class="text-2xl font-black text-emerald-600" id="c-baixo">—</div><div class="text-[9px] font-bold text-emerald-700 uppercase tracking-wide mt-0.5">Baixo</div></div>
+                <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-200"><div class="text-2xl font-black text-slate-400" id="c-nd">—</div><div class="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Indefinido</div></div>
             </div>
         </div>
     </div>
 
-    <!-- RANKING + PILARES -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="glass-card overflow-hidden">
             <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-                <h2 class="font-bold text-slate-800 flex items-center gap-2">
-                    <i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i>
-                    Ranking de Analistas
-                </h2>
+                <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i>Ranking de Analistas</h2>
                 <span class="text-xs text-slate-400 font-semibold" id="badge-ranking">—</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="tbl w-full border-collapse">
-                    <thead><tr>
-                        <th>#</th><th>Analista</th><th>Coord.</th><th>Reuniões</th><th>Média</th>
-                    </tr></thead>
+                    <thead><tr><th>#</th><th>Analista</th><th>Coord.</th><th>Reuniões</th><th>Média</th></tr></thead>
                     <tbody id="tbody-ranking"></tbody>
                 </table>
-                <div id="empty-ranking" class="hidden text-center py-8">
-                    <i data-lucide="inbox" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i>
-                    <p class="text-sm text-slate-400">Nenhum dado disponível</p>
-                </div>
+                <div id="empty-ranking" class="hidden text-center py-8"><i data-lucide="inbox" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i><p class="text-sm text-slate-400">Nenhum dado disponível</p></div>
             </div>
         </div>
         <div class="glass-card p-8">
-            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>
-                Média do Time por Pilar
-            </h2>
+            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>Média do Time por Pilar</h2>
             <div id="pilares-list" class="space-y-3"></div>
         </div>
     </div>
 
-    <!-- COORD + CHECKLIST -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="glass-card p-8">
-            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <i data-lucide="users" class="w-4 h-4 text-indigo-500"></i>
-                Performance por Coordenador
-            </h2>
+            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-indigo-500"></i>Performance por Coordenador</h2>
             <div style="height:260px"><canvas id="chart-coord"></canvas></div>
         </div>
         <div class="glass-card p-8">
-            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <i data-lucide="list-checks" class="w-4 h-4 text-blue-600"></i>
-                Checklist de Onboarding
-                <span class="ml-auto text-[9px] font-bold text-slate-400 uppercase tracking-wide">% cumprimento</span>
-            </h2>
+            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="list-checks" class="w-4 h-4 text-blue-600"></i>Checklist de Onboarding<span class="ml-auto text-[9px] font-bold text-slate-400 uppercase tracking-wide">% cumprimento</span></h2>
             <div id="ck-list" class="space-y-1"></div>
         </div>
     </div>
 
-    <!-- TABELA COMPLETA -->
     <div class="glass-card overflow-hidden">
         <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-            <h2 class="font-bold text-slate-800 flex items-center gap-2">
-                <i data-lucide="list" class="w-4 h-4 text-slate-500"></i>
-                Todas as Avaliações
-            </h2>
+            <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-slate-500"></i>Todas as Avaliações</h2>
             <span class="text-xs text-slate-400 font-semibold" id="badge-total">—</span>
         </div>
         <div class="overflow-x-auto">
             <table class="rtbl w-full border-collapse">
-                <thead><tr>
-                    <th>Data</th><th>Analista</th><th>Coordenador</th>
-                    <th>Média CS</th><th>Saúde</th><th>Churn</th><th>Origem</th><th></th>
-                </tr></thead>
+                <thead><tr><th>Data</th><th>Analista</th><th>Coordenador</th><th>Média CS</th><th>Saúde</th><th>Churn</th><th>Origem</th><th></th></tr></thead>
                 <tbody id="tbody-reunioes"></tbody>
             </table>
-            <div id="empty-reunioes" class="hidden text-center py-12">
-                <i data-lucide="inbox" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i>
-                <p class="text-slate-400 font-semibold">Nenhuma avaliação encontrada</p>
-            </div>
+            <div id="empty-reunioes" class="hidden text-center py-12"><i data-lucide="inbox" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-slate-400 font-semibold">Nenhuma avaliação encontrada</p></div>
         </div>
     </div>
 
@@ -390,29 +299,24 @@ let allReunioes=[], statsData={}, chartEvo=null, chartCoord=null;
 async function loadData() {
     showLoading(true);
     try {
-        const p     = document.getElementById('f-periodo').value;
-        const coord = document.getElementById('f-coordenador').value;
-        const anal  = document.getElementById('f-analista').value;
-        const params = new URLSearchParams();
-        if (p && p!=='0') params.append('periodo',p);
-        if (coord) params.append('coordenador',coord);
-        if (anal)  params.append('analista',anal);
-
-        const res  = await fetch('/api/dashboard?'+params.toString());
-        if (!res.ok) throw new Error('HTTP '+res.status);
-        const data = await res.json();
-
-        allReunioes = data.reunioes || [];
-        statsData   = data.stats   || {};
-
-        const origem = document.getElementById('f-origem').value;
-        if (origem==='auto')   allReunioes = allReunioes.filter(r=>r.analise_json?.origem==='drive_automatico');
-        if (origem==='manual') allReunioes = allReunioes.filter(r=>r.analise_json?.origem!=='drive_automatico');
-
+        const p=document.getElementById('f-periodo').value;
+        const coord=document.getElementById('f-coordenador').value;
+        const anal=document.getElementById('f-analista').value;
+        const params=new URLSearchParams();
+        if(p&&p!=='0') params.append('periodo',p);
+        if(coord) params.append('coordenador',coord);
+        if(anal) params.append('analista',anal);
+        const res=await fetch('/api/dashboard?'+params.toString());
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const data=await res.json();
+        allReunioes=data.reunioes||[];
+        statsData=data.stats||{};
+        const origem=document.getElementById('f-origem').value;
+        if(origem==='auto') allReunioes=allReunioes.filter(r=>r.analise_json?.origem==='drive_automatico');
+        if(origem==='manual') allReunioes=allReunioes.filter(r=>r.analise_json?.origem!=='drive_automatico');
         populateFilters();
         renderAll();
-        document.getElementById('last-sync').textContent =
-            '⟳ '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+        document.getElementById('last-sync').textContent='⟳ '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     } catch(e) {
         console.error(e);
         alert('Erro ao carregar dados: '+e.message);
@@ -421,36 +325,34 @@ async function loadData() {
     }
 }
 
-function showLoading(v) {
-    document.getElementById('loading-overlay').style.display = v ? 'flex' : 'none';
-}
+function showLoading(v) { document.getElementById('loading-overlay').style.display=v?'flex':'none'; }
 
 function populateFilters() {
-    const coords   = [...new Set(allReunioes.map(r=>r.coordenador).filter(Boolean))].sort();
-    const analistas = [...new Set(allReunioes.map(r=>r.analista_nome).filter(Boolean))].sort();
-    const cf=document.getElementById('f-coordenador'), af=document.getElementById('f-analista');
-    const cc=cf.value, ca=af.value;
+    const coords=[...new Set(allReunioes.map(r=>r.coordenador).filter(Boolean))].sort();
+    const analistas=[...new Set(allReunioes.map(r=>r.analista_nome).filter(Boolean))].sort();
+    const cf=document.getElementById('f-coordenador'),af=document.getElementById('f-analista');
+    const cc=cf.value,ca=af.value;
     cf.innerHTML='<option value="">Todos os coordenadores</option>'+coords.map(c=>`<option value="${c}"${c===cc?' selected':''}>${c}</option>`).join('');
     af.innerHTML='<option value="">Todos os analistas</option>'+analistas.map(a=>`<option value="${a}"${a===ca?' selected':''}>${a}</option>`).join('');
 }
 
 function renderAll() {
-    renderKPIs(); renderSaudeChurn(); renderEvo();
-    renderRanking(); renderPilares(); renderCoord();
-    renderChecklist(); renderReunioes();
+    renderKPIs();renderSaudeChurn();renderEvo();
+    renderRanking();renderPilares();renderCoord();
+    renderChecklist();renderReunioes();
     lucide.createIcons();
 }
 
 function renderKPIs() {
     const s=statsData;
-    document.getElementById('kpi-total').textContent = s.total??'—';
-    document.getElementById('kpi-media').textContent = s.media_geral!=null?s.media_geral.toFixed(1):'—';
-    document.getElementById('kpi-saude').textContent = s.saudeStats?.saudavel??'—';
-    document.getElementById('kpi-churn').textContent = s.churnStats?.alto??'—';
+    document.getElementById('kpi-total').textContent=s.total??'—';
+    document.getElementById('kpi-media').textContent=s.media_geral!=null?s.media_geral.toFixed(1):'—';
+    document.getElementById('kpi-saude').textContent=s.saudeStats?.saudavel??'—';
+    document.getElementById('kpi-churn').textContent=s.churnStats?.alto??'—';
 }
 
 function renderSaudeChurn() {
-    const ss=statsData.saudeStats||{}, cs=statsData.churnStats||{};
+    const ss=statsData.saudeStats||{},cs=statsData.churnStats||{};
     document.getElementById('s-saudavel').textContent=ss.saudavel??'—';
     document.getElementById('s-risco').textContent=ss.risco??'—';
     document.getElementById('s-critico').textContent=ss.critico??'—';
@@ -477,7 +379,7 @@ function renderEvo() {
 function renderRanking() {
     const ranking=statsData.ranking||[];
     document.getElementById('badge-ranking').textContent=ranking.length+' analistas';
-    const tbody=document.getElementById('tbody-ranking'), empty=document.getElementById('empty-ranking');
+    const tbody=document.getElementById('tbody-ranking'),empty=document.getElementById('empty-ranking');
     if(!ranking.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
     empty.classList.add('hidden');
     const medals=['🥇','🥈','🥉'];
@@ -497,7 +399,7 @@ function renderRanking() {
 function renderPilares() {
     const pt=statsData.pilaresTime||{};
     document.getElementById('pilares-list').innerHTML=PILLARS.map(p=>{
-        const val=pt[p.k]||0, pct=(val/5)*100;
+        const val=pt[p.k]||0,pct=(val/5)*100;
         const color=val<3?'#ef4444':val<4?'#f59e0b':'#10b981';
         return `<div style="display:flex;align-items:center;gap:0.75rem">
             <span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:8rem;text-align:right">${p.l}</span>
@@ -509,7 +411,7 @@ function renderPilares() {
 
 function renderCoord() {
     const pc=statsData.porCoordenador||{};
-    const labels=Object.keys(pc), vals=labels.map(k=>pc[k].media), totals=labels.map(k=>pc[k].total);
+    const labels=Object.keys(pc),vals=labels.map(k=>pc[k].media),totals=labels.map(k=>pc[k].total);
     const colors=['#2563eb','#7c3aed','#db2777','#059669','#d97706'];
     if(chartCoord) chartCoord.destroy();
     chartCoord=new Chart(document.getElementById('chart-coord').getContext('2d'),{
@@ -535,7 +437,7 @@ function renderChecklist() {
 }
 
 function renderReunioes() {
-    const tbody=document.getElementById('tbody-reunioes'), empty=document.getElementById('empty-reunioes');
+    const tbody=document.getElementById('tbody-reunioes'),empty=document.getElementById('empty-reunioes');
     document.getElementById('badge-total').textContent=allReunioes.length+' registros';
     if(!allReunioes.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
     empty.classList.add('hidden');
@@ -561,12 +463,11 @@ function renderReunioes() {
     lucide.createIcons();
 }
 
-// Modal
 function openModalId(id){const r=allReunioes.find(x=>x.id===id);if(r)renderModal(r);}
 function openModalAnalista(nome){const r=allReunioes.find(x=>x.analista_nome===nome);if(r)renderModal(r);}
 
 function renderModal(r) {
-    const aj=r.analise_json||{}, media=r.media_final??0;
+    const aj=r.analise_json||{},media=r.media_final??0;
     const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
     document.getElementById('modal-analista').textContent=r.analista_nome||'—';
     document.getElementById('modal-meta').textContent=`${r.coordenador||'—'} · ${data}`;
@@ -574,71 +475,52 @@ function renderModal(r) {
     document.getElementById('modal-resumo').textContent=aj.resumo_executivo||'—';
     document.getElementById('modal-saude').textContent=r.saude_cliente||'—';
     document.getElementById('modal-churn').textContent=r.risco_churn||'—';
-    const tag=document.getElementById('modal-status-tag');
-    tag.textContent=media>=4.5?'Elite CS':media>=3.5?'Alta Performance':'Acompanhamento';
-
+    document.getElementById('modal-status-tag').textContent=media>=4.5?'Elite CS':media>=3.5?'Alta Performance':'Acompanhamento';
     document.getElementById('modal-pilares').innerHTML=PILLARS.map(p=>{
-        const val=r['nota_'+p.k], hasVal=val!=null;
+        const val=r['nota_'+p.k],hasVal=val!=null;
         const bg=!hasVal?'bg-slate-50':val>=4?'bg-emerald-50':val>=3?'bg-blue-50':'bg-red-50';
         const tc=!hasVal?'text-slate-300':val>=4?'text-emerald-600':val>=3?'text-blue-600':'text-red-600';
-        return `<div class="${bg} rounded-2xl p-3 text-center border border-slate-100">
-            <div class="text-[8px] font-bold uppercase tracking-wide text-slate-400 mb-1">${p.l}</div>
-            <div class="text-xl font-black ${tc}">${hasVal?val:'—'}</div>
-        </div>`;
+        return `<div class="${bg} rounded-2xl p-3 text-center border border-slate-100"><div class="text-[8px] font-bold uppercase tracking-wide text-slate-400 mb-1">${p.l}</div><div class="text-xl font-black ${tc}">${hasVal?val:'—'}</div></div>`;
     }).join('');
-
     document.getElementById('modal-fortes').innerHTML=(aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
     document.getElementById('modal-atencao').innerHTML=(aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
-
     const rel=aj.justificativa_detalhada||'';
-    document.getElementById('modal-relatorio').innerHTML=rel
-        ?rel.replace(/## (.+)/g,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>')
-        :'<p class="text-slate-400">Relatório não disponível.</p>';
-
+    document.getElementById('modal-relatorio').innerHTML=rel?rel.replace(/## (.+)/g,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>'):'<p class="text-slate-400">Relatório não disponível.</p>';
     document.getElementById('modal-overlay').classList.add('open');
     lucide.createIcons();
 }
+
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
-// Substitui o "loadData();" no final do <script> do index.html por isso:
-
 async function checkAuthAndLoad() {
     try {
-        const me = await fetch('/api/me');
-        if (me.status === 401 || me.status === 403) {
-            window.location.href = '/api/auth';
-            return;
-        }
-        const user = await me.json();
-        if (user.email?.toLowerCase() === 'sthephany.talasca@nibo.com.br') {
-            const btn = document.getElementById('btn-clear-all');
+        const me=await fetch('/api/me');
+        if(me.status===401||me.status===403){window.location.href='/api/auth';return;}
+        const user=await me.json();
+        if(user.email?.toLowerCase()==='sthephany.talasca@nibo.com.br'){
+            const btn=document.getElementById('btn-clear-all');
             btn.classList.remove('hidden');
             btn.classList.add('flex');
         }
         loadData();
-    } catch(e) {
-        window.location.href = '/api/auth';
-    }
+    } catch(e){window.location.href='/api/auth';}
 }
 
 async function clearAllData() {
-    if (!confirm('⚠️ Isso vai deletar TODAS as avaliações permanentemente.\n\nTem certeza?')) return;
-    if (!confirm('Última chance. Confirma?')) return;
+    if(!confirm('⚠️ Isso vai deletar TODAS as avaliações permanentemente.\n\nTem certeza?')) return;
+    if(!confirm('Última chance. Confirma?')) return;
     try {
-        const res = await fetch('/api/records', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ modo: 'all' })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({modo:'all'})});
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.error);
         alert(`✅ ${data.count} avaliações deletadas.`);
         loadData();
-    } catch (err) {
-        alert('Erro: ' + err.message);
-    }
+    } catch(err){alert('Erro: '+err.message);}
 }
+
+// ← ISSO É O QUE FALTAVA: chama a função ao carregar a página
+checkAuthAndLoad();
 </script>
 </body>
 </html>
