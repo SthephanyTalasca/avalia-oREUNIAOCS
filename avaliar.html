@@ -411,9 +411,11 @@ async function handleAnalysis() {
         renderDashboard(data); saveToHistory(data);
 
         try {
-            const saveRes = await fetch('/api/save', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ analise: data, coordenador: coordinator }) });
-            if (!saveRes.ok) { const err = await saveRes.json().catch(()=>({})); console.warn('Aviso: análise não salva:', err.error||saveRes.status); }
-        } catch(e) { console.warn('Aviso: erro ao salvar:', e.message); }
+            const analistaNome = document.getElementById('cc-name-input').value.trim();
+body: JSON.stringify({ 
+    analise: { ...data, analista_nome: analistaNome || data.analista_nome || 'Não identificado' }, 
+    coordenador: coordinator 
+})
 
     } catch(err) {
         alert('Erro na análise: '+err.message);
