@@ -132,10 +132,17 @@ function buildNotasExemplo(ALL_PILLARS) {
 }
 
 // ── CHAMADA 1: Notas numéricas ─────────────────────────────────────────────
-async function getNumbers(transcript, knowledgeContext, ALL_PILLARS, PILLARS_PROMPT) {
+async function getNumbers(transcript, knowledgeContext, ALL_PILLARS, PILLARS_PROMPT, PROMPTS) {
   const notasExemplo = buildNotasExemplo(ALL_PILLARS);
-  const prompt = `Você é um avaliador especialista em Customer Success da Nibo.
-Avalie a reunião de CS abaixo com base nos ${ALL_PILLARS.length} pilares de qualidade.
+
+  // Monta blocos de instrução a partir do Supabase (fallback inline se não existir)
+  const instrucaoContexto   = PROMPTS['instrucao_contexto_cs']   || 'Você avalia reuniões de CS da Nibo.';
+  const instrucaoAvaliacao  = PROMPTS['instrucao_avaliacao']      || 'Seja rigoroso e baseie cada nota em evidências concretas da transcrição.';
+  const instrucaoMedia      = PROMPTS['instrucao_media_final']    || 'media_final = média das notas válidas (excluindo -1).';
+
+  const prompt = `${instrucaoContexto}
+
+${instrucaoAvaliacao}
 
 DEFINIÇÃO DOS PILARES E ESCALA DE NOTAS:
 ${PILLARS_PROMPT}
@@ -158,7 +165,7 @@ ${notasExemplo},
 }
 
 Use -1 quando não houver evidência suficiente. Notas de 1 a 5 (inteiros).
-media_final = média das notas válidas (excluindo -1).`;
+${instrucaoMedia}`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -323,12 +330,12 @@ export default async function handler(req, res) {
     console.log('📏 Tamanho da transcrição:', prompt.length, 'caracteres');
 
     // Carrega configuração dinâmica do Supabase
-    const { ALL_PILLARS, PILLARS_PROMPT } = await getConfig();
+    const { ALL_PILLARS, PILLARS_PROMPT, PROMPTS } = await getConfig();
     console.log(`⚙️ ${ALL_PILLARS.length} pilares carregados do Supabase`);
 
     const knowledgeContext = buildKnowledgeContext(prompt);
 
-    const numbers = await withRetry(() => getNumbers(prompt, knowledgeContext, ALL_PILLARS, PILLARS_PROMPT), 'getNumbers', 3);
+    const numbers = await withRetry(() => getNumbers(prompt, knowledgeContext, ALL_PILLARS, PILLARS_PROMPT, PROMPTS), 'getNumbers', 3);
     console.log('✅ Notas obtidas. Média:', numbers.media_final);
 
     const [meta, textsA, textsB] = await Promise.all([
