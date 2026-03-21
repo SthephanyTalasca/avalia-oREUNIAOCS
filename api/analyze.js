@@ -25,7 +25,6 @@ const ALL_PILLARS = [
     ['universo_contabil', 'Universo Contábil'],
 ];
 
-// Detecta o analista pelo nome na transcrição
 const CS_MAP = {
     'brayan santos': { nome: 'Brayan Santos', coordinator: 'Sayuri' },
     'camille vaz': { nome: 'Camille Vaz', coordinator: 'Sayuri' },
@@ -59,7 +58,6 @@ const CS_MAP = {
 
 function detectAnalista(transcript) {
     const lower = transcript.toLowerCase();
-    // Testa nomes completos primeiro (mais específicos)
     const sorted = Object.keys(CS_MAP).sort((a, b) => b.length - a.length);
     for (const key of sorted) {
         if (lower.includes(key)) return CS_MAP[key];
@@ -67,50 +65,34 @@ function detectAnalista(transcript) {
     return null;
 }
 
-// Converte qualquer data encontrada para ISO (YYYY-MM-DD)
-// Aceita: DD/MM/AAAA, AAAA-MM-DD, "15 de março de 2025", "março 15 2025" etc.
 function parseDataReuniao(rawDate) {
     if (!rawDate) return null;
     const s = String(rawDate).trim();
 
-    // Já está em ISO
     if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
 
-    // DD/MM/AAAA ou DD-MM-AAAA
     const dmy = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
     if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
 
-    // Meses por extenso E abreviados (formato das transcrições: "30 de jan. de 2026")
     const meses = {
-        janeiro:1,  jan:1,
-        fevereiro:2, fev:2,
-        março:3,    mar:3, marco:3,
-        abril:4,    abr:4,
-        maio:5,
-        junho:6,    jun:6,
-        julho:7,    jul:7,
-        agosto:8,   ago:8,
-        setembro:9, set:9,
-        outubro:10, out:10,
-        novembro:11, nov:11,
+        janeiro:1, jan:1, fevereiro:2, fev:2,
+        março:3, mar:3, marco:3, abril:4, abr:4,
+        maio:5, junho:6, jun:6, julho:7, jul:7,
+        agosto:8, ago:8, setembro:9, set:9,
+        outubro:10, out:10, novembro:11, nov:11,
         dezembro:12, dez:12,
     };
 
-    // Remove pontos de abreviação e normaliza: "30 de jan. de 2026" → "30 de jan de 2026"
     const norm = s.toLowerCase().replace(/\./g, '');
-
-    // "DD de MÊS de AAAA" (com ou sem "de" antes do ano)
     const ext = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})/);
     if (ext && meses[ext[2]]) return `${ext[3]}-${String(meses[ext[2]]).padStart(2,'0')}-${ext[1].padStart(2,'0')}`;
 
-    // Tenta Date.parse como fallback
     const d = new Date(s);
     if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
 
     return null;
 }
 
-// ── Repara JSON truncado ──────────────────────────────────────────────────
 function repairJson(raw) {
     let s = (raw || '').trimEnd();
     s = s.replace(/,\s*$/, '');
@@ -234,13 +216,11 @@ async function getNumbers(transcript) {
 
     const parsed = safeParse(res.text, 'getNumbers');
 
-    // Converte notas inválidas (0 ou -1) para null — não entram na média
     ALL_PILLARS.forEach(function(p) {
         const val = parsed['nota_' + p[0]];
         if (val === -1 || val === 0 || val == null) parsed['nota_' + p[0]] = null;
     });
 
-    // Recalcula media_final ignorando nulls (não confia no valor da IA)
     const notasValidas = ALL_PILLARS
         .map(p => parsed['nota_' + p[0]])
         .filter(v => v !== null && v > 0 && v <= 5);
@@ -250,8 +230,6 @@ async function getNumbers(transcript) {
 
     parsed.tempo_fala_cs      = (parsed.tempo_fala_cs_pct      || 50) + '%';
     parsed.tempo_fala_cliente = (parsed.tempo_fala_cliente_pct || 50) + '%';
-
-    // Normaliza a data extraída pela IA
     parsed.data_reuniao = parseDataReuniao(parsed.data_reuniao) || null;
 
     parsed.checklist_cs = {
@@ -266,7 +244,11 @@ async function getNumbers(transcript) {
     return parsed;
 }
 
-// ── CHAMADA 2: meta-textos ────────────────────────────────────────────────
+// ── CHAMADA 2: meta-textos + nome_cliente ─────────────────────────────────
+// 💡 APRENDIZADO: adicionamos nome_cliente ao responseSchema.
+//    O responseSchema funciona como um "contrato" com a IA:
+//    você declara quais campos quer, seus tipos, e quais são obrigatórios.
+//    A IA garante que o JSON retornado vai ter exatamente esses campos.
 async function getMeta(transcript, numbers) {
     const notasStr = ALL_PILLARS
         .filter(p => numbers['nota_' + p[0]] !== null)
@@ -282,12 +264,17 @@ async function getMeta(transcript, numbers) {
             systemInstruction:
                 'Auditor de CS do Nibo. Notas: ' + notasStr + '. ' +
                 'Retorne os campos solicitados em JSON. ' +
+                // ✨ Instrução para o novo campo:
+                'nome_cliente: nome da empresa ou pessoa cliente identificada na transcrição. ' +
+                'Procure por quem está sendo atendido — nome do escritório, empresa ou contato. ' +
+                'Se não conseguir identificar claramente, retorne "Não identificado". ' +
                 'pontos_fortes e pontos_atencao: máx 4 itens cada, frases curtas. ' +
                 'sistemas_citados: ferramentas/sistemas mencionados pelo cliente. ' +
                 'resumo_executivo: 1 frase. saude_cliente: 1 frase. risco_churn: 1 frase.',
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
+                    nome_cliente:     { type: Type.STRING },  // ✨ NOVO
                     resumo_executivo: { type: Type.STRING },
                     saude_cliente:    { type: Type.STRING },
                     risco_churn:      { type: Type.STRING },
@@ -295,7 +282,7 @@ async function getMeta(transcript, numbers) {
                     pontos_fortes:    { type: Type.ARRAY, items: { type: Type.STRING } },
                     pontos_atencao:   { type: Type.ARRAY, items: { type: Type.STRING } },
                 },
-                required: ['resumo_executivo', 'saude_cliente', 'risco_churn',
+                required: ['nome_cliente', 'resumo_executivo', 'saude_cliente', 'risco_churn',
                            'sistemas_citados', 'pontos_fortes', 'pontos_atencao'],
             },
         },
@@ -355,9 +342,15 @@ async function getRelatorio(numbers, meta, texts, coordinator) {
     }).filter(Boolean).join('\n');
 
     const coordinatorLine = coordinator ? `Coordenador responsável: **${coordinator}**\n\n` : '';
+    // ✨ Nome do cliente aparece também no relatório gerado
+    const clienteLine = meta.nome_cliente && meta.nome_cliente !== 'Não identificado'
+        ? `Cliente: **${meta.nome_cliente}**\n\n`
+        : '';
+
     const prompt =
         'Coordenador de CS do Nibo — feedback sobre o analista desta reunião.\n\n' +
         coordinatorLine +
+        clienteLine +
         'NOTAS:\n' + linhas + '\n\n' +
         'Média: ' + (numbers.media_final || '?') + '/5' +
         ' | Saúde: ' + (meta.saude_cliente || '') +
@@ -393,13 +386,11 @@ export default async function handler(req, res) {
     if (!prompt) return res.status(400).json({ error: 'Transcrição obrigatória.' });
 
     try {
-        // Detecta analista localmente (mais rápido e consistente)
         const detectado = detectAnalista(prompt);
 
         // 1. Notas + data_reuniao
         const numbers = await withRetry(() => getNumbers(prompt), 'getNumbers');
 
-        // Aplica analista detectado localmente (sobrescreve se a IA não encontrou)
         if (detectado) {
             numbers.analista_nome = detectado.nome;
             if (!coordinator) numbers.coordinator = detectado.coordinator;
@@ -407,7 +398,7 @@ export default async function handler(req, res) {
         numbers.analista_nome = numbers.analista_nome || 'Não identificado';
         numbers.coordinator   = coordinator || numbers.coordinator || null;
 
-        // 2. Meta + justificativas em paralelo
+        // 2. Meta (inclui nome_cliente) + justificativas em paralelo
         const [meta, textsA, textsB] = await Promise.all([
             withRetry(() => getMeta(prompt, numbers),   'getMeta'),
             withRetry(() => getTextsA(prompt, numbers), 'getTextsA'),
@@ -415,7 +406,6 @@ export default async function handler(req, res) {
         ]);
         const texts = Object.assign({}, textsA, textsB);
 
-        // Fallbacks para pilares sem evidência
         ALL_PILLARS.forEach(function(p) {
             const k = p[0];
             if (numbers['nota_' + k] === null) {
@@ -427,7 +417,7 @@ export default async function handler(req, res) {
             }
         });
 
-        // Fallbacks para meta
+        meta.nome_cliente     = meta.nome_cliente     || 'Não identificado'; // ✨
         meta.resumo_executivo = meta.resumo_executivo || 'Reunião de onboarding realizada.';
         meta.saude_cliente    = meta.saude_cliente    || 'Não avaliado.';
         meta.risco_churn      = meta.risco_churn      || 'Não avaliado.';
