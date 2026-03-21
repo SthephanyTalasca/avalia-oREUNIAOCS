@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -8,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -17,12 +16,12 @@
         .glass-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         @keyframes pulse-opacity { 0%,100%{opacity:1} 50%{opacity:.4} }
         .pulse-text { animation: pulse-opacity 1.8s ease-in-out infinite; }
-        .markdown-content h1, .markdown-content h2 { font-weight: 800; color: #1e3a8a; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1rem; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; }
-        .markdown-content p { margin-bottom: 1rem; color: #475569; line-height: 1.6; font-size: 0.9rem; }
-        .markdown-content ul { list-style-type: none; padding-left: 0; margin-bottom: 1.25rem; }
-        .markdown-content li { position: relative; padding-left: 1.5rem; margin-bottom: 0.4rem; color: #475569; font-size: 0.85rem; }
-        .markdown-content li::before { content: "•"; position: absolute; left: 0; color: #2563eb; font-weight: bold; }
-        select { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
+        .markdown-content h1, .markdown-content h2 { font-weight:800;color:#1e3a8a;margin-top:1.5rem;margin-bottom:0.75rem;font-size:1rem;text-transform:uppercase;border-bottom:2px solid #2563eb;padding-bottom:0.5rem; }
+        .markdown-content p { margin-bottom:1rem;color:#475569;line-height:1.6;font-size:0.9rem; }
+        .markdown-content ul { list-style-type:none;padding-left:0;margin-bottom:1.25rem; }
+        .markdown-content li { position:relative;padding-left:1.5rem;margin-bottom:0.4rem;color:#475569;font-size:0.85rem; }
+        .markdown-content li::before { content:"•";position:absolute;left:0;color:#2563eb;font-weight:bold; }
+        select { background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 0.5rem center;background-size:1.5em 1.5em;padding-right:2.5rem; }
     </style>
 </head>
 <body class="pb-20 antialiased">
@@ -38,18 +37,18 @@
                 <p class="text-[9px] text-blue-200 uppercase tracking-widest font-bold mt-1">Análise de Implementação e Onboarding</p>
             </div>
         </div>
-
         <div class="flex items-center gap-4 flex-wrap justify-center md:justify-end">
-            <div class="relative">
-                <i data-lucide="user" class="absolute left-3 top-2.5 w-4 h-4 text-blue-300"></i>
-                <input type="text" id="cc-name-input" placeholder="Analista de CS"
-                    class="pl-10 pr-5 py-2 rounded-xl bg-blue-900/40 border border-blue-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-blue-300 transition-all" />
+            <!-- Analista detectado automaticamente — exibido como badge -->
+            <div id="analista-badge" class="hidden items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600/30 border border-emerald-400/50 text-emerald-200 text-sm font-bold">
+                <i data-lucide="user-check" class="w-4 h-4"></i>
+                <span id="analista-badge-nome">—</span>
             </div>
+            <!-- Coordenador: opcional -->
             <div class="relative">
                 <i data-lucide="shield" class="absolute left-3 top-2.5 w-4 h-4 text-amber-300"></i>
                 <select id="coordinator-select"
                     class="pl-10 pr-5 py-2 rounded-xl bg-amber-900/40 border border-amber-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-amber-300 transition-all cursor-pointer">
-                    <option value="">Selecione Coordenador...</option>
+                    <option value="">Coordenador (opcional)</option>
                     <option value="Sayuri">Sayuri</option>
                     <option value="Tayanara">Tayanara</option>
                     <option value="Túlio">Túlio</option>
@@ -73,16 +72,19 @@
                 <i data-lucide="message-square" class="text-blue-600"></i>
                 <h2 class="font-bold text-slate-800 text-lg">Submeter Transcrição do Cliente</h2>
             </div>
+            <!-- Info box -->
+            <div class="flex items-start gap-3 mb-5 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                <i data-lucide="info" class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0"></i>
+                <p class="text-xs text-blue-700 font-medium">O nome do analista será detectado automaticamente pela IA a partir da transcrição. O coordenador é opcional.</p>
+            </div>
             <textarea id="transcript-input" rows="6"
                 class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:ring-4 ring-blue-500/5 focus:outline-none transition-all text-sm resize-none"
                 placeholder="Cole aqui o diálogo da reunião de Onboarding..."></textarea>
             <div class="flex items-center justify-between mt-3 mb-6 px-1">
-                <div class="text-[11px] font-bold text-slate-400">
-                    <span id="char-count">0</span> caracteres
-                </div>
+                <div class="text-[11px] font-bold text-slate-400"><span id="char-count">0</span> caracteres</div>
                 <label class="text-[11px] font-bold text-slate-400 cursor-pointer hover:text-blue-600 transition-colors flex items-center gap-2">
                     <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                    Ou carregar PDF anterior
+                    Ou carregar PDF
                     <input type="file" id="pdf-upload" accept=".pdf" class="hidden" />
                 </label>
             </div>
@@ -106,8 +108,7 @@
                     </div>
                     <div class="flex-1">
                         <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                            <span>Avaliando os 17 pilares</span>
-                            <span id="step-scores-pct">—</span>
+                            <span>Avaliando os 17 pilares</span><span id="step-scores-pct">—</span>
                         </div>
                         <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
                             <div id="bar-scores" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width:0%"></div>
@@ -120,8 +121,7 @@
                     </div>
                     <div class="flex-1">
                         <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                            <span>Gerando relatório de auditoria</span>
-                            <span id="step-report-pct">—</span>
+                            <span>Gerando relatório de auditoria</span><span id="step-report-pct">—</span>
                         </div>
                         <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
                             <div id="bar-report" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width:0%"></div>
@@ -133,6 +133,16 @@
         </div>
 
         <div id="analysis-content" class="hidden space-y-8">
+
+            <!-- Analista identificado -->
+            <div id="analista-resultado" class="hidden glass-card p-6 border-l-4 border-emerald-500 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-xl font-black text-emerald-600" id="analista-inicial">?</div>
+                <div>
+                    <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Analista Identificado pela IA</p>
+                    <p id="analista-nome-resultado" class="text-lg font-extrabold text-[#002d72]">—</p>
+                    <p id="analista-coord-resultado" class="text-xs text-slate-500">—</p>
+                </div>
+            </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center border-b-[10px] border-blue-600">
@@ -170,8 +180,7 @@
                     </div>
                     <div class="glass-card p-8">
                         <h3 class="font-bold text-slate-800 text-[14px] mb-6 flex items-center gap-3">
-                            <i data-lucide="list-checks" class="text-blue-600 w-5 h-5"></i>
-                            Checklist de Onboarding
+                            <i data-lucide="list-checks" class="text-blue-600 w-5 h-5"></i>Checklist de Onboarding
                         </h3>
                         <div id="checklist-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                     </div>
@@ -196,16 +205,11 @@
             <div class="glass-card p-12 md:p-16 shadow-2xl border-t-[10px] border-[#002d72] flex justify-between items-start">
                 <div class="flex-1">
                     <h3 class="text-xl font-extrabold text-[#002d72] uppercase tracking-widest mb-10 border-b pb-6 flex items-center gap-4">
-                        <i data-lucide="scroll-text"></i>
-                        Relatório de Auditoria de CS
+                        <i data-lucide="scroll-text"></i>Relatório de Auditoria de CS
                     </h3>
                     <div id="markdown-body" class="markdown-content"></div>
                 </div>
                 <div class="flex gap-2 ml-4">
-                    <button id="save-report-btn" class="flex items-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all" title="Salvar relatório">
-                        <i data-lucide="save" class="w-4 h-4"></i>
-                        <span class="hidden md:inline">Salvar</span>
-                    </button>
                     <button id="export-pdf-btn" class="flex items-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all" title="Exportar como PDF">
                         <i data-lucide="file-pdf" class="w-4 h-4"></i>
                         <span class="hidden md:inline">PDF</span>
@@ -214,9 +218,9 @@
             </div>
         </div>
     </div>
-
 </main>
 
+<!-- Modal pilar -->
 <div id="justification-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
     <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col" id="modal-content-box">
         <div class="flex justify-between items-start mb-6">
@@ -243,6 +247,7 @@
     </div>
 </div>
 
+<!-- Modal PDF -->
 <div id="pdf-viewer-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0">
     <div class="bg-white rounded-[2rem] p-6 max-w-4xl w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]" id="pdf-viewer-content">
         <div class="flex justify-between items-center mb-4 sticky top-0 bg-white pb-4 border-b">
@@ -261,11 +266,12 @@
 <script>
 lucide.createIcons();
 
+// ── Mapeamento CS → Coordenador (detecção local como fallback) ─────────────
 const CS_TO_COORDINATOR = {
   'brayan santos':'Sayuri','brayan':'Sayuri','camille vaz':'Sayuri','camille':'Sayuri',
   'carolina miranda':'Sayuri','carolina':'Sayuri','isaque silva':'Sayuri','isaque':'Sayuri',
   'larissa mota':'Sayuri','nat vieira':'Sayuri','nat':'Sayuri','vinícius oliveira':'Sayuri','vinicius':'Sayuri',
-  'ana de battisti':'Tayanara','ana battisti':'Tayanara','ana':'Tayanara',
+  'ana de battisti':'Tayanara','ana battisti':'Tayanara',
   'denis silva':'Tayanara','denis':'Tayanara','larissa teixeira':'Tayanara',
   'lorrayne moreira':'Tayanara','lorrayne':'Tayanara','micaelle martins':'Tayanara','micaelle':'Tayanara',
   'sthephany talasca':'Tayanara','sthephany':'Tayanara','sthe':'Tayanara',
@@ -278,43 +284,33 @@ const CS_TO_COORDINATOR = {
   'túlio morgado':'Michel','túlio':'Michel','tulio':'Michel',
 };
 
-function detectCSAndCoordinator(transcript) {
-  if (!transcript) return { cs: null, coordinator: null };
-  const lower = transcript.toLowerCase();
-  for (const [name, coordinator] of Object.entries(CS_TO_COORDINATOR)) {
-    if (lower.includes(name)) return { cs: name, coordinator };
-  }
-  return { cs: null, coordinator: null };
+// Detecção local (preenche coordenador automaticamente ao colar)
+function detectLocalCS(transcript) {
+    if (!transcript) return null;
+    const lower = transcript.toLowerCase();
+    for (const [name, coordinator] of Object.entries(CS_TO_COORDINATOR)) {
+        if (lower.includes(name)) return { nome: name, coordinator };
+    }
+    return null;
 }
-
-document.getElementById('transcript-input').addEventListener('input', function() {
-  const { coordinator } = detectCSAndCoordinator(this.value);
-  if (coordinator) document.getElementById('coordinator-select').value = coordinator;
-});
 
 document.getElementById('transcript-input').addEventListener('paste', function() {
-  setTimeout(() => {
-    const { cs, coordinator } = detectCSAndCoordinator(this.value);
-    if (coordinator) {
-      document.getElementById('coordinator-select').value = coordinator;
-      const toast = document.createElement('div');
-      toast.className = 'fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-50';
-      toast.textContent = `✅ ${coordinator} atribuído a ${cs}`;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-  }, 100);
+    setTimeout(() => {
+        const detected = detectLocalCS(this.value);
+        if (detected) {
+            // Pré-preenche coordenador se não selecionado
+            const sel = document.getElementById('coordinator-select');
+            if (!sel.value) sel.value = detected.coordinator;
+            showToast(`✅ Coordenador detectado: ${detected.coordinator}`);
+        }
+    }, 100);
 });
 
-const STORAGE_KEY = 'nibo_auditor_history';
-function saveToHistory(data) {
-    const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    const entry = { id: Date.now(), timestamp: new Date().toLocaleString('pt-BR'), analista: document.getElementById('cc-name-input').value || 'Sem nome', coordenador: document.getElementById('coordinator-select').value || 'Não informado', media: data.media_final, resumo: data.resumo_executivo, data };
-    history.unshift(entry);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-    return entry.id;
-}
+document.getElementById('transcript-input').addEventListener('input', () => {
+    document.getElementById('char-count').textContent = document.getElementById('transcript-input').value.length.toLocaleString('pt-BR');
+});
 
+// ── PDF ────────────────────────────────────────────────────────────────────
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 document.getElementById('pdf-upload').addEventListener('change', async function(e) {
@@ -334,25 +330,41 @@ async function openPdfViewer(pdfData, filename) {
     setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('pdf-viewer-content').classList.replace('scale-95','scale-100'); }, 10);
     try {
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        const container = document.getElementById('pdf-pages');
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const canvas = document.createElement('canvas');
             const viewport = page.getViewport({ scale: 2 });
             canvas.width = viewport.width; canvas.height = viewport.height;
             await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-            const div = document.createElement('div'); div.className = 'bg-white rounded-lg shadow-md overflow-hidden'; div.appendChild(canvas); container.appendChild(div);
+            const div = document.createElement('div');
+            div.className = 'bg-white rounded-lg shadow-md overflow-hidden';
+            div.appendChild(canvas);
+            document.getElementById('pdf-pages').appendChild(div);
         }
         document.getElementById('pdf-loading').style.display = 'none';
-    } catch(e) { document.getElementById('pdf-pages').innerHTML = '<p class="text-red-600 font-bold">Erro ao carregar o PDF.</p>'; document.getElementById('pdf-loading').style.display = 'none'; }
+    } catch(e) {
+        document.getElementById('pdf-pages').innerHTML = '<p class="text-red-600 font-bold">Erro ao carregar o PDF.</p>';
+        document.getElementById('pdf-loading').style.display = 'none';
+    }
 }
 
 function closePdfViewer() {
     const modal = document.getElementById('pdf-viewer-modal');
-    modal.classList.add('opacity-0'); document.getElementById('pdf-viewer-content').classList.replace('scale-100','scale-95');
-    setTimeout(() => { modal.classList.replace('flex','hidden'); }, 300);
+    modal.classList.add('opacity-0');
+    document.getElementById('pdf-viewer-content').classList.replace('scale-100','scale-95');
+    setTimeout(() => modal.classList.replace('flex','hidden'), 300);
 }
 
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-50';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+// ── Pillar store ───────────────────────────────────────────────────────────
 const pillarStore = {};
 let radarChartInstance = null;
 const fields = [
@@ -364,61 +376,100 @@ const fields = [
     {l:'Ecossistema',k:'ecossistema_nibo'},{l:'Univ. Contábil',k:'universo_contabil'}
 ];
 
-document.getElementById('transcript-input').addEventListener('input', () => {
-    document.getElementById('char-count').textContent = document.getElementById('transcript-input').value.length.toLocaleString('pt-BR');
-});
-
+// ── Progress bars ──────────────────────────────────────────────────────────
 function animateTo(barId, pctId, target, durationMs) {
     return new Promise(resolve => {
         const bar = document.getElementById(barId), pct = document.getElementById(pctId);
         const start = parseFloat(bar.style.width)||0, steps=40, step=(target-start)/steps, delay=durationMs/steps;
         let cur=start, i=0;
-        const t = setInterval(() => { cur=Math.min(cur+step,target); bar.style.width=cur+'%'; if(pct) pct.textContent=Math.round(cur)+'%'; if(++i>=steps){clearInterval(t);resolve();} }, delay);
+        const t = setInterval(() => {
+            cur=Math.min(cur+step,target); bar.style.width=cur+'%';
+            if(pct) pct.textContent=Math.round(cur)+'%';
+            if(++i>=steps){clearInterval(t);resolve();}
+        }, delay);
     });
 }
-function markDone(iconId) { const el=document.getElementById(iconId); if(el) el.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-4 h-4 text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>`; }
+function markDone(iconId) {
+    const el=document.getElementById(iconId);
+    if(el) el.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-4 h-4 text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>`;
+}
 function activate(rowId) { document.getElementById(rowId)?.classList.remove('opacity-30'); }
 function setLabel(text) { document.getElementById('loading-label').textContent = text; }
 
+// ── ANÁLISE PRINCIPAL ──────────────────────────────────────────────────────
 const analyzeBtn = document.getElementById('analyze-btn');
 
 async function handleAnalysis() {
     const prompt = document.getElementById('transcript-input').value.trim();
-    if (!prompt) return;
+    if (!prompt) { alert('Cole uma transcrição antes de analisar.'); return; }
+
+    // Coordenador é opcional
     const coordinator = document.getElementById('coordinator-select').value;
-    if (!coordinator) { alert('Por favor, selecione um coordenador antes de analisar.'); return; }
 
     document.getElementById('results-section').classList.remove('hidden');
     document.getElementById('loading-spinner').classList.remove('hidden');
     document.getElementById('analysis-content').classList.add('hidden');
+    document.getElementById('analista-resultado').classList.add('hidden');
     ['bar-scores','bar-report'].forEach(id => document.getElementById(id).style.width='0%');
     activate('step-scores');
     analyzeBtn.disabled = true;
     document.getElementById('btn-text').textContent = 'Analisando...';
-    setLabel('Lendo transcrição e avaliando os 17 pilares...');
+    setLabel('Lendo transcrição e identificando o analista...');
     animateTo('bar-scores','step-scores-pct',88,25000);
 
     try {
-        const response = await fetch('/api/analyze', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ prompt, coordinator }) });
-        let data; try { data = await response.json(); } catch { throw new Error('Erro de comunicação com o servidor.'); }
+        const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ prompt, coordinator })
+        });
+
+        let data;
+        try { data = await response.json(); } catch { throw new Error('Erro de comunicação com o servidor.'); }
         if (data.error) throw new Error(data.error);
 
         await animateTo('bar-scores','step-scores-pct',100,300);
-        markDone('step-scores-icon'); activate('step-report');
+        markDone('step-scores-icon');
+        activate('step-report');
         await animateTo('bar-report','step-report-pct',100,400);
-        markDone('step-report-icon'); setLabel('Análise concluída!');
+        markDone('step-report-icon');
+        setLabel('Análise concluída!');
         await new Promise(r => setTimeout(r, 500));
-        renderDashboard(data); saveToHistory(data);
 
+        // Mostra analista identificado pela IA
+        const analistaNome = data.analista_nome || 'Não identificado';
+        const coordNome = data.coordinator || coordinator || '—';
+        document.getElementById('analista-resultado').classList.remove('hidden');
+        document.getElementById('analista-inicial').textContent = analistaNome[0]?.toUpperCase() || '?';
+        document.getElementById('analista-nome-resultado').textContent = analistaNome;
+        document.getElementById('analista-coord-resultado').textContent = coordNome !== '—' ? `Coordenador: ${coordNome}` : 'Coordenador não identificado';
+
+        renderDashboard(data);
+
+        // Salva no Supabase
         try {
-            const analistaNome = document.getElementById('cc-name-input').value.trim();
-body: JSON.stringify({ 
-    analise: { ...data, analista_nome: analistaNome || data.analista_nome || 'Não identificado' }, 
-    coordenador: coordinator 
-})
+            const saveRes = await fetch('/api/save', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    analise: {
+                        ...data,
+                        // A IA já retorna analista_nome — usamos direto
+                        analista_nome: analistaNome
+                    },
+                    coordenador: coordinator || null
+                })
+            });
+            if (!saveRes.ok) {
+                const err = await saveRes.json().catch(()=>({}));
+                console.warn('Aviso: análise não salva:', err.error || saveRes.status);
+            } else {
+                showToast('✅ Análise salva com sucesso!');
+            }
+        } catch(e) { console.warn('Aviso: erro ao salvar:', e.message); }
 
     } catch(err) {
-        alert('Erro na análise: '+err.message);
+        alert('Erro na análise: ' + err.message);
         document.getElementById('results-section').classList.add('hidden');
     } finally {
         analyzeBtn.disabled = false;
@@ -426,15 +477,20 @@ body: JSON.stringify({
     }
 }
 
+// ── Render Dashboard ───────────────────────────────────────────────────────
 function renderDashboard(data) {
     document.getElementById('loading-spinner').classList.add('hidden');
     document.getElementById('analysis-content').classList.remove('hidden');
+
     const media = data.media_final||0;
     document.getElementById('media-final').textContent = media.toFixed(1);
     document.getElementById('resumo-text').textContent = data.resumo_executivo||'—';
     document.getElementById('saude-text').textContent  = data.saude_cliente||'N/A';
     document.getElementById('churn-text').textContent  = data.risco_churn||'N/A';
-    document.getElementById('concorrentes-tags').innerHTML = (data.sistemas_citados||[]).map(c=>`<span class="px-3 py-1 bg-slate-800 text-blue-200 text-[9px] font-black rounded-lg shadow uppercase tracking-widest flex items-center gap-1.5"><i data-lucide="cpu" class="w-3 h-3"></i> ${c}</span>`).join('');
+    document.getElementById('concorrentes-tags').innerHTML = (data.sistemas_citados||[]).map(c=>
+        `<span class="px-3 py-1 bg-slate-800 text-blue-200 text-[9px] font-black rounded-lg shadow uppercase tracking-widest flex items-center gap-1.5"><i data-lucide="cpu" class="w-3 h-3"></i> ${c}</span>`
+    ).join('');
+
     const status = document.getElementById('status-tag');
     if(media>=4.5){status.textContent='Elite CS';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg';}
     else if(media>=3.5){status.textContent='Alta Performance';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-700';}
@@ -454,7 +510,11 @@ function renderDashboard(data) {
             <p class="text-[7.5px] text-slate-500 italic leading-tight font-medium max-w-[95%] truncate">${p}</p>
         </div>`;
     }).join('');
-    grid.addEventListener('click', e => { const card=e.target.closest('.pillar-card'); if(card&&pillarStore[card.dataset.pillar]?.hasScore) openModal(pillarStore[card.dataset.pillar]); });
+
+    grid.addEventListener('click', e => {
+        const card=e.target.closest('.pillar-card');
+        if(card&&pillarStore[card.dataset.pillar]?.hasScore) openModal(pillarStore[card.dataset.pillar]);
+    });
 
     const tCS=parseFloat(data.tempo_fala_cs||0), tCli=parseFloat(data.tempo_fala_cliente||0);
     document.getElementById('talk-time-container').innerHTML=`
@@ -463,28 +523,52 @@ function renderDashboard(data) {
 
     const ck=data.checklist_cs||{};
     const ckLabels={definiu_prazo_implementacao:'Prazo de Implantação',alinhou_dever_de_casa:'Dever de Casa Alinhado',validou_certificado_digital:'Certificado A1 / Acesso',agendou_proximo_passo:'Próxima Reunião Agendada',conectou_com_dor_vendas:'Retomou Dor de Vendas',explicou_canal_suporte:'Explicou Canal de Suporte'};
-    document.getElementById('checklist-container').innerHTML=Object.entries(ckLabels).map(([key,label])=>`<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100"><span class="text-[9px] font-bold text-slate-600 uppercase tracking-tight">${label}</span><div class="w-5 h-5 rounded-full flex items-center justify-center ${ck[key]?'bg-emerald-500':'bg-slate-300'}"><i data-lucide="${ck[key]?'check':'minus'}" class="text-white w-3 h-3"></i></div></div>`).join('');
+    document.getElementById('checklist-container').innerHTML=Object.entries(ckLabels).map(([key,label])=>
+        `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100"><span class="text-[9px] font-bold text-slate-600 uppercase tracking-tight">${label}</span><div class="w-5 h-5 rounded-full flex items-center justify-center ${ck[key]?'bg-emerald-500':'bg-slate-300'}"><i data-lucide="${ck[key]?'check':'minus'}" class="text-white w-3 h-3"></i></div></div>`
+    ).join('');
 
     document.getElementById('lista-fortes').innerHTML=(data.pontos_fortes||[]).map(i=>`<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
     document.getElementById('lista-atencao').innerHTML=(data.pontos_atencao||[]).map(i=>`<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
     document.getElementById('markdown-body').innerHTML=marked.parse(data.justificativa_detalhada||'');
-    renderRadar(data); lucide.createIcons();
+
+    renderRadar(data);
+    lucide.createIcons();
 }
 
 function renderRadar(data) {
     const ctx=document.getElementById('radarChart').getContext('2d');
     if(radarChartInstance) radarChartInstance.destroy();
-    radarChartInstance=new Chart(ctx,{type:'radar',data:{labels:fields.map(f=>f.l),datasets:[{label:'Nota de CS',data:fields.map(f=>data[`nota_${f.k}`]??0),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#1e3a8a'}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}});
+    radarChartInstance=new Chart(ctx,{
+        type:'radar',
+        data:{labels:fields.map(f=>f.l),datasets:[{label:'Nota de CS',data:fields.map(f=>data[`nota_${f.k}`]??0),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#1e3a8a'}]},
+        options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}
+    });
 }
 
+// ── Modal pilar ────────────────────────────────────────────────────────────
 function openModal({label,score,colorClass,porque,melhoria}) {
     document.getElementById('modal-title').textContent=label;
-    const scoreEl=document.getElementById('modal-score'); scoreEl.textContent=score; scoreEl.className=`text-5xl font-black leading-none ${colorClass}`;
+    const scoreEl=document.getElementById('modal-score');
+    scoreEl.textContent=score; scoreEl.className=`text-5xl font-black leading-none ${colorClass}`;
     document.getElementById('modal-text').textContent=porque;
-    const container=document.getElementById('modal-improvement-container'), labelEl=document.getElementById('modal-improvement-label'), textEl=document.getElementById('modal-improvement-text'), iconEl=document.getElementById('modal-improvement-icon');
+    const container=document.getElementById('modal-improvement-container');
+    const labelEl=document.getElementById('modal-improvement-label');
+    const textEl=document.getElementById('modal-improvement-text');
+    const iconEl=document.getElementById('modal-improvement-icon');
     textEl.textContent=melhoria;
-    if(score>=5){container.className='rounded-2xl p-4 border border-emerald-100 bg-emerald-50 mt-2';labelEl.className='text-[9px] font-bold uppercase tracking-widest block text-emerald-700';labelEl.textContent='Excelente!';textEl.className='text-[12px] leading-relaxed font-medium text-emerald-900';iconEl.setAttribute('data-lucide','check-circle');}
-    else{container.className='rounded-2xl p-4 border border-amber-100 bg-amber-50 mt-2';labelEl.className='text-[9px] font-bold uppercase tracking-widest block text-amber-700';labelEl.textContent='O que faltou para o 5?';textEl.className='text-[12px] leading-relaxed font-medium text-amber-900';iconEl.setAttribute('data-lucide','target');}
+    if(score>=5){
+        container.className='rounded-2xl p-4 border border-emerald-100 bg-emerald-50 mt-2';
+        labelEl.className='text-[9px] font-bold uppercase tracking-widest block text-emerald-700';
+        labelEl.textContent='Excelente!';
+        textEl.className='text-[12px] leading-relaxed font-medium text-emerald-900';
+        iconEl.setAttribute('data-lucide','check-circle');
+    } else {
+        container.className='rounded-2xl p-4 border border-amber-100 bg-amber-50 mt-2';
+        labelEl.className='text-[9px] font-bold uppercase tracking-widest block text-amber-700';
+        labelEl.textContent='O que faltou para o 5?';
+        textEl.className='text-[12px] leading-relaxed font-medium text-amber-900';
+        iconEl.setAttribute('data-lucide','target');
+    }
     const modal=document.getElementById('justification-modal'), modalBox=document.getElementById('modal-content-box');
     modal.classList.replace('hidden','flex');
     setTimeout(()=>{ modal.classList.remove('opacity-0'); modalBox.classList.replace('scale-95','scale-100'); lucide.createIcons(); },10);
@@ -497,12 +581,8 @@ function closeModal() {
 }
 
 document.getElementById('justification-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
-analyzeBtn.addEventListener('click',handleAnalysis);
-
-document.getElementById('save-report-btn').addEventListener('click',()=>{
-    const toast=document.createElement('div'); toast.className='fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-50'; toast.textContent='✅ Análise já salva automaticamente!'; document.body.appendChild(toast); setTimeout(()=>toast.remove(),3000);
-});
-document.getElementById('export-pdf-btn').addEventListener('click',()=>{ alert('Funcionalidade de exportar PDF em desenvolvimento. Use Ctrl+P para imprimir como PDF.'); });
+analyzeBtn.addEventListener('click', handleAnalysis);
+document.getElementById('export-pdf-btn').addEventListener('click',()=>{ alert('Use Ctrl+P para imprimir como PDF.'); });
 </script>
 </body>
 </html>
