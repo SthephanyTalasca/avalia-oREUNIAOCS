@@ -50,8 +50,13 @@
         #perfil-box { background:#f1f5f9;border-radius:2.5rem;width:100%;max-width:900px;margin:auto;box-shadow:0 32px 80px rgba(0,0,0,0.3); }
         #edit-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem; }
         #edit-overlay.open { display:flex; }
-        #equipe-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem; }
+        /* Equipe modal */
+        #equipe-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);z-index:250;display:none;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto; }
         #equipe-overlay.open { display:flex; }
+        #equipe-box { background:white;border-radius:2.5rem;width:100%;max-width:760px;margin:auto;box-shadow:0 32px 80px rgba(0,0,0,0.3); }
+        .eq-row { display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;border-bottom:1px solid #f1f5f9;transition:background 0.15s; }
+        .eq-row:last-child { border-bottom:none; }
+        .eq-row:hover { background:#f8fafc; }
         .md h2 { font-weight:800;color:#1e3a8a;margin-top:1.25rem;margin-bottom:0.5rem;font-size:0.85rem;text-transform:uppercase;border-bottom:2px solid #2563eb;padding-bottom:0.4rem; }
         .md p  { margin-bottom:0.75rem;color:#475569;line-height:1.6;font-size:0.85rem; }
         .md ul { list-style:none;padding:0;margin-bottom:1rem; }
@@ -62,58 +67,133 @@
 <body class="pb-20 antialiased">
 
 <div id="loading-overlay">
-    <div class="text-center text-white"><div class="spinner"></div><p class="font-bold text-sm uppercase tracking-widest">Carregando avaliações...</p></div>
+    <div class="text-center text-white">
+        <div class="spinner"></div>
+        <p class="font-bold text-sm uppercase tracking-widest">Carregando avaliações...</p>
+    </div>
 </div>
 
 <!-- MODAL DETALHE AVALIAÇÃO -->
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
-    <div class="modal-box">
-        <div class="sticky top-0 bg-white px-8 py-6 border-b border-slate-100 rounded-t-[2.5rem] flex justify-between items-start z-10">
-            <div>
-                <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Detalhe da Avaliação</span>
-                <h2 id="modal-analista" class="font-extrabold text-xl text-[#002d72]">—</h2>
-                <p id="modal-meta" class="text-sm text-slate-500 mt-0.5">—</p>
+    <div class="modal-box" style="max-width:780px">
+        <!-- Header -->
+        <div class="sticky top-0 bg-white px-8 py-5 border-b border-slate-100 rounded-t-[2.5rem] flex justify-between items-center z-10">
+            <div class="flex items-center gap-4">
+                <div id="modal-avatar" class="w-11 h-11 rounded-2xl bg-blue-100 flex items-center justify-center text-lg font-black text-blue-700">—</div>
+                <div>
+                    <h2 id="modal-analista" class="font-extrabold text-lg text-[#002d72] leading-tight">—</h2>
+                    <p id="modal-meta" class="text-xs text-slate-400 font-semibold mt-0.5">—</p>
+                </div>
             </div>
-            <div class="flex gap-2 ml-4">
+            <div class="flex gap-2">
                 <button onclick="abrirEdicao()" class="bg-blue-50 hover:bg-blue-100 p-2.5 rounded-full transition-colors" title="Editar"><i data-lucide="pencil" class="w-4 h-4 text-blue-600"></i></button>
                 <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
             </div>
         </div>
-        <div class="p-8 space-y-8">
-            <div class="bg-gradient-to-br from-[#002d72] to-blue-700 rounded-3xl p-8 text-white flex items-center gap-6">
-                <div class="flex-shrink-0">
-                    <span class="text-[9px] font-black uppercase tracking-widest text-blue-200 block mb-1">Média CS (máx 5)</span>
-                    <div id="modal-media" class="text-6xl font-black leading-none">—</div>
-                    <div id="modal-status-tag" class="mt-2 inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/20">—</div>
-                </div>
-                <div class="flex-1 border-l border-white/20 pl-6">
-                    <p id="modal-resumo" class="text-sm text-blue-100 leading-snug mb-4">—</p>
-                    <div class="flex gap-3">
-                        <div class="flex-1 bg-white/10 rounded-2xl p-3 border border-white/20"><span class="text-[8px] font-black text-blue-300 uppercase tracking-widest block mb-1">Saúde</span><p id="modal-saude" class="text-sm font-bold">—</p></div>
-                        <div class="flex-1 bg-red-500/20 rounded-2xl p-3 border border-red-400/30"><span class="text-[8px] font-black text-red-300 uppercase tracking-widest block mb-1">Churn</span><p id="modal-churn" class="text-sm font-bold">—</p></div>
+
+        <div class="p-7 space-y-6">
+
+            <!-- Faixa azul: média + resumo + saúde/churn -->
+            <div class="bg-gradient-to-br from-[#002d72] to-blue-700 rounded-3xl p-6 text-white">
+                <div class="flex items-start gap-6">
+                    <div class="flex-shrink-0 text-center">
+                        <div class="text-[9px] font-black uppercase tracking-widest text-blue-300 mb-1">Média</div>
+                        <div id="modal-media" class="text-6xl font-black leading-none">—</div>
+                        <div id="modal-status-tag" class="mt-2 inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-white/20">—</div>
+                    </div>
+                    <div class="flex-1 border-l border-white/20 pl-6 space-y-3">
+                        <p id="modal-resumo" class="text-sm text-blue-100 leading-snug">—</p>
+                        <div class="flex gap-3">
+                            <div class="flex-1 bg-white/10 rounded-2xl p-3 border border-white/20">
+                                <div class="text-[8px] font-black text-blue-300 uppercase tracking-widest mb-1">Saúde do Cliente</div>
+                                <p id="modal-saude" class="text-xs font-bold">—</p>
+                            </div>
+                            <div class="flex-1 bg-red-500/20 rounded-2xl p-3 border border-red-400/30">
+                                <div class="text-[8px] font-black text-red-300 uppercase tracking-widest mb-1">Risco de Churn</div>
+                                <p id="modal-churn" class="text-xs font-bold">—</p>
+                            </div>
+                        </div>
+                        <!-- Barra de fala única CS vs Cliente -->
+                        <div>
+                            <div class="text-[8px] font-black text-blue-300 uppercase tracking-widest mb-2">Tempo de Fala</div>
+                            <div class="h-5 w-full rounded-full overflow-hidden flex" id="modal-fala-bar">
+                                <div id="modal-fala-cs" class="h-full bg-white/80 transition-all duration-700 flex items-center justify-center" style="width:50%">
+                                    <span class="text-[9px] font-black text-[#002d72] px-1">CS</span>
+                                </div>
+                                <div id="modal-fala-cli" class="h-full bg-blue-400/60 transition-all duration-700 flex items-center justify-center" style="width:50%">
+                                    <span class="text-[9px] font-black text-white px-1">Cliente</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-1">
+                                <span id="modal-fala-cs-pct" class="text-[9px] font-bold text-blue-200">—</span>
+                                <span id="modal-fala-cli-pct" class="text-[9px] font-bold text-blue-300">—</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div><span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-4">Notas por Pilar</span><div id="modal-pilares" class="grid grid-cols-3 gap-3"></div></div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-emerald-50 rounded-3xl p-6 border border-emerald-100"><span class="text-[9px] font-black uppercase tracking-widest text-emerald-700 block mb-3">Pontos Fortes</span><ul id="modal-fortes" class="space-y-1.5 text-xs font-semibold text-emerald-900"></ul></div>
-                <div class="bg-amber-50 rounded-3xl p-6 border border-amber-100"><span class="text-[9px] font-black uppercase tracking-widest text-amber-700 block mb-3">Oportunidades</span><ul id="modal-atencao" class="space-y-1.5 text-xs font-semibold text-amber-900"></ul></div>
+
+            <!-- Pilares com justificativa -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Notas por Pilar</span>
+                    <span class="text-[9px] text-slate-300 font-semibold italic">Clique para ver justificativa</span>
+                </div>
+                <div id="modal-pilares" class="grid grid-cols-2 gap-2"></div>
             </div>
-            <div><span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-4 border-b pb-3">Relatório de Auditoria</span><div id="modal-relatorio" class="md"></div></div>
+
+            <!-- Tooltip justificativa (aparece ao clicar) -->
+            <div id="modal-pilar-detalhe" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span id="modal-pd-nome" class="text-[10px] font-black uppercase text-slate-500 tracking-widest">—</span>
+                    <span id="modal-pd-nota" class="text-2xl font-black">—</span>
+                </div>
+                <p id="modal-pd-porque" class="text-sm text-slate-700 font-medium leading-relaxed">—</p>
+                <div id="modal-pd-melhoria-box" class="rounded-xl p-3 border border-amber-100 bg-amber-50 hidden">
+                    <span class="text-[9px] font-black uppercase text-amber-600 tracking-widest block mb-1">O que faltou para o 5?</span>
+                    <p id="modal-pd-melhoria" class="text-xs text-amber-900 font-medium leading-relaxed">—</p>
+                </div>
+            </div>
+
+            <!-- Fortes + Oportunidades -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-emerald-50 rounded-3xl p-5 border border-emerald-100">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-emerald-700 block mb-3 flex items-center gap-1.5"><i data-lucide="trending-up" class="w-3 h-3"></i> Pontos Fortes</span>
+                    <ul id="modal-fortes" class="space-y-1.5 text-xs font-semibold text-emerald-900"></ul>
+                </div>
+                <div class="bg-amber-50 rounded-3xl p-5 border border-amber-100">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-amber-700 block mb-3 flex items-center gap-1.5"><i data-lucide="target" class="w-3 h-3"></i> Oportunidades</span>
+                    <ul id="modal-atencao" class="space-y-1.5 text-xs font-semibold text-amber-900"></ul>
+                </div>
+            </div>
+
+            <!-- Relatório -->
+            <div>
+                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-4 border-b pb-3">Relatório de Auditoria</span>
+                <div id="modal-relatorio" class="md"></div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- MODAL EDITAR -->
+<!-- MODAL EDITAR REGISTRO -->
 <div id="edit-overlay" onclick="if(event.target===this)closeEdicao()">
     <div class="bg-white rounded-[2rem] p-8 max-w-md w-full mx-4 shadow-2xl">
         <div class="flex justify-between items-center mb-6">
             <h2 class="font-extrabold text-lg text-[#002d72]">Editar Registro</h2>
-            <button onclick="closeEdicao()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
+            <button onclick="closeEdicao()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors">
+                <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
+            </button>
         </div>
         <div class="space-y-4">
-            <div><label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Nome do Analista</label><input id="edit-analista" type="text" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300" placeholder="Nome do analista" /></div>
-            <div><label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Coordenador</label><input id="edit-coordenador" type="text" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300" placeholder="Nome do coordenador" /></div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Nome do Analista</label>
+                <input id="edit-analista" type="text" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300" placeholder="Nome do analista" />
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Coordenador</label>
+                <input id="edit-coordenador" type="text" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300" placeholder="Nome do coordenador" />
+            </div>
         </div>
         <div class="flex gap-3 mt-6">
             <button onclick="closeEdicao()" class="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
@@ -127,68 +207,176 @@
     <div id="perfil-box" class="space-y-6 p-6">
         <div class="bg-gradient-to-br from-[#002d72] to-blue-800 rounded-3xl p-8 text-white">
             <div class="flex items-center justify-between mb-6">
-                <button onclick="closePerfil()" class="bg-white/20 hover:bg-white/30 p-2.5 rounded-2xl transition-all"><i data-lucide="arrow-left" class="w-5 h-5 text-white"></i></button>
+                <button onclick="closePerfil()" class="bg-white/20 hover:bg-white/30 p-2.5 rounded-2xl transition-all">
+                    <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
+                </button>
                 <span class="text-[10px] font-black uppercase tracking-widest text-blue-200">Perfil do Analista</span>
                 <div class="w-10"></div>
             </div>
             <div class="flex items-center gap-6">
                 <div id="perfil-avatar" class="w-20 h-20 rounded-3xl bg-white/20 flex items-center justify-center text-3xl font-black text-white">—</div>
-                <div class="flex-1"><h2 id="perfil-nome" class="text-3xl font-extrabold mb-1">—</h2><p id="perfil-coord" class="text-blue-200 text-sm font-bold uppercase tracking-widest">—</p></div>
-                <div class="text-right"><div class="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Média Geral</div><div id="perfil-media" class="text-6xl font-black">—</div></div>
+                <div class="flex-1">
+                    <h2 id="perfil-nome" class="text-3xl font-extrabold mb-1">—</h2>
+                    <p id="perfil-coord" class="text-blue-200 text-sm font-bold uppercase tracking-widest">—</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Média Geral</div>
+                    <div id="perfil-media" class="text-6xl font-black">—</div>
+                </div>
             </div>
             <div class="grid grid-cols-3 gap-4 mt-6">
-                <div class="bg-white/10 rounded-2xl p-4 text-center border border-white/20"><div id="perfil-total" class="text-3xl font-black">—</div><div class="text-[9px] font-bold text-blue-200 uppercase tracking-wide mt-1">Avaliações</div></div>
-                <div class="bg-emerald-500/20 rounded-2xl p-4 text-center border border-emerald-400/30"><div id="perfil-melhor" class="text-3xl font-black text-emerald-300">—</div><div class="text-[9px] font-bold text-emerald-200 uppercase tracking-wide mt-1">Melhor Nota</div></div>
-                <div class="bg-red-500/20 rounded-2xl p-4 text-center border border-red-400/30"><div id="perfil-pior" class="text-3xl font-black text-red-300">—</div><div class="text-[9px] font-bold text-red-200 uppercase tracking-wide mt-1">Menor Nota</div></div>
+                <div class="bg-white/10 rounded-2xl p-4 text-center border border-white/20">
+                    <div id="perfil-total" class="text-3xl font-black">—</div>
+                    <div class="text-[9px] font-bold text-blue-200 uppercase tracking-wide mt-1">Avaliações</div>
+                </div>
+                <div class="bg-emerald-500/20 rounded-2xl p-4 text-center border border-emerald-400/30">
+                    <div id="perfil-melhor" class="text-3xl font-black text-emerald-300">—</div>
+                    <div class="text-[9px] font-bold text-emerald-200 uppercase tracking-wide mt-1">Melhor Nota</div>
+                </div>
+                <div class="bg-red-500/20 rounded-2xl p-4 text-center border border-red-400/30">
+                    <div id="perfil-pior" class="text-3xl font-black text-red-300">—</div>
+                    <div class="text-[9px] font-bold text-red-200 uppercase tracking-wide mt-1">Menor Nota</div>
+                </div>
             </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="glass-card p-8 flex items-center justify-center" style="min-height:320px"><canvas id="perfil-radar"></canvas></div>
-            <div class="glass-card p-8"><h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>Média por Pilar</h3><div id="perfil-pilares" class="space-y-3"></div></div>
+            <div class="glass-card p-8 flex items-center justify-center" style="min-height:320px">
+                <canvas id="perfil-radar"></canvas>
+            </div>
+            <div class="glass-card p-8">
+                <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>Média por Pilar</h3>
+                <div id="perfil-pilares" class="space-y-3"></div>
+            </div>
         </div>
         <div class="glass-card overflow-hidden">
             <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-slate-500"></i>Todas as Avaliações</h3>
                 <span id="perfil-badge-total" class="text-xs text-slate-400 font-semibold">—</span>
             </div>
-            <div class="overflow-x-auto"><table class="rtbl w-full border-collapse"><thead><tr><th>Data</th><th>Média CS</th><th>Saúde</th><th>Churn</th><th></th></tr></thead><tbody id="perfil-tbody"></tbody></table></div>
+            <div class="overflow-x-auto">
+                <table class="rtbl w-full border-collapse">
+                    <thead><tr><th>Data</th><th>Média CS</th><th>Saúde</th><th>Churn</th><th></th></tr></thead>
+                    <tbody id="perfil-tbody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- MODAL EQUIPE -->
+<!-- ══════════════════════════════════════════════════════════
+     MODAL DE EQUIPE — novo
+     ══════════════════════════════════════════════════════════ -->
 <div id="equipe-overlay" onclick="if(event.target===this)closeEquipe()">
-    <div class="bg-white rounded-[2rem] w-full max-w-2xl mx-4 shadow-2xl flex flex-col max-h-[85vh]">
-        <div class="flex justify-between items-center px-8 py-6 border-b border-slate-100">
-            <div>
-                <h2 class="font-extrabold text-xl text-[#002d72]">Equipe de CS</h2>
-                <p class="text-xs text-slate-400 mt-0.5">Gerencie analistas e seus coordenadores</p>
-            </div>
-            <button onclick="closeEquipe()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
-        </div>
-        <!-- Adicionar novo -->
-        <div class="px-8 py-5 border-b border-slate-100 bg-slate-50">
-            <p class="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-3">Adicionar Analista</p>
-            <div class="flex gap-3">
-                <input id="equipe-nome-input" type="text" placeholder="Nome do analista" class="flex-1 p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300" />
-                <select id="equipe-coord-select" class="p-3 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 ring-blue-300">
-                    <option value="">Coordenador (opcional)</option>
-                    <option value="Sayuri">Sayuri</option>
-                    <option value="Tayanara">Tayanara</option>
-                    <option value="Túlio">Túlio</option>
-                    <option value="Michel">Michel</option>
-                    <option value="Jéssica">Jéssica</option>
-                </select>
-                <button onclick="adicionarMembro()" class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all whitespace-nowrap">
-                    <i data-lucide="plus" class="w-4 h-4 inline mr-1"></i>Adicionar
+    <div id="equipe-box" class="overflow-hidden">
+
+        <!-- Header -->
+        <div class="bg-gradient-to-br from-[#002d72] to-blue-800 px-8 py-7 text-white">
+            <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="users" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-extrabold text-xl">Gerenciar Equipe</h2>
+                        <p class="text-blue-200 text-xs font-semibold">Analistas e coordenadores ativos</p>
+                    </div>
+                </div>
+                <button onclick="closeEquipe()" class="bg-white/20 hover:bg-white/30 p-2.5 rounded-2xl transition-all">
+                    <i data-lucide="x" class="w-5 h-5 text-white"></i>
                 </button>
             </div>
         </div>
-        <!-- Lista -->
-        <div class="flex-1 overflow-y-auto px-8 py-4">
-            <div id="equipe-lista" class="space-y-2">
-                <p class="text-slate-400 text-sm text-center py-8">Carregando...</p>
+
+        <!-- Adicionar analista -->
+        <div class="px-8 py-5 border-b border-slate-100 bg-slate-50">
+            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Adicionar Analista</p>
+            <div class="flex gap-3">
+                <input id="eq-novo-nome" type="text" placeholder="Nome completo do analista"
+                    class="flex-1 p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white" />
+                <select id="eq-novo-coord"
+                    class="p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white min-w-[160px]">
+                    <option value="">Coordenador...</option>
+                    <option value="Tayanara">Tayanara</option>
+                    <option value="Sayuri">Sayuri</option>
+                    <option value="Michel">Michel</option>
+                </select>
+                <button onclick="adicionarAnalista()" class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Adicionar
+                </button>
             </div>
+            <div id="eq-add-msg" class="hidden mt-2 text-xs font-bold"></div>
+        </div>
+
+        <!-- Filtro por coordenador -->
+        <div class="px-8 py-4 border-b border-slate-100 flex items-center gap-3">
+            <i data-lucide="filter" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
+            <select id="eq-filter-coord" onchange="renderEquipeList()"
+                class="p-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white">
+                <option value="">Todos os coordenadores</option>
+                <option value="Tayanara">Tayanara</option>
+                <option value="Sayuri">Sayuri</option>
+                <option value="Michel">Michel</option>
+            </select>
+            <span id="eq-badge" class="text-xs text-slate-400 font-semibold ml-auto">— analistas</span>
+        </div>
+
+        <!-- Loading state -->
+        <div id="eq-loading" class="py-12 text-center text-slate-400 font-semibold text-sm">
+            <div class="inline-block w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+            <p>Carregando equipe...</p>
+        </div>
+
+        <!-- Lista de analistas -->
+        <div id="eq-list" class="hidden max-h-[420px] overflow-y-auto">
+            <!-- preenchido por renderEquipeList() -->
+        </div>
+
+        <!-- Estado vazio -->
+        <div id="eq-empty" class="hidden py-12 text-center">
+            <i data-lucide="users" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i>
+            <p class="text-slate-400 font-semibold text-sm">Nenhum analista encontrado.</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-8 py-5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+            <button onclick="carregarEquipe(true)" class="text-xs text-slate-400 hover:text-slate-600 font-semibold flex items-center gap-1.5 transition-colors">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Ver inativos
+            </button>
+            <button onclick="closeEquipe()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-bold transition-all">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit analista no modal de equipe -->
+<div id="eq-edit-overlay" onclick="if(event.target===this)closeEqEdit()" style="position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:400;display:none;align-items:center;justify-content:center;padding:1rem;">
+    <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="font-extrabold text-lg text-[#002d72]">Editar Analista</h2>
+            <button onclick="closeEqEdit()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors">
+                <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
+            </button>
+        </div>
+        <input type="hidden" id="eq-edit-id" />
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Nome</label>
+                <input id="eq-edit-nome" type="text" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300" />
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Coordenador</label>
+                <select id="eq-edit-coord" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300">
+                    <option value="">Sem coordenador</option>
+                    <option value="Tayanara">Tayanara</option>
+                    <option value="Sayuri">Sayuri</option>
+                    <option value="Michel">Michel</option>
+                </select>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeEqEdit()" class="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
+            <button onclick="salvarEqEdit()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all">Salvar</button>
         </div>
     </div>
 </div>
@@ -203,13 +391,14 @@
                 <p class="text-[9px] text-blue-200 uppercase tracking-widest font-bold mt-1">Dashboard de Avaliações</p>
             </div>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap justify-end">
             <span id="last-sync" class="text-xs text-blue-300 hidden md:block"></span>
             <button onclick="loadData()" class="flex items-center gap-2 px-4 py-2 bg-blue-800 hover:bg-blue-900 rounded-xl text-sm font-bold transition-all border border-blue-600">
                 <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span class="hidden md:inline">Atualizar</span>
             </button>
-            <button onclick="abrirEquipe()" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-all shadow">
-                <i data-lucide="users" class="w-4 h-4"></i>Equipe
+            <!-- Botão Equipe -->
+            <button onclick="openEquipe()" class="flex items-center gap-2 px-4 py-2 bg-violet-700 hover:bg-violet-800 text-white rounded-xl text-sm font-bold transition-all shadow border border-violet-500">
+                <i data-lucide="users" class="w-4 h-4"></i><span class="hidden md:inline">Equipe</span>
             </button>
             <a href="/avaliar.html" class="flex items-center gap-2 px-4 py-2 bg-white text-[#002d72] rounded-xl text-sm font-bold hover:bg-blue-50 transition-all shadow">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>Avaliação Manual
@@ -223,14 +412,14 @@
 
 <main class="max-w-7xl mx-auto px-4 mt-8 space-y-6">
 
-    <!-- FILTROS — padrão "Todas as datas" para não perder registros -->
+    <!-- FILTROS -->
     <div class="glass-card p-6">
         <div class="flex items-center gap-2 mb-4"><i data-lucide="filter" class="w-4 h-4 text-slate-500"></i><span class="font-bold text-slate-700 text-sm">Filtros</span></div>
         <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
             <select id="f-periodo" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50">
-                <option value="0" selected>Todas as datas</option>
+                <option value="0">Todas as datas</option>
                 <option value="7">Últimos 7 dias</option>
-                <option value="30">Últimos 30 dias</option>
+                <option value="30" selected>Últimos 30 dias</option>
                 <option value="90">Últimos 90 dias</option>
             </select>
             <select id="f-coordenador" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50"><option value="">Todos os coordenadores</option></select>
@@ -255,19 +444,28 @@
     <!-- DESTAQUES -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="glass-card p-8 border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 cursor-pointer hover:shadow-xl transition-all" onclick="abrirPerfilDestaque('mes')">
-            <div class="flex items-center gap-3 mb-5"><div class="w-10 h-10 bg-amber-400 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="star" class="w-5 h-5 text-white"></i></div><div><p class="text-[10px] font-black uppercase tracking-widest text-amber-600">⭐ Melhor CS do Mês</p><p class="text-[9px] text-amber-500">Maior média — últimos 30 dias</p></div></div>
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 bg-amber-400 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="star" class="w-5 h-5 text-white"></i></div>
+                <div><p class="text-[10px] font-black uppercase tracking-widest text-amber-600">⭐ Melhor CS do Mês</p><p class="text-[9px] text-amber-500">Maior média — últimos 30 dias</p></div>
+            </div>
             <div id="destaque-mes-nome" class="text-2xl font-black text-[#002d72] mb-1">—</div>
             <div id="destaque-mes-info" class="text-xs text-slate-500 mb-3">—</div>
             <div id="destaque-mes-media" class="text-5xl font-black text-amber-400">—</div>
         </div>
         <div class="glass-card p-8 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 cursor-pointer hover:shadow-xl transition-all" onclick="abrirPerfilDestaque('semana')">
-            <div class="flex items-center gap-3 mb-5"><div class="w-10 h-10 bg-blue-500 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="zap" class="w-5 h-5 text-white"></i></div><div><p class="text-[10px] font-black uppercase tracking-widest text-blue-600">⚡ Melhor CS da Semana</p><p class="text-[9px] text-blue-400">Maior média — últimos 7 dias</p></div></div>
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 bg-blue-500 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="zap" class="w-5 h-5 text-white"></i></div>
+                <div><p class="text-[10px] font-black uppercase tracking-widest text-blue-600">⚡ Melhor CS da Semana</p><p class="text-[9px] text-blue-400">Maior média — últimos 7 dias</p></div>
+            </div>
             <div id="destaque-semana-nome" class="text-2xl font-black text-[#002d72] mb-1">—</div>
             <div id="destaque-semana-info" class="text-xs text-slate-500 mb-3">—</div>
             <div id="destaque-semana-media" class="text-5xl font-black text-blue-400">—</div>
         </div>
         <div class="glass-card p-8 border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-purple-50 cursor-pointer hover:shadow-xl transition-all" onclick="abrirPerfilDestaque('ativo')">
-            <div class="flex items-center gap-3 mb-5"><div class="w-10 h-10 bg-violet-500 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="flame" class="w-5 h-5 text-white"></i></div><div><p class="text-[10px] font-black uppercase tracking-widest text-violet-600">🔥 Mais Ativo do Mês</p><p class="text-[9px] text-violet-400">Mais reuniões — últimos 30 dias</p></div></div>
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 bg-violet-500 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="flame" class="w-5 h-5 text-white"></i></div>
+                <div><p class="text-[10px] font-black uppercase tracking-widest text-violet-600">🔥 Mais Ativo do Mês</p><p class="text-[9px] text-violet-400">Mais reuniões — últimos 30 dias</p></div>
+            </div>
             <div id="destaque-ativo-nome" class="text-2xl font-black text-[#002d72] mb-1">—</div>
             <div id="destaque-ativo-info" class="text-xs text-slate-500 mb-3">—</div>
             <div id="destaque-ativo-count" class="text-5xl font-black text-violet-400">—</div>
@@ -277,7 +475,10 @@
     <!-- EVOLUÇÃO + SAÚDE/CHURN -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 glass-card p-8">
-            <div class="flex items-center justify-between mb-6"><h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>Evolução Semanal</h2><span class="text-xs text-slate-400 font-semibold" id="badge-semanas">—</span></div>
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>Evolução Semanal</h2>
+                <span class="text-xs text-slate-400 font-semibold" id="badge-semanas">—</span>
+            </div>
             <div style="height:220px"><canvas id="chart-evo"></canvas></div>
         </div>
         <div class="glass-card p-8">
@@ -302,49 +503,101 @@
     <!-- RANKING + PILARES -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="glass-card overflow-hidden">
-            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between"><h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i>Ranking de Analistas</h2><span class="text-xs text-slate-400 font-semibold" id="badge-ranking">—</span></div>
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i>Ranking de Analistas</h2>
+                <span class="text-xs text-slate-400 font-semibold" id="badge-ranking">—</span>
+            </div>
             <div class="overflow-x-auto">
-                <table class="tbl w-full border-collapse"><thead><tr><th>#</th><th>Analista</th><th>Coord.</th><th>Reuniões</th><th>Média</th></tr></thead><tbody id="tbody-ranking"></tbody></table>
+                <table class="tbl w-full border-collapse">
+                    <thead><tr><th>#</th><th>Analista</th><th>Coord.</th><th>Reuniões</th><th>Média</th></tr></thead>
+                    <tbody id="tbody-ranking"></tbody>
+                </table>
                 <div id="empty-ranking" class="hidden text-center py-8"><i data-lucide="inbox" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i><p class="text-sm text-slate-400">Nenhum dado disponível</p></div>
             </div>
         </div>
-        <div class="glass-card p-8"><h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>Média do Time por Pilar</h2><div id="pilares-list" class="space-y-3"></div></div>
+        <div class="glass-card p-8">
+            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>Média do Time por Pilar</h2>
+            <div id="pilares-list" class="space-y-3"></div>
+        </div>
     </div>
 
     <!-- COORD + CHECKLIST -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="glass-card p-8"><h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-indigo-500"></i>Performance por Coordenador</h2><div style="height:260px"><canvas id="chart-coord"></canvas></div></div>
-        <div class="glass-card p-8"><h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="list-checks" class="w-4 h-4 text-blue-600"></i>Checklist de Onboarding<span class="ml-auto text-[9px] font-bold text-slate-400 uppercase tracking-wide">% cumprimento</span></h2><div id="ck-list" class="space-y-1"></div></div>
+        <div class="glass-card p-8">
+            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-indigo-500"></i>Performance por Coordenador</h2>
+            <div style="height:260px"><canvas id="chart-coord"></canvas></div>
+        </div>
+        <div class="glass-card p-8">
+            <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="list-checks" class="w-4 h-4 text-blue-600"></i>Checklist de Onboarding<span class="ml-auto text-[9px] font-bold text-slate-400 uppercase tracking-wide">% cumprimento</span></h2>
+            <div id="ck-list" class="space-y-1"></div>
+        </div>
     </div>
 
     <!-- TABELA COMPLETA -->
     <div class="glass-card overflow-hidden">
-        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between"><h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-slate-500"></i>Todas as Avaliações</h2><span class="text-xs text-slate-400 font-semibold" id="badge-total">—</span></div>
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-slate-500"></i>Todas as Avaliações</h2>
+            <span class="text-xs text-slate-400 font-semibold" id="badge-total">—</span>
+        </div>
         <div class="overflow-x-auto">
-            <table class="rtbl w-full border-collapse"><thead><tr><th>Data</th><th>Analista</th><th>Coordenador</th><th>Média CS</th><th>Saúde</th><th>Churn</th><th>Origem</th><th></th></tr></thead><tbody id="tbody-reunioes"></tbody></table>
+            <table class="rtbl w-full border-collapse">
+                <thead><tr><th>Data</th><th>Analista</th><th>Coordenador</th><th>Média CS</th><th>Saúde</th><th>Churn</th><th>Origem</th><th></th></tr></thead>
+                <tbody id="tbody-reunioes"></tbody>
+            </table>
             <div id="empty-reunioes" class="hidden text-center py-12"><i data-lucide="inbox" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-slate-400 font-semibold">Nenhuma avaliação encontrada</p></div>
         </div>
     </div>
+
 </main>
 
 <script>
 lucide.createIcons();
 
-const PILLARS=[{k:'consultividade',l:'Consultividade'},{k:'escuta_ativa',l:'Escuta Ativa'},{k:'jornada_cliente',l:'Jornada do Cliente'},{k:'encantamento',l:'Encantamento'},{k:'objecoes',l:'Objeções/Bugs'},{k:'rapport',l:'Rapport'},{k:'autoridade',l:'Autoridade'},{k:'postura',l:'Postura'},{k:'gestao_tempo',l:'Gestão de Tempo'},{k:'contextualizacao',l:'Contextualização'},{k:'clareza',l:'Clareza'},{k:'objetividade',l:'Objetividade'},{k:'flexibilidade',l:'Flexibilidade'},{k:'dominio_produto',l:'Dom. Produto'},{k:'dominio_negocio',l:'Dom. Negócio'},{k:'ecossistema_nibo',l:'Ecossistema Nibo'},{k:'universo_contabil',l:'Univ. Contábil'}];
-const CK_LABELS={definiu_prazo_implementacao:'Prazo de Implantação',alinhou_dever_de_casa:'Dever de Casa Alinhado',validou_certificado_digital:'Certificado Digital',agendou_proximo_passo:'Próxima Reunião Agendada',conectou_com_dor_vendas:'Conectou com Dor de Vendas',explicou_canal_suporte:'Explicou Canal de Suporte'};
+const PILLARS = [
+    {k:'consultividade',l:'Consultividade'},{k:'escuta_ativa',l:'Escuta Ativa'},
+    {k:'jornada_cliente',l:'Jornada do Cliente'},{k:'encantamento',l:'Encantamento'},
+    {k:'objecoes',l:'Objeções/Bugs'},{k:'rapport',l:'Rapport'},
+    {k:'autoridade',l:'Autoridade'},{k:'postura',l:'Postura'},
+    {k:'gestao_tempo',l:'Gestão de Tempo'},{k:'contextualizacao',l:'Contextualização'},
+    {k:'clareza',l:'Clareza'},{k:'objetividade',l:'Objetividade'},
+    {k:'flexibilidade',l:'Flexibilidade'},{k:'dominio_produto',l:'Dom. Produto'},
+    {k:'dominio_negocio',l:'Dom. Negócio'},{k:'ecossistema_nibo',l:'Ecossistema Nibo'},
+    {k:'universo_contabil',l:'Univ. Contábil'},
+];
+const CK_LABELS = {
+    definiu_prazo_implementacao:'Prazo de Implantação',
+    alinhou_dever_de_casa:'Dever de Casa Alinhado',
+    validou_certificado_digital:'Certificado Digital',
+    agendou_proximo_passo:'Próxima Reunião Agendada',
+    conectou_com_dor_vendas:'Conectou com Dor de Vendas',
+    explicou_canal_suporte:'Explicou Canal de Suporte',
+};
 
-let allReunioes=[],todasReunioes=[],statsData={},chartEvo=null,chartCoord=null,perfilRadar=null;
-let destaquesMes=null,destaquesSemana=null,destaquesAtivo=null,editandoId=null;
+// ── Cache global de registros ──────────────────────────────────────────────
+// FIX: todasReunioes agora guarda TODOS os registros sem filtro de data.
+// openModalId busca primeiro em todasReunioes, depois em allReunioes como fallback.
+let allReunioes=[], todasReunioes=[], statsData={}, chartEvo=null, chartCoord=null, perfilRadar=null;
+let destaquesMes=null, destaquesSemana=null, destaquesAtivo=null;
+let editandoId=null;
 
-// Equipe — dados locais (sincroniza com cs_analistas via api/team.js se disponível)
-let equipeLocal = JSON.parse(localStorage.getItem('nibo_equipe')||'[]');
+// Cache de equipe
+let equipeData = [];
+let mostrandoInativos = false;
 
-function avgArr(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;}
-function showToast(msg){const t=document.createElement('div');t.className='fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-[400]';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+function avgArr(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 
-async function loadData(){
+// ── FIX: helper para buscar registro por id em qualquer cache ────────────────
+// Antes, se todasReunioes estivesse vazio (ex: segunda requisição ainda não voltou),
+// o modal abria sem dados. Agora buscamos em múltiplas fontes.
+function findReuniaoById(id) {
+    return todasReunioes.find(x => x.id === id)
+        || allReunioes.find(x => x.id === id)
+        || null;
+}
+
+async function loadData() {
     showLoading(true);
-    try{
+    try {
         const p=document.getElementById('f-periodo').value;
         const coord=document.getElementById('f-coordenador').value;
         const anal=document.getElementById('f-analista').value;
@@ -353,17 +606,25 @@ async function loadData(){
         if(coord) params.append('coordenador',coord);
         if(anal) params.append('analista',anal);
 
-        const [res,resTodas]=await Promise.all([
+        // FIX: fazemos as duas chamadas em paralelo.
+        // Se a segunda (periodo=0) falhar, usamos os dados do filtro como fallback.
+        const [res, resTodas] = await Promise.all([
             fetch('/api/dashboard?'+params.toString()),
-            fetch('/api/dashboard?periodo=0')
+            fetch('/api/dashboard?periodo=0').catch(() => null) // não deixa travar se falhar
         ]);
         if(!res.ok) throw new Error('HTTP '+res.status);
-        const data=await res.json();
-        const dataTodas=await resTodas.json();
+        const data = await res.json();
 
-        allReunioes=data.reunioes||[];
-        statsData=data.stats||{};
-        todasReunioes=dataTodas.reunioes||[];
+        allReunioes = data.reunioes || [];
+        statsData   = data.stats   || {};
+
+        // FIX: se a segunda requisição funcionou, usamos ela; senão, usamos allReunioes
+        if(resTodas && resTodas.ok) {
+            const dataTodas = await resTodas.json();
+            todasReunioes = dataTodas.reunioes || [];
+        } else {
+            todasReunioes = [...allReunioes]; // fallback: mesmos dados
+        }
 
         const origem=document.getElementById('f-origem').value;
         if(origem==='auto') allReunioes=allReunioes.filter(r=>r.analise_json?.origem==='drive_automatico');
@@ -373,24 +634,67 @@ async function loadData(){
         populateFilters();
         renderAll();
         document.getElementById('last-sync').textContent='⟳ '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    }catch(e){console.error(e);alert('Erro ao carregar dados: '+e.message);}
-    finally{showLoading(false);}
+    } catch(e) {
+        console.error(e);
+        alert('Erro ao carregar dados: '+e.message);
+    } finally {
+        showLoading(false);
+    }
 }
 
-function calcDestaques(){
-    const agora=Date.now(),umMes=30*24*60*60*1000,umaSemana=7*24*60*60*1000;
-    function melhorMedia(arr){const por={};for(const r of arr){if(!r.analista_nome||!r.media_final)continue;if(!por[r.analista_nome])por[r.analista_nome]={nome:r.analista_nome,coord:r.coordenador,medias:[]};por[r.analista_nome].medias.push(r.media_final);}return Object.values(por).map(a=>({...a,media:avgArr(a.medias),total:a.medias.length})).sort((a,b)=>b.media-a.media)[0]||null;}
-    function maisAtivo(arr){const por={};for(const r of arr){if(!r.analista_nome)continue;if(!por[r.analista_nome])por[r.analista_nome]={nome:r.analista_nome,coord:r.coordenador,total:0};por[r.analista_nome].total++;}return Object.values(por).sort((a,b)=>b.total-a.total)[0]||null;}
-    const doMes=todasReunioes.filter(r=>agora-new Date(r.data_reuniao||r.created_at).getTime()<=umMes);
-    const daSemana=todasReunioes.filter(r=>agora-new Date(r.data_reuniao||r.created_at).getTime()<=umaSemana);
-    destaquesMes=melhorMedia(doMes);destaquesSemana=melhorMedia(daSemana);destaquesAtivo=maisAtivo(doMes);
-    function rc(d,px,tipo){if(d){document.getElementById(px+'-nome').textContent=d.nome;document.getElementById(px+'-info').textContent=(d.coord||'')+(d.coord?' · ':'')+d.total+(tipo==='ativo'?' reuniões':' avaliações');if(tipo==='ativo')document.getElementById(px+'-count').textContent=d.total+' 🏅';else document.getElementById(px+'-media').textContent=d.media.toFixed(1)+'/5';}else{document.getElementById(px+'-nome').textContent='Sem dados no período';document.getElementById(px+'-info').textContent='—';if(tipo==='ativo')document.getElementById(px+'-count').textContent='';else document.getElementById(px+'-media').textContent='';}}
-    rc(destaquesMes,'destaque-mes','media');rc(destaquesSemana,'destaque-semana','media');rc(destaquesAtivo,'destaque-ativo','ativo');
+function calcDestaques() {
+    const agora = Date.now();
+    const umMes = 30*24*60*60*1000;
+    const umaSemana = 7*24*60*60*1000;
+
+    function melhorMedia(arr) {
+        const por = {};
+        for(const r of arr) {
+            if(!r.analista_nome||!r.media_final) continue;
+            if(!por[r.analista_nome]) por[r.analista_nome]={nome:r.analista_nome,coord:r.coordenador,medias:[]};
+            por[r.analista_nome].medias.push(r.media_final);
+        }
+        return Object.values(por).map(a=>({...a,media:avgArr(a.medias),total:a.medias.length})).sort((a,b)=>b.media-a.media)[0]||null;
+    }
+
+    function maisAtivo(arr) {
+        const por = {};
+        for(const r of arr) {
+            if(!r.analista_nome) continue;
+            if(!por[r.analista_nome]) por[r.analista_nome]={nome:r.analista_nome,coord:r.coordenador,total:0};
+            por[r.analista_nome].total++;
+        }
+        return Object.values(por).sort((a,b)=>b.total-a.total)[0]||null;
+    }
+
+    const doMes = todasReunioes.filter(r=>agora-new Date(r.data_reuniao||r.created_at).getTime()<=umMes);
+    const daSemana = todasReunioes.filter(r=>agora-new Date(r.data_reuniao||r.created_at).getTime()<=umaSemana);
+
+    destaquesMes = melhorMedia(doMes);
+    destaquesSemana = melhorMedia(daSemana);
+    destaquesAtivo = maisAtivo(doMes);
+
+    function renderCard(d, prefixo, tipo) {
+        if(d) {
+            document.getElementById(prefixo+'-nome').textContent=d.nome;
+            document.getElementById(prefixo+'-info').textContent=(d.coord||'')+(d.coord?' · ':'')+d.total+(tipo==='ativo'?' reuniões':' avaliações');
+            if(tipo==='ativo') document.getElementById(prefixo+'-count').textContent=d.total+' 🏅';
+            else document.getElementById(prefixo+'-media').textContent=d.media.toFixed(1)+'/5';
+        } else {
+            document.getElementById(prefixo+'-nome').textContent='Sem dados no período';
+            document.getElementById(prefixo+'-info').textContent='—';
+            if(tipo==='ativo') document.getElementById(prefixo+'-count').textContent='';
+            else document.getElementById(prefixo+'-media').textContent='';
+        }
+    }
+    renderCard(destaquesMes,'destaque-mes','media');
+    renderCard(destaquesSemana,'destaque-semana','media');
+    renderCard(destaquesAtivo,'destaque-ativo','ativo');
 }
 
-function showLoading(v){document.getElementById('loading-overlay').style.display=v?'flex':'none';}
+function showLoading(v){ document.getElementById('loading-overlay').style.display=v?'flex':'none'; }
 
-function populateFilters(){
+function populateFilters() {
     const coords=[...new Set(allReunioes.map(r=>r.coordenador).filter(Boolean))].sort();
     const analistas=[...new Set(allReunioes.map(r=>r.analista_nome).filter(Boolean))].sort();
     const cf=document.getElementById('f-coordenador'),af=document.getElementById('f-analista');
@@ -399,162 +703,563 @@ function populateFilters(){
     af.innerHTML='<option value="">Todos os analistas</option>'+analistas.map(a=>`<option value="${a}"${a===ca?' selected':''}>${a}</option>`).join('');
 }
 
-function renderAll(){renderKPIs();renderSaudeChurn();renderEvo();renderRanking();renderPilares();renderCoord();renderChecklist();renderReunioes();lucide.createIcons();}
+function renderAll() {
+    renderKPIs();renderSaudeChurn();renderEvo();
+    renderRanking();renderPilares();renderCoord();
+    renderChecklist();renderReunioes();
+    lucide.createIcons();
+}
 
-function renderKPIs(){const s=statsData;document.getElementById('kpi-total').textContent=s.total??'—';document.getElementById('kpi-media').textContent=s.media_geral!=null?s.media_geral.toFixed(1):'—';document.getElementById('kpi-saude').textContent=s.saudeStats?.saudavel??'—';document.getElementById('kpi-churn').textContent=s.churnStats?.alto??'—';}
+function renderKPIs() {
+    const s=statsData;
+    document.getElementById('kpi-total').textContent=s.total??'—';
+    document.getElementById('kpi-media').textContent=s.media_geral!=null?s.media_geral.toFixed(1):'—';
+    document.getElementById('kpi-saude').textContent=s.saudeStats?.saudavel??'—';
+    document.getElementById('kpi-churn').textContent=s.churnStats?.alto??'—';
+}
 
-function renderSaudeChurn(){const ss=statsData.saudeStats||{},cs=statsData.churnStats||{};['s-saudavel','s-risco','s-critico','s-nd'].forEach((id,i)=>document.getElementById(id).textContent=[ss.saudavel,ss.risco,ss.critico,ss.indefinido][i]??'—');['c-alto','c-medio','c-baixo','c-nd'].forEach((id,i)=>document.getElementById(id).textContent=[cs.alto,cs.medio,cs.baixo,cs.indefinido][i]??'—');}
+function renderSaudeChurn() {
+    const ss=statsData.saudeStats||{},cs=statsData.churnStats||{};
+    document.getElementById('s-saudavel').textContent=ss.saudavel??'—';
+    document.getElementById('s-risco').textContent=ss.risco??'—';
+    document.getElementById('s-critico').textContent=ss.critico??'—';
+    document.getElementById('s-nd').textContent=ss.indefinido??'—';
+    document.getElementById('c-alto').textContent=cs.alto??'—';
+    document.getElementById('c-medio').textContent=cs.medio??'—';
+    document.getElementById('c-baixo').textContent=cs.baixo??'—';
+    document.getElementById('c-nd').textContent=cs.indefinido??'—';
+}
 
-function renderEvo(){const evo=statsData.evolucao||[];document.getElementById('badge-semanas').textContent=evo.length+' semanas';const labels=evo.map(e=>new Date(e.semana).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}));const vals=evo.map(e=>e.media);if(chartEvo)chartEvo.destroy();chartEvo=new Chart(document.getElementById('chart-evo').getContext('2d'),{type:'line',data:{labels,datasets:[{label:'Média Semanal',data:vals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#2563eb',pointBorderColor:'#fff',pointBorderWidth:2,fill:true,tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});}
+function renderEvo() {
+    const evo=statsData.evolucao||[];
+    document.getElementById('badge-semanas').textContent=evo.length+' semanas';
+    const labels=evo.map(e=>new Date(e.semana).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}));
+    const vals=evo.map(e=>e.media);
+    if(chartEvo) chartEvo.destroy();
+    chartEvo=new Chart(document.getElementById('chart-evo').getContext('2d'),{
+        type:'line',
+        data:{labels,datasets:[{label:'Média Semanal',data:vals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#2563eb',pointBorderColor:'#fff',pointBorderWidth:2,fill:true,tension:0.4}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}
+    });
+}
 
-function renderRanking(){const ranking=statsData.ranking||[];document.getElementById('badge-ranking').textContent=ranking.length+' analistas';const tbody=document.getElementById('tbody-ranking'),empty=document.getElementById('empty-ranking');if(!ranking.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}empty.classList.add('hidden');const medals=['🥇','🥈','🥉'];tbody.innerHTML=ranking.map((a,i)=>{const pos=medals[i]||(i+1);const cls=a.media>=4?'score-high':a.media>=3?'score-mid':'score-low';return`<tr onclick="abrirPerfil('${a.nome.replace(/'/g,"\\\'")}')" style="cursor:pointer"><td><span class="font-black text-xl">${pos}</span></td><td><span class="font-bold text-blue-600">${a.nome}</span></td><td class="text-slate-500 text-xs">${a.coordenador||'—'}</td><td class="text-slate-600">${a.total}</td><td><span class="score-pill ${cls}">${a.media.toFixed(1)}</span></td></tr>`;}).join('');}
+function renderRanking() {
+    const ranking=statsData.ranking||[];
+    document.getElementById('badge-ranking').textContent=ranking.length+' analistas';
+    const tbody=document.getElementById('tbody-ranking'),empty=document.getElementById('empty-ranking');
+    if(!ranking.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
+    empty.classList.add('hidden');
+    const medals=['🥇','🥈','🥉'];
+    tbody.innerHTML=ranking.map((a,i)=>{
+        const pos=medals[i]||(i+1);
+        const cls=a.media>=4?'score-high':a.media>=3?'score-mid':'score-low';
+        return `<tr onclick="abrirPerfil('${a.nome.replace(/'/g,"\\\'")}')" style="cursor:pointer">
+            <td><span class="font-black text-xl">${pos}</span></td>
+            <td><span class="font-bold text-blue-600 hover:underline">${a.nome}</span></td>
+            <td class="text-slate-500 text-xs">${a.coordenador||'—'}</td>
+            <td class="text-slate-600">${a.total}</td>
+            <td><span class="score-pill ${cls}">${a.media.toFixed(1)}</span></td>
+        </tr>`;
+    }).join('');
+}
 
-function renderPilares(){const pt=statsData.pilaresTime||{};const ordenados=PILLARS.map(p=>({...p,val:pt[p.k]||0})).filter(p=>p.val>0).sort((a,b)=>b.val-a.val);document.getElementById('pilares-list').innerHTML=ordenados.map((p,i)=>{const pct=(p.val/5)*100;const color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';const isMelhor=i===0,isPior=i===ordenados.length-1;const badge=isMelhor?'<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>':isPior?'<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>':'';const rowStyle=isMelhor?'background:rgba(16,185,129,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':isPior?'background:rgba(239,68,68,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':'';return`<div style="display:flex;align-items:center;gap:0.75rem;${rowStyle}"><span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:9rem;text-align:right">${p.l}${badge}</span><div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div><span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${p.val.toFixed(1)}</span></div>`;}).join('');}
+function renderPilares() {
+    const pt=statsData.pilaresTime||{};
+    const ordenados=PILLARS.map(p=>({...p,val:pt[p.k]||0})).filter(p=>p.val>0).sort((a,b)=>b.val-a.val);
+    document.getElementById('pilares-list').innerHTML=ordenados.map((p,i)=>{
+        const pct=(p.val/5)*100;
+        const color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';
+        const isMelhor=i===0,isPior=i===ordenados.length-1;
+        const badge=isMelhor?'<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>'
+                  :isPior?'<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>':'';
+        const rowStyle=isMelhor?'background:rgba(16,185,129,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':isPior?'background:rgba(239,68,68,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':'';
+        return `<div style="display:flex;align-items:center;gap:0.75rem;${rowStyle}">
+            <span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:9rem;text-align:right">${p.l}${badge}</span>
+            <div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+            <span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${p.val.toFixed(1)}</span>
+        </div>`;
+    }).join('');
+}
 
-function renderCoord(){const pc=statsData.porCoordenador||{};const labels=Object.keys(pc),vals=labels.map(k=>pc[k].media),totals=labels.map(k=>pc[k].total);const colors=['#2563eb','#7c3aed','#db2777','#059669','#d97706'];if(chartCoord)chartCoord.destroy();chartCoord=new Chart(document.getElementById('chart-coord').getContext('2d'),{type:'bar',data:{labels,datasets:[{label:'Média CS',data:vals,backgroundColor:labels.map((_,i)=>colors[i%colors.length]+'22'),borderColor:labels.map((_,i)=>colors[i%colors.length]),borderWidth:2,borderRadius:8,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:ctx=>`Reuniões: ${totals[ctx.dataIndex]}`}}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:11,weight:'700'}},grid:{display:false}}}}});}
+function renderCoord() {
+    const pc=statsData.porCoordenador||{};
+    const labels=Object.keys(pc),vals=labels.map(k=>pc[k].media),totals=labels.map(k=>pc[k].total);
+    const colors=['#2563eb','#7c3aed','#db2777','#059669','#d97706'];
+    if(chartCoord) chartCoord.destroy();
+    chartCoord=new Chart(document.getElementById('chart-coord').getContext('2d'),{
+        type:'bar',
+        data:{labels,datasets:[{label:'Média CS',data:vals,backgroundColor:labels.map((_,i)=>colors[i%colors.length]+'22'),borderColor:labels.map((_,i)=>colors[i%colors.length]),borderWidth:2,borderRadius:8,borderSkipped:false}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:ctx=>`Reuniões: ${totals[ctx.dataIndex]}`}}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:11,weight:'700'}},grid:{display:false}}}}
+    });
+}
 
-function renderChecklist(){const ck=statsData.ckRates||{};document.getElementById('ck-list').innerHTML=Object.entries(CK_LABELS).map(([key,label])=>{const pct=ck[key]??0;const color=pct<50?'#ef4444':pct<75?'#f59e0b':'#10b981';return`<div class="ck-row"><span style="font-weight:600">${label}</span><div style="display:flex;align-items:center"><div class="ck-bar-bg"><div class="ck-bar-fill" style="width:${pct}%;background:${color}"></div></div><span style="font-weight:800;font-size:0.78rem;color:${color};min-width:2.5rem;text-align:right">${pct}%</span></div></div>`;}).join('');}
+function renderChecklist() {
+    const ck=statsData.ckRates||{};
+    document.getElementById('ck-list').innerHTML=Object.entries(CK_LABELS).map(([key,label])=>{
+        const pct=ck[key]??0;
+        const color=pct<50?'#ef4444':pct<75?'#f59e0b':'#10b981';
+        return `<div class="ck-row"><span style="font-weight:600">${label}</span><div style="display:flex;align-items:center"><div class="ck-bar-bg"><div class="ck-bar-fill" style="width:${pct}%;background:${color}"></div></div><span style="font-weight:800;font-size:0.78rem;color:${color};min-width:2.5rem;text-align:right">${pct}%</span></div></div>`;
+    }).join('');
+}
 
-function renderReunioes(){const tbody=document.getElementById('tbody-reunioes'),empty=document.getElementById('empty-reunioes');document.getElementById('badge-total').textContent=allReunioes.length+' registros';if(!allReunioes.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}empty.classList.add('hidden');tbody.innerHTML=allReunioes.map(r=>{const media=r.media_final??0;const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';const cv=(r.risco_churn||'').toLowerCase();const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');const isAuto=r.analise_json?.origem==='drive_automatico';const analistaNome=r.analista_nome||'—';const naoId=analistaNome.toLowerCase().includes('identificado')||analistaNome==='—';return`<tr><td class="text-slate-500">${data}</td><td><button onclick="abrirPerfil('${analistaNome.replace(/'/g,"\\\'")}')" class="font-bold ${naoId?'text-red-500':'text-blue-600'} hover:underline text-left">${analistaNome}</button>${naoId?'<span class="ml-1 text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">Sem ID</span>':''}</td><td class="text-slate-500">${r.coordenador||'—'}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs max-w-xs truncate">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><span class="${isAuto?'tag-auto':'tag-manual'}">${isAuto?'Auto':'Manual'}</span></td><td class="flex gap-1"><button onclick="openModalId(${r.id})" class="text-slate-400 hover:text-blue-600 p-1"><i data-lucide="eye" class="w-4 h-4"></i></button><button onclick="abrirEdicaoId(${r.id})" class="text-slate-400 hover:text-emerald-600 p-1"><i data-lucide="pencil" class="w-4 h-4"></i></button></td></tr>`;}).join('');lucide.createIcons();}
+function renderReunioes() {
+    const tbody=document.getElementById('tbody-reunioes'),empty=document.getElementById('empty-reunioes');
+    document.getElementById('badge-total').textContent=allReunioes.length+' registros';
+    if(!allReunioes.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
+    empty.classList.add('hidden');
+    tbody.innerHTML=allReunioes.map(r=>{
+        const media=r.media_final??0;
+        const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
+        const cv=(r.risco_churn||'').toLowerCase();
+        const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';
+        const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
+        const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
+        const isAuto=r.analise_json?.origem==='drive_automatico';
+        const analistaNome=r.analista_nome||'—';
+        const naoId=analistaNome.toLowerCase().includes('identificado')||analistaNome==='—';
+        return `<tr>
+            <td class="text-slate-500">${data}</td>
+            <td>
+                <button onclick="abrirPerfil('${analistaNome.replace(/'/g,"\\\'")}')" class="font-bold ${naoId?'text-red-500':'text-blue-600'} hover:underline text-left">${analistaNome}</button>
+                ${naoId?'<span class="ml-1 text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">Sem ID</span>':''}
+            </td>
+            <td class="text-slate-500">${r.coordenador||'—'}</td>
+            <td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td>
+            <td class="text-slate-600 text-xs max-w-xs truncate">${r.saude_cliente||'—'}</td>
+            <td><span class="tag-${churnCls}">${churnLabel}</span></td>
+            <td><span class="${isAuto?'tag-auto':'tag-manual'}">${isAuto?'Auto':'Manual'}</span></td>
+            <td class="flex gap-1">
+                <button onclick="openModalId(${r.id})" class="text-slate-400 hover:text-blue-600 p-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                <button onclick="abrirEdicaoId(${r.id})" class="text-slate-400 hover:text-emerald-600 p-1"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+            </td>
+        </tr>`;
+    }).join('');
+    lucide.createIcons();
+}
 
-// ── PERFIL ────────────────────────────────────────────────────────────────
-function abrirPerfil(nome){
-    if(!nome||nome==='—'||nome.toLowerCase().includes('identificado'))return;
+// ── PERFIL DO ANALISTA ────────────────────────────────────────────────────
+function abrirPerfil(nome) {
+    if(!nome||nome==='—'||nome.toLowerCase().includes('identificado')) return;
+    // FIX: busca em todasReunioes (sem filtro de data) para mostrar histórico completo
     const reunioes=todasReunioes.filter(r=>(r.analista_nome||'').toLowerCase()===nome.toLowerCase());
     if(!reunioes.length){alert('Sem avaliações encontradas para '+nome);return;}
+
     document.getElementById('perfil-avatar').textContent=nome.trim()[0].toUpperCase();
     document.getElementById('perfil-nome').textContent=nome;
     document.getElementById('perfil-coord').textContent=reunioes[0]?.coordenador||'—';
+
     const medias=reunioes.map(r=>r.media_final).filter(Boolean);
     document.getElementById('perfil-media').textContent=medias.length?avgArr(medias).toFixed(1):'—';
     document.getElementById('perfil-total').textContent=reunioes.length;
     document.getElementById('perfil-melhor').textContent=medias.length?Math.max(...medias).toFixed(1):'—';
     document.getElementById('perfil-pior').textContent=medias.length?Math.min(...medias).toFixed(1):'—';
+
     const pilaresComMedia=PILLARS.map(p=>{const vals=reunioes.map(r=>r['nota_'+p.k]).filter(v=>v!=null);return{...p,val:vals.length?+avgArr(vals).toFixed(1):null};}).filter(p=>p.val!==null).sort((a,b)=>b.val-a.val);
-    document.getElementById('perfil-pilares').innerHTML=pilaresComMedia.map((p,i)=>{const pct=(p.val/5)*100;const color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';const isMelhor=i===0,isPior=i===pilaresComMedia.length-1;const badge=isMelhor?'<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>':isPior?'<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>':'';const rowStyle=isMelhor?'background:rgba(16,185,129,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':isPior?'background:rgba(239,68,68,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':'';return`<div style="display:flex;align-items:center;gap:0.75rem;${rowStyle}"><span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:9rem;text-align:right">${p.l}${badge}</span><div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div><span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${p.val}</span></div>`;}).join('');
+    document.getElementById('perfil-pilares').innerHTML=pilaresComMedia.map((p,i)=>{
+        const pct=(p.val/5)*100;const color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';
+        const isMelhor=i===0,isPior=i===pilaresComMedia.length-1;
+        const badge=isMelhor?'<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>':isPior?'<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>':'';
+        const rowStyle=isMelhor?'background:rgba(16,185,129,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':isPior?'background:rgba(239,68,68,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':'';
+        return `<div style="display:flex;align-items:center;gap:0.75rem;${rowStyle}"><span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:9rem;text-align:right">${p.l}${badge}</span><div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div><span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${p.val}</span></div>`;
+    }).join('');
+
     const ctx=document.getElementById('perfil-radar').getContext('2d');
-    if(perfilRadar)perfilRadar.destroy();
+    if(perfilRadar) perfilRadar.destroy();
     perfilRadar=new Chart(ctx,{type:'radar',data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Média',data:PILLARS.map(p=>{const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;}),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1e3a8a'}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}});
+
     document.getElementById('perfil-badge-total').textContent=reunioes.length+' avaliações';
-    document.getElementById('perfil-tbody').innerHTML=reunioes.map(r=>{const media=r.media_final??0;const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';const cv=(r.risco_churn||'').toLowerCase();const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');return`<tr onclick="openModalId(${r.id})" style="cursor:pointer"><td class="text-slate-500 font-semibold">${data}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td></tr>`;}).join('');
+    document.getElementById('perfil-tbody').innerHTML=reunioes.map(r=>{
+        const media=r.media_final??0;const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
+        const cv=(r.risco_churn||'').toLowerCase();
+        const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';
+        const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
+        const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
+        return `<tr onclick="openModalId(${r.id})" style="cursor:pointer"><td class="text-slate-500 font-semibold">${data}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td></tr>`;
+    }).join('');
+
     document.getElementById('perfil-overlay').classList.add('open');
     document.getElementById('perfil-overlay').scrollTop=0;
     lucide.createIcons();
 }
-function closePerfil(){document.getElementById('perfil-overlay').classList.remove('open');}
-function abrirPerfilDestaque(tipo){const d=tipo==='mes'?destaquesMes:tipo==='semana'?destaquesSemana:destaquesAtivo;if(d)abrirPerfil(d.nome);}
 
-// ── EDITAR ────────────────────────────────────────────────────────────────
-function abrirEdicaoId(id){const r=todasReunioes.find(x=>x.id===id)||allReunioes.find(x=>x.id===id);if(!r)return;editandoId=id;document.getElementById('edit-analista').value=r.analista_nome||'';document.getElementById('edit-coordenador').value=r.coordenador||'';document.getElementById('edit-overlay').classList.add('open');document.getElementById('modal-overlay').classList.remove('open');lucide.createIcons();}
-function abrirEdicao(){if(!editandoId)return;abrirEdicaoId(editandoId);}
+function closePerfil(){document.getElementById('perfil-overlay').classList.remove('open');}
+
+function abrirPerfilDestaque(tipo){
+    const d=tipo==='mes'?destaquesMes:tipo==='semana'?destaquesSemana:destaquesAtivo;
+    if(d) abrirPerfil(d.nome);
+}
+
+// ── EDITAR REGISTRO ───────────────────────────────────────────────────────
+function abrirEdicaoId(id) {
+    // FIX: usa helper findReuniaoById para buscar em múltiplos caches
+    const r = findReuniaoById(id);
+    if(!r) return;
+    editandoId=id;
+    document.getElementById('edit-analista').value=r.analista_nome||'';
+    document.getElementById('edit-coordenador').value=r.coordenador||'';
+    document.getElementById('edit-overlay').classList.add('open');
+    document.getElementById('modal-overlay').classList.remove('open');
+    lucide.createIcons();
+}
+
+function abrirEdicao() {
+    if(!editandoId) return;
+    abrirEdicaoId(editandoId);
+}
+
 function closeEdicao(){document.getElementById('edit-overlay').classList.remove('open');}
-async function salvarEdicao(){
+
+async function salvarEdicao() {
     const analista=document.getElementById('edit-analista').value.trim();
     const coordenador=document.getElementById('edit-coordenador').value.trim();
     if(!analista){alert('Nome do analista é obrigatório.');return;}
-    try{const res=await fetch('/api/reassign',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({reuniao_id:editandoId,analista_nome:analista,coordenador_nome:coordenador})});const data=await res.json();if(!res.ok)throw new Error(data.error);closeEdicao();await loadData();showToast('✅ Registro atualizado!');}
-    catch(err){alert('Erro ao salvar: '+err.message);}
+    try {
+        const res=await fetch('/api/reassign',{
+            method:'PATCH',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({reuniao_id:editandoId, analista_nome:analista, coordenador_nome:coordenador})
+        });
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.error);
+        closeEdicao();
+        await loadData();
+        showToast('✅ Registro atualizado!');
+    } catch(err){alert('Erro ao salvar: '+err.message);}
 }
 
-// ── MODAL AVALIAÇÃO ───────────────────────────────────────────────────────
-function openModalId(id){editandoId=id;const r=todasReunioes.find(x=>x.id===id)||allReunioes.find(x=>x.id===id);if(r)renderModal(r);}
+// ── MODAL AVALIAÇÃO ────────────────────────────────────────────────────────
+function openModalId(id){
+    editandoId = id;
+    // FIX: usa helper findReuniaoById
+    const r = findReuniaoById(id);
+    if(r) {
+        renderModal(r);
+    } else {
+        // registro não está em cache — buscar diretamente na API
+        // (pode acontecer se o dashboard foi aberto antes da 2ª requisição terminar)
+        fetch('/api/dashboard?periodo=0')
+            .then(r => r.json())
+            .then(data => {
+                todasReunioes = data.reunioes || todasReunioes;
+                const registro = todasReunioes.find(x => x.id === id);
+                if(registro) renderModal(registro);
+                else alert('Avaliação não encontrada. Tente atualizar a página.');
+            })
+            .catch(() => alert('Erro ao buscar avaliação.'));
+    }
+}
+
 function renderModal(r){
-    const aj=r.analise_json||{},media=r.media_final??0;
-    const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
-    document.getElementById('modal-analista').textContent=r.analista_nome||'—';
-    document.getElementById('modal-meta').textContent=`${r.coordenador||'—'} · ${data}`;
-    document.getElementById('modal-media').textContent=media.toFixed(1);
-    document.getElementById('modal-resumo').textContent=aj.resumo_executivo||'—';
-    document.getElementById('modal-saude').textContent=r.saude_cliente||'—';
-    document.getElementById('modal-churn').textContent=r.risco_churn||'—';
-    document.getElementById('modal-status-tag').textContent=media>=4.5?'Elite CS':media>=3.5?'Alta Performance':'Acompanhamento';
-    document.getElementById('modal-pilares').innerHTML=PILLARS.map(p=>{const val=r['nota_'+p.k],hasVal=val!=null;const bg=!hasVal?'bg-slate-50':val>=4?'bg-emerald-50':val>=3?'bg-blue-50':'bg-red-50';const tc=!hasVal?'text-slate-300':val>=4?'text-emerald-600':val>=3?'text-blue-600':'text-red-600';return`<div class="${bg} rounded-2xl p-3 text-center border border-slate-100"><div class="text-[8px] font-bold uppercase tracking-wide text-slate-400 mb-1">${p.l}</div><div class="text-xl font-black ${tc}">${hasVal?val:'—'}</div></div>`;}).join('');
-    document.getElementById('modal-fortes').innerHTML=(aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
-    document.getElementById('modal-atencao').innerHTML=(aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
-    const rel=aj.justificativa_detalhada||'';
-    document.getElementById('modal-relatorio').innerHTML=rel?rel.replace(/## (.+)/g,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>'):'<p class="text-slate-400">Relatório não disponível.</p>';
-    document.getElementById('modal-overlay').classList.add('open');
-    lucide.createIcons();
-}
-function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+    const aj = r.analise_json || {}, media = r.media_final ?? 0;
+    const dataStr = new Date(r.data_reuniao || r.created_at).toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'});
+    const nome = r.analista_nome || '—';
 
-// ── EQUIPE ────────────────────────────────────────────────────────────────
-function abrirEquipe(){
-    renderEquipe();
-    document.getElementById('equipe-overlay').classList.add('open');
-    lucide.createIcons();
-}
-function closeEquipe(){document.getElementById('equipe-overlay').classList.remove('open');}
+    // Header
+    document.getElementById('modal-avatar').textContent = nome[0]?.toUpperCase() || '?';
+    document.getElementById('modal-analista').textContent = nome;
+    document.getElementById('modal-meta').textContent = `${r.coordenador || '—'} · ${dataStr}`;
 
-function renderEquipe(){
-    const lista=document.getElementById('equipe-lista');
-    if(!equipeLocal.length){lista.innerHTML='<p class="text-slate-400 text-sm text-center py-8">Nenhum analista cadastrado ainda.</p>';return;}
-    const porCoord={};
-    for(const m of equipeLocal){const c=m.coordenador||'Sem coordenador';if(!porCoord[c])porCoord[c]=[];porCoord[c].push(m);}
-    lista.innerHTML=Object.entries(porCoord).map(([coord,membros])=>`
-        <div class="mb-4">
-            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">${coord}</p>
-            <div class="space-y-2">
-                ${membros.map(m=>`
-                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center font-black text-blue-700 text-sm">${m.nome[0].toUpperCase()}</div>
-                        <div>
-                            <p class="font-bold text-slate-800 text-sm">${m.nome}</p>
-                            <p class="text-xs text-slate-400">${m.coordenador||'Sem coordenador'}</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="editarMembro('${m.id}')" class="p-2 text-slate-400 hover:text-blue-600 transition-colors"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                        <button onclick="removerMembro('${m.id}')" class="p-2 text-slate-400 hover:text-red-600 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
-                </div>`).join('')}
+    // Média e status
+    document.getElementById('modal-media').textContent = media.toFixed(1);
+    document.getElementById('modal-status-tag').textContent = media>=4.5?'Elite CS':media>=3.5?'Alta Performance':'Acompanhamento';
+    document.getElementById('modal-resumo').textContent = aj.resumo_executivo || '—';
+    document.getElementById('modal-saude').textContent = r.saude_cliente || '—';
+    document.getElementById('modal-churn').textContent = r.risco_churn || '—';
+
+    // Barra de fala única
+    const tCS  = parseFloat(aj.tempo_fala_cs  || r.tempo_fala_cs  || '50') || 50;
+    const tCli = parseFloat(aj.tempo_fala_cliente || r.tempo_fala_cliente || '50') || 50;
+    document.getElementById('modal-fala-cs').style.width  = tCS  + '%';
+    document.getElementById('modal-fala-cli').style.width = tCli + '%';
+    document.getElementById('modal-fala-cs-pct').textContent  = 'CS ' + tCS + '%';
+    document.getElementById('modal-fala-cli-pct').textContent = 'Cliente ' + tCli + '%';
+    // Esconde label se a fatia for pequena demais
+    document.getElementById('modal-fala-cs').querySelector('span').style.display  = tCS  > 15 ? '' : 'none';
+    document.getElementById('modal-fala-cli').querySelector('span').style.display = tCli > 15 ? '' : 'none';
+
+    // Pilares — grid 2 colunas, cada card mostra nota + nome + início da justificativa
+    document.getElementById('modal-pilar-detalhe').classList.add('hidden');
+    document.getElementById('modal-pilares').innerHTML = PILLARS.map(p => {
+        const val = r['nota_' + p.k];
+        const hasVal = val != null;
+        const porque = aj['porque_' + p.k] || '—';
+        const bg  = !hasVal ? 'bg-slate-50 opacity-60' : val>=4 ? 'bg-emerald-50 hover:bg-emerald-100' : val>=3 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-red-50 hover:bg-red-100';
+        const tc  = !hasVal ? 'text-slate-300' : val>=4 ? 'text-emerald-600' : val>=3 ? 'text-blue-600' : 'text-red-500';
+        const cur = hasVal ? 'cursor-pointer' : 'cursor-default';
+        return `<div data-pk="${p.k}" class="pilar-modal-card ${bg} ${cur} rounded-2xl p-3 border border-slate-100 flex items-center gap-3 transition-all select-none">
+            <div class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg ${tc} bg-white shadow-sm border border-slate-100">${hasVal ? val : '—'}</div>
+            <div class="flex-1 min-w-0">
+                <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">${p.l}</div>
+                <p class="text-[11px] text-slate-500 font-medium leading-snug truncate">${hasVal ? porque : 'Sem evidência'}</p>
             </div>
-        </div>`).join('');
+            ${hasVal ? '<i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300 flex-shrink-0"></i>' : ''}
+        </div>`;
+    }).join('');
+
+    // Clique no pilar → expande detalhe abaixo
+    document.getElementById('modal-pilares').addEventListener('click', function handler(e) {
+        const card = e.target.closest('.pilar-modal-card');
+        if (!card || !card.dataset.pk) return;
+        const pk = card.dataset.pk;
+        const pillar = PILLARS.find(p => p.k === pk);
+        const val = r['nota_' + pk];
+        if (val == null) return;
+
+        const porque  = aj['porque_' + pk]   || 'Sem justificativa.';
+        const melhoria = aj['melhoria_' + pk] || '';
+
+        const tc = val>=4 ? 'text-emerald-600' : val>=3 ? 'text-blue-600' : 'text-red-500';
+        document.getElementById('modal-pd-nome').textContent = pillar?.l || pk;
+        const notaEl = document.getElementById('modal-pd-nota');
+        notaEl.textContent = val;
+        notaEl.className = `text-2xl font-black ${tc}`;
+        document.getElementById('modal-pd-porque').textContent = porque;
+
+        const melhoriaBox = document.getElementById('modal-pd-melhoria-box');
+        if (melhoria && melhoria !== 'Excelência atingida.' && val < 5) {
+            document.getElementById('modal-pd-melhoria').textContent = melhoria;
+            melhoriaBox.classList.remove('hidden');
+        } else {
+            melhoriaBox.classList.add('hidden');
+        }
+
+        const det = document.getElementById('modal-pilar-detalhe');
+        det.classList.remove('hidden');
+        det.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+        // Highlight no card selecionado
+        document.querySelectorAll('.pilar-modal-card').forEach(c => c.style.outline = '');
+        card.style.outline = '2px solid #2563eb';
+    }, { once: false });
+
+    // Fortes / Atenção
+    document.getElementById('modal-fortes').innerHTML = (aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('') || '<li class="text-slate-400">—</li>';
+    document.getElementById('modal-atencao').innerHTML = (aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('') || '<li class="text-slate-400">—</li>';
+
+    // Relatório
+    const rel = aj.justificativa_detalhada || '';
+    document.getElementById('modal-relatorio').innerHTML = rel
+        ? rel.replace(/## (.+)/g,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>')
+        : '<p class="text-slate-400">Relatório não disponível.</p>';
+
+    document.getElementById('modal-overlay').classList.add('open');
+    document.getElementById('modal-overlay').querySelector('.modal-box').scrollTop = 0;
     lucide.createIcons();
 }
 
-function salvarEquipeLocal(){localStorage.setItem('nibo_equipe',JSON.stringify(equipeLocal));}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closePerfil();closeEdicao();closeEquipe();closeEqEdit();}});
 
-function adicionarMembro(){
-    const nome=document.getElementById('equipe-nome-input').value.trim();
-    const coord=document.getElementById('equipe-coord-select').value;
-    if(!nome){alert('Digite o nome do analista.');return;}
-    const jaExiste=equipeLocal.find(m=>m.nome.toLowerCase()===nome.toLowerCase());
-    if(jaExiste){alert('Analista já cadastrado.');return;}
-    equipeLocal.push({id:Date.now().toString(),nome,coordenador:coord||null});
-    salvarEquipeLocal();
-    document.getElementById('equipe-nome-input').value='';
-    document.getElementById('equipe-coord-select').value='';
-    renderEquipe();
-    showToast('✅ '+nome+' adicionado à equipe!');
+// ══════════════════════════════════════════════════════════════════════════
+// MODAL DE EQUIPE
+// ══════════════════════════════════════════════════════════════════════════
+
+function openEquipe() {
+    document.getElementById('equipe-overlay').classList.add('open');
+    document.getElementById('equipe-overlay').scrollTop = 0;
+    carregarEquipe(false);
 }
 
-function editarMembro(id){
-    const m=equipeLocal.find(x=>x.id===id);
-    if(!m)return;
-    const novoNome=prompt('Nome do analista:',m.nome);
-    if(!novoNome?.trim())return;
-    const novoCoord=prompt('Coordenador (deixe em branco para remover):',m.coordenador||'');
-    m.nome=novoNome.trim();
-    m.coordenador=novoCoord?.trim()||null;
-    salvarEquipeLocal();
-    renderEquipe();
-    showToast('✅ Analista atualizado!');
+function closeEquipe() {
+    document.getElementById('equipe-overlay').classList.remove('open');
+    mostrandoInativos = false;
 }
 
-function removerMembro(id){
-    const m=equipeLocal.find(x=>x.id===id);
-    if(!m)return;
-    if(!confirm(`Remover ${m.nome} da equipe?`))return;
-    equipeLocal=equipeLocal.filter(x=>x.id!==id);
-    salvarEquipeLocal();
-    renderEquipe();
-    showToast('🗑️ Analista removido.');
+async function carregarEquipe(incluirInativos) {
+    mostrandoInativos = !!incluirInativos;
+    document.getElementById('eq-loading').classList.remove('hidden');
+    document.getElementById('eq-list').classList.add('hidden');
+    document.getElementById('eq-empty').classList.add('hidden');
+
+    try {
+        const url = '/api/team' + (incluirInativos ? '?incluir_inativos=1' : '');
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        equipeData = await res.json();
+        renderEquipeList();
+    } catch(e) {
+        document.getElementById('eq-loading').classList.add('hidden');
+        document.getElementById('eq-empty').classList.remove('hidden');
+        document.getElementById('eq-empty').innerHTML = `<i data-lucide="alert-circle" class="w-8 h-8 text-red-300 mx-auto mb-2"></i><p class="text-red-400 font-semibold text-sm">Erro ao carregar equipe: ${e.message}</p>`;
+        lucide.createIcons();
+    }
 }
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closePerfil();closeEdicao();closeEquipe();}});
+function renderEquipeList() {
+    const filtroCoord = document.getElementById('eq-filter-coord').value;
+    let lista = equipeData;
+    if(filtroCoord) lista = lista.filter(a => a.coordenador === filtroCoord);
 
+    document.getElementById('eq-loading').classList.add('hidden');
+    document.getElementById('eq-badge').textContent = lista.length + ' analista' + (lista.length !== 1 ? 's' : '');
+
+    if(!lista.length) {
+        document.getElementById('eq-list').classList.add('hidden');
+        document.getElementById('eq-empty').classList.remove('hidden');
+        document.getElementById('eq-empty').innerHTML = '<i data-lucide="users" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-slate-400 font-semibold text-sm">Nenhum analista encontrado.</p>';
+        lucide.createIcons();
+        return;
+    }
+
+    document.getElementById('eq-empty').classList.add('hidden');
+    document.getElementById('eq-list').classList.remove('hidden');
+
+    // Agrupar por coordenador
+    const grupos = {};
+    for(const a of lista) {
+        const coord = a.coordenador || 'Sem Coordenador';
+        if(!grupos[coord]) grupos[coord] = [];
+        grupos[coord].push(a);
+    }
+
+    const coordColors = { 'Tayanara':'#2563eb', 'Sayuri':'#7c3aed', 'Michel':'#059669', 'Sem Coordenador':'#94a3b8' };
+
+    document.getElementById('eq-list').innerHTML = Object.entries(grupos).map(([coord, analistas]) => {
+        const cor = coordColors[coord] || '#64748b';
+        const rows = analistas.map(a => {
+            const inatBadge = !a.ativo ? '<span style="font-size:0.6rem;font-weight:700;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.4rem">Inativo</span>' : '';
+            return `<div class="eq-row">
+                <div class="w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white flex-shrink-0" style="background:${cor}22;color:${cor}">
+                    ${a.nome.trim()[0].toUpperCase()}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-slate-800 text-sm truncate">${a.nome}${inatBadge}</p>
+                    <p class="text-xs text-slate-400">${a.coordenador || '—'}</p>
+                </div>
+                <div class="flex gap-1.5 flex-shrink-0">
+                    <button onclick="abrirEqEdit(${a.id})" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all" title="Editar">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                    </button>
+                    ${a.ativo ? `<button onclick="desativarAnalista(${a.id},'${a.nome.replace(/'/g,"\\\'")}')" class="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-all" title="Remover">
+                        <i data-lucide="user-minus" class="w-3.5 h-3.5"></i>
+                    </button>` : `<button onclick="reativarAnalista(${a.id})" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-all" title="Reativar">
+                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                    </button>`}
+                </div>
+            </div>`;
+        }).join('');
+
+        return `<div>
+            <div class="px-8 py-2 bg-slate-50 border-y border-slate-100 flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full flex-shrink-0" style="background:${cor}"></div>
+                <span class="text-[10px] font-black uppercase tracking-widest" style="color:${cor}">${coord}</span>
+                <span class="ml-auto text-[10px] text-slate-400 font-semibold">${analistas.length} analista${analistas.length!==1?'s':''}</span>
+            </div>
+            ${rows}
+        </div>`;
+    }).join('');
+
+    lucide.createIcons();
+}
+
+async function adicionarAnalista() {
+    const nome = document.getElementById('eq-novo-nome').value.trim();
+    const coord = document.getElementById('eq-novo-coord').value;
+    const msg = document.getElementById('eq-add-msg');
+
+    if(!nome) { mostrarMsgEquipe('Nome é obrigatório.', 'erro'); return; }
+
+    try {
+        const res = await fetch('/api/team', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ nome, coordenador: coord || null })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error);
+
+        document.getElementById('eq-novo-nome').value = '';
+        document.getElementById('eq-novo-coord').value = '';
+
+        if(data.reativado) mostrarMsgEquipe('✅ Analista reativado com sucesso!', 'ok');
+        else mostrarMsgEquipe('✅ Analista adicionado!', 'ok');
+
+        await carregarEquipe(mostrandoInativos);
+    } catch(e) {
+        mostrarMsgEquipe('Erro: ' + e.message, 'erro');
+    }
+}
+
+async function desativarAnalista(id, nome) {
+    if(!confirm(`Remover "${nome}" da equipe ativa?\n\nEle não será deletado — só ficará inativo.`)) return;
+    try {
+        const res = await fetch('/api/team', {
+            method: 'DELETE',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ id })
+        });
+        if(!res.ok) throw new Error((await res.json()).error);
+        mostrarMsgEquipe('✅ Analista removido.', 'ok');
+        await carregarEquipe(mostrandoInativos);
+    } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function reativarAnalista(id) {
+    const analista = equipeData.find(a => a.id === id);
+    if(!analista) return;
+    try {
+        const res = await fetch('/api/team', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ nome: analista.nome, coordenador: analista.coordenador })
+        });
+        if(!res.ok) throw new Error((await res.json()).error);
+        mostrarMsgEquipe('✅ Analista reativado!', 'ok');
+        await carregarEquipe(mostrandoInativos);
+    } catch(e) { alert('Erro: ' + e.message); }
+}
+
+function mostrarMsgEquipe(texto, tipo) {
+    const el = document.getElementById('eq-add-msg');
+    el.textContent = texto;
+    el.className = 'mt-2 text-xs font-bold ' + (tipo === 'ok' ? 'text-emerald-600' : 'text-red-500');
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
+// Edit analista — modal de equipe
+function abrirEqEdit(id) {
+    const a = equipeData.find(x => x.id === id);
+    if(!a) return;
+    document.getElementById('eq-edit-id').value = id;
+    document.getElementById('eq-edit-nome').value = a.nome;
+    document.getElementById('eq-edit-coord').value = a.coordenador || '';
+    document.getElementById('eq-edit-overlay').style.display = 'flex';
+    lucide.createIcons();
+}
+
+function closeEqEdit() {
+    document.getElementById('eq-edit-overlay').style.display = 'none';
+}
+
+async function salvarEqEdit() {
+    const id = parseInt(document.getElementById('eq-edit-id').value);
+    const nome = document.getElementById('eq-edit-nome').value.trim();
+    const coord = document.getElementById('eq-edit-coord').value;
+    if(!nome) { alert('Nome é obrigatório.'); return; }
+    try {
+        const res = await fetch('/api/team', {
+            method: 'PATCH',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ id, nome, coordenador: coord || null })
+        });
+        if(!res.ok) throw new Error((await res.json()).error);
+        closeEqEdit();
+        mostrarMsgEquipe('✅ Analista atualizado!', 'ok');
+        await carregarEquipe(mostrandoInativos);
+    } catch(e) { alert('Erro: ' + e.message); }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+function showToast(msg) {
+    const t=document.createElement('div');
+    t.className='fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-[500]';
+    t.textContent=msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),3000);
+}
+
+// ── Auth & clearAll ───────────────────────────────────────────────────────
 async function checkAuthAndLoad(){
     try{
         const me=await fetch('/api/me');
@@ -569,10 +1274,15 @@ async function checkAuthAndLoad(){
 }
 
 async function clearAllData(){
-    if(!confirm('⚠️ Isso vai deletar TODAS as avaliações permanentemente.\n\nTem certeza?'))return;
-    if(!confirm('Última chance. Confirma?'))return;
-    try{const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({modo:'all'})});const data=await res.json();if(!res.ok)throw new Error(data.error);alert(`✅ ${data.count} avaliações deletadas.`);loadData();}
-    catch(err){alert('Erro: '+err.message);}
+    if(!confirm('⚠️ Isso vai deletar TODAS as avaliações permanentemente.\n\nTem certeza?')) return;
+    if(!confirm('Última chance. Confirma?')) return;
+    try{
+        const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({modo:'all'})});
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.error);
+        alert(`✅ ${data.count} avaliações deletadas.`);
+        loadData();
+    }catch(err){alert('Erro: '+err.message);}
 }
 
 checkAuthAndLoad();
