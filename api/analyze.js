@@ -1,32 +1,12 @@
 import { GoogleGenAI } from '@google/genai';
+import { getConfig } from './config.js';
 
 export const maxDuration = 300;
 export const config = { api: { bodyParser: { sizeLimit: '20mb' } } };
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const ALL_PILLARS = [
-  ['consultividade',    'Consultividade'],
-  ['escuta_ativa',      'Escuta Ativa'],
-  ['jornada_cliente',   'Jornada do Cliente'],
-  ['encantamento',      'Encantamento'],
-  ['objecoes',          'Objeções/Bugs'],
-  ['rapport',           'Rapport'],
-  ['autoridade',        'Autoridade'],
-  ['postura',           'Postura'],
-  ['gestao_tempo',      'Gestão de Tempo'],
-  ['contextualizacao',  'Contextualização'],
-  ['clareza',           'Clareza'],
-  ['objetividade',      'Objetividade'],
-  ['flexibilidade',     'Flexibilidade'],
-  ['dominio_produto',   'Domínio de Produto'],
-  ['dominio_negocio',   'Domínio de Negócio'],
-  ['ecossistema_nibo',  'Ecossistema Nibo'],
-  ['universo_contabil', 'Universo Contábil'],
-];
-
 // ── Base de conhecimento por produto ─────────────────────────────────────────
-// Cada produto tem: env var com o conteúdo + palavras-chave para detecção
 const KNOWLEDGE_MAP = [
   {
     key: 'BPO / Gestão Financeira',
@@ -66,35 +46,21 @@ const KNOWLEDGE_MAP = [
   },
 ];
 
-// Detecta quais produtos aparecem na transcrição e monta contexto de conhecimento
 function buildKnowledgeContext(transcript) {
   const lower = transcript.toLowerCase();
   const found = [];
-
   for (const produto of KNOWLEDGE_MAP) {
-    const detected = produto.keywords.some(kw => lower.includes(kw));
-    if (!detected) continue;
-
+    if (!produto.keywords.some(kw => lower.includes(kw))) continue;
     const conteudo = process.env[produto.envVar];
-    if (!conteudo) {
-      console.warn(`⚠️ Produto detectado "${produto.key}" mas env var ${produto.envVar} não está configurada.`);
-      continue;
-    }
-
+    if (!conteudo) { console.warn(`⚠️ Produto "${produto.key}" sem env var ${produto.envVar}`); continue; }
     found.push({ nome: produto.key, conteudo });
     console.log(`📚 Produto detectado: ${produto.key}`);
   }
-
-  if (found.length === 0) {
-    console.log('📚 Nenhum produto específico detectado — avaliando sem base de conhecimento de produto.');
-    return '';
-  }
-
+  if (!found.length) return '';
   const blocos = found.map(f =>
     `=== BASE DE CONHECIMENTO: ${f.nome} ===\n${f.conteudo}\n=== FIM: ${f.nome} ===`
   ).join('\n\n');
-
-  return `\n\n---\nCONTEXTO DOS PRODUTOS NIBO MENCIONADOS NA REUNIÃO (use para avaliar Domínio de Produto, Ecossistema Nibo e Domínio de Negócio):\n${blocos}\n---\n`;
+  return `\n\n---\nCONTEXTO DOS PRODUTOS NIBO MENCIONADOS NA REUNIÃO:\n${blocos}\n---\n`;
 }
 
 // ── Helpers JSON ──────────────────────────────────────────────────────────────
@@ -160,11 +126,20 @@ async function withRetry(fn, label, attempts = 3) {
   throw lastErr;
 }
 
-// ── CHAMADA 1: Notas numéricas ─────────────────────────────────────────────
-async function getNumbers(transcript, knowledgeContext) {
-  const prompt = `Você é um avaliador especialista em Customer Success da Nibo.
-Avalie a reunião de CS abaixo com base nos 17 pilares de qualidade.${knowledgeContext}
+// ── Monta o JSON esperado no prompt a partir dos pilares dinâmicos ────────────
+function buildNotasExemplo(ALL_PILLARS) {
+  return ALL_PILLARS.map(([k]) => `  "nota_${k}": -1`).join(',\n');
+}
 
+// ── CHAMADA 1: Notas numéricas ─────────────────────────────────────────────
+async function getNumbers(transcript, knowledgeContext, ALL_PILLARS, PILLARS_PROMPT) {
+  const notasExemplo = buildNotasExemplo(ALL_PILLARS);
+  const prompt = `Você é um avaliador especialista em Customer Success da Nibo.
+Avalie a reunião de CS abaixo com base nos ${ALL_PILLARS.length} pilares de qualidade.
+
+DEFINIÇÃO DOS PILARES E ESCALA DE NOTAS:
+${PILLARS_PROMPT}
+${knowledgeContext}
 TRANSCRIÇÃO:
 ${transcript}
 
@@ -173,23 +148,7 @@ Retorne APENAS este JSON (sem texto adicional, sem markdown):
   "media_final": 3.5,
   "tempo_fala_cs_pct": 60,
   "tempo_fala_cliente_pct": 40,
-  "nota_consultividade": 4,
-  "nota_escuta_ativa": 3,
-  "nota_jornada_cliente": 4,
-  "nota_encantamento": 3,
-  "nota_objecoes": -1,
-  "nota_rapport": 4,
-  "nota_autoridade": 3,
-  "nota_postura": 4,
-  "nota_gestao_tempo": 4,
-  "nota_contextualizacao": 3,
-  "nota_clareza": 4,
-  "nota_objetividade": 4,
-  "nota_flexibilidade": 3,
-  "nota_dominio_produto": 4,
-  "nota_dominio_negocio": 3,
-  "nota_ecossistema_nibo": -1,
-  "nota_universo_contabil": -1,
+${notasExemplo},
   "ck_prazo": true,
   "ck_dever_casa": false,
   "ck_certificado": true,
@@ -199,7 +158,6 @@ Retorne APENAS este JSON (sem texto adicional, sem markdown):
 }
 
 Use -1 quando não houver evidência suficiente. Notas de 1 a 5 (inteiros).
-Para dominio_produto e ecossistema_nibo: use a base de conhecimento fornecida para verificar se o CS explicou corretamente os módulos, funcionalidades e fluxos do produto.
 media_final = média das notas válidas (excluindo -1).`;
 
   const res = await ai.models.generateContent({
@@ -233,7 +191,7 @@ media_final = média das notas válidas (excluindo -1).`;
 }
 
 // ── CHAMADA 2: Meta-textos ─────────────────────────────────────────────────
-async function getMeta(transcript, numbers, knowledgeContext) {
+async function getMeta(transcript, numbers, knowledgeContext, ALL_PILLARS) {
   const notasStr = ALL_PILLARS
     .filter(([k]) => numbers['nota_' + k] !== null)
     .map(([k, l]) => `${l}: ${numbers['nota_' + k]}/5`).join(', ');
@@ -261,11 +219,15 @@ Retorne APENAS este JSON:
   return safeParse(extractText(res), 'getMeta');
 }
 
-// ── CHAMADA 3: Justificativas pilares 1-9 ─────────────────────────────────
-async function getTextsA(transcript, numbers, knowledgeContext) {
+// ── CHAMADA 3 + 4: Justificativas (divide em dois grupos para não estourar tokens) ──
+async function getTextsA(transcript, numbers, knowledgeContext, ALL_PILLARS) {
   const group = ALL_PILLARS.slice(0, 9);
   const notasStr = group.filter(([k]) => numbers['nota_' + k] !== null)
     .map(([k, l]) => `${l}: ${numbers['nota_' + k]}/5`).join(', ');
+
+  const campos = group.map(([k]) =>
+    `  "porque_${k}":"justificativa","melhoria_${k}":"sugestão"`
+  ).join(',\n');
 
   const prompt = `Justifique as notas de CS: ${notasStr}.${knowledgeContext}
 
@@ -274,15 +236,7 @@ ${transcript}
 
 Retorne APENAS este JSON:
 {
-  "porque_consultividade":"justificativa","melhoria_consultividade":"sugestão",
-  "porque_escuta_ativa":"justificativa","melhoria_escuta_ativa":"sugestão",
-  "porque_jornada_cliente":"justificativa","melhoria_jornada_cliente":"sugestão",
-  "porque_encantamento":"justificativa","melhoria_encantamento":"sugestão",
-  "porque_objecoes":"justificativa","melhoria_objecoes":"sugestão",
-  "porque_rapport":"justificativa","melhoria_rapport":"sugestão",
-  "porque_autoridade":"justificativa","melhoria_autoridade":"sugestão",
-  "porque_postura":"justificativa","melhoria_postura":"sugestão",
-  "porque_gestao_tempo":"justificativa","melhoria_gestao_tempo":"sugestão"
+${campos}
 }`;
 
   const res = await ai.models.generateContent({
@@ -293,11 +247,14 @@ Retorne APENAS este JSON:
   return safeParse(extractText(res), 'getTextsA');
 }
 
-// ── CHAMADA 4: Justificativas pilares 10-17 ────────────────────────────────
-async function getTextsB(transcript, numbers, knowledgeContext) {
+async function getTextsB(transcript, numbers, knowledgeContext, ALL_PILLARS) {
   const group = ALL_PILLARS.slice(9);
   const notasStr = group.filter(([k]) => numbers['nota_' + k] !== null)
     .map(([k, l]) => `${l}: ${numbers['nota_' + k]}/5`).join(', ');
+
+  const campos = group.map(([k]) =>
+    `  "porque_${k}":"justificativa","melhoria_${k}":"sugestão"`
+  ).join(',\n');
 
   const prompt = `Justifique as notas de CS: ${notasStr}.${knowledgeContext}
 
@@ -306,14 +263,7 @@ ${transcript}
 
 Retorne APENAS este JSON:
 {
-  "porque_contextualizacao":"justificativa","melhoria_contextualizacao":"sugestão",
-  "porque_clareza":"justificativa","melhoria_clareza":"sugestão",
-  "porque_objetividade":"justificativa","melhoria_objetividade":"sugestão",
-  "porque_flexibilidade":"justificativa","melhoria_flexibilidade":"sugestão",
-  "porque_dominio_produto":"justificativa","melhoria_dominio_produto":"sugestão",
-  "porque_dominio_negocio":"justificativa","melhoria_dominio_negocio":"sugestão",
-  "porque_ecossistema_nibo":"justificativa","melhoria_ecossistema_nibo":"sugestão",
-  "porque_universo_contabil":"justificativa","melhoria_universo_contabil":"sugestão"
+${campos}
 }`;
 
   const res = await ai.models.generateContent({
@@ -325,7 +275,7 @@ Retorne APENAS este JSON:
 }
 
 // ── CHAMADA 5: Relatório ───────────────────────────────────────────────────
-async function getRelatorio(numbers, meta, texts, coordinator) {
+async function getRelatorio(numbers, meta, texts, coordinator, ALL_PILLARS) {
   const linhas = ALL_PILLARS.map(([k, l]) => {
     const nota = numbers['nota_' + k];
     if (nota === null) return null;
@@ -372,16 +322,19 @@ export default async function handler(req, res) {
     console.log('📝 Iniciando análise...');
     console.log('📏 Tamanho da transcrição:', prompt.length, 'caracteres');
 
-    // Detecta produtos e monta contexto de conhecimento
+    // Carrega configuração dinâmica do Supabase
+    const { ALL_PILLARS, PILLARS_PROMPT } = await getConfig();
+    console.log(`⚙️ ${ALL_PILLARS.length} pilares carregados do Supabase`);
+
     const knowledgeContext = buildKnowledgeContext(prompt);
 
-    const numbers = await withRetry(() => getNumbers(prompt, knowledgeContext), 'getNumbers', 3);
+    const numbers = await withRetry(() => getNumbers(prompt, knowledgeContext, ALL_PILLARS, PILLARS_PROMPT), 'getNumbers', 3);
     console.log('✅ Notas obtidas. Média:', numbers.media_final);
 
     const [meta, textsA, textsB] = await Promise.all([
-      withRetry(() => getMeta(prompt, numbers, knowledgeContext), 'getMeta', 2),
-      withRetry(() => getTextsA(prompt, numbers, knowledgeContext), 'getTextsA', 2),
-      withRetry(() => getTextsB(prompt, numbers, knowledgeContext), 'getTextsB', 2),
+      withRetry(() => getMeta(prompt, numbers, knowledgeContext, ALL_PILLARS), 'getMeta', 2),
+      withRetry(() => getTextsA(prompt, numbers, knowledgeContext, ALL_PILLARS), 'getTextsA', 2),
+      withRetry(() => getTextsB(prompt, numbers, knowledgeContext, ALL_PILLARS), 'getTextsB', 2),
     ]);
     console.log('✅ Meta e justificativas obtidas');
 
@@ -406,7 +359,7 @@ export default async function handler(req, res) {
     meta.pontos_atencao   = meta.pontos_atencao   || [];
 
     const justificativa_detalhada = await withRetry(
-      () => getRelatorio(numbers, meta, texts, coordinator), 'getRelatorio', 2
+      () => getRelatorio(numbers, meta, texts, coordinator, ALL_PILLARS), 'getRelatorio', 2
     );
     console.log('✅ Análise completa!');
 
