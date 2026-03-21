@@ -162,7 +162,7 @@
             <a href="/avaliar.html" class="flex items-center gap-2 px-4 py-2 bg-white text-[#002d72] rounded-xl text-sm font-bold hover:bg-blue-50 transition-all shadow">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 Avaliação Manual
-                <button id="btn-clear-all" class="hidden items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow" onclick="clearAllData()">
+              <button id="btn-clear-all" class="hidden items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow" onclick="clearAllData()">
     <i data-lucide="trash-2" class="w-4 h-4"></i>
     Limpar tudo
 </button>
@@ -611,14 +611,11 @@ async function checkAuthAndLoad() {
             return;
         }
         const user = await me.json();
-
-        // Mostra botão só pra você
-        if (user.email && user.email.toLowerCase() === 'sthephany.talasca@nibo.com.br') {
+        if (user.email?.toLowerCase() === 'sthephany.talasca@nibo.com.br') {
             const btn = document.getElementById('btn-clear-all');
             btn.classList.remove('hidden');
             btn.classList.add('flex');
         }
-
         loadData();
     } catch(e) {
         window.location.href = '/api/auth';
@@ -626,24 +623,20 @@ async function checkAuthAndLoad() {
 }
 
 async function clearAllData() {
-    const confirmado = confirm(
-        '⚠️ ATENÇÃO\n\nIsso vai deletar TODAS as avaliações do banco de dados permanentemente.\n\nTem certeza?'
-    );
-    if (!confirmado) return;
-
-    const confirmado2 = confirm('Última chance. Confirma a limpeza completa?');
-    if (!confirmado2) return;
-
+    if (!confirm('⚠️ Isso vai deletar TODAS as avaliações permanentemente.\n\nTem certeza?')) return;
+    if (!confirm('Última chance. Confirma?')) return;
     try {
-        const res = await fetch('/api/clear-all', { method: 'DELETE' });
+        const res = await fetch('/api/records', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modo: 'all' })
+        });
         const data = await res.json();
-
         if (!res.ok) throw new Error(data.error);
-
-        alert(`✅ ${data.count} avaliações deletadas com sucesso.`);
-        loadData(); // recarrega o dashboard zerado
+        alert(`✅ ${data.count} avaliações deletadas.`);
+        loadData();
     } catch (err) {
-        alert('Erro ao limpar: ' + err.message);
+        alert('Erro: ' + err.message);
     }
 }
 </script>
