@@ -162,6 +162,10 @@
             <a href="/avaliar.html" class="flex items-center gap-2 px-4 py-2 bg-white text-[#002d72] rounded-xl text-sm font-bold hover:bg-blue-50 transition-all shadow">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 Avaliação Manual
+                <button id="btn-clear-all" class="hidden items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow" onclick="clearAllData()">
+    <i data-lucide="trash-2" class="w-4 h-4"></i>
+    Limpar tudo
+</button>
             </a>
         </div>
     </div>
@@ -606,13 +610,42 @@ async function checkAuthAndLoad() {
             window.location.href = '/api/auth';
             return;
         }
+        const user = await me.json();
+
+        // Mostra botão só pra você
+        if (user.email && user.email.toLowerCase() === 'sthephany.talasca@nibo.com.br') {
+            const btn = document.getElementById('btn-clear-all');
+            btn.classList.remove('hidden');
+            btn.classList.add('flex');
+        }
+
         loadData();
     } catch(e) {
         window.location.href = '/api/auth';
     }
 }
 
-checkAuthAndLoad();
+async function clearAllData() {
+    const confirmado = confirm(
+        '⚠️ ATENÇÃO\n\nIsso vai deletar TODAS as avaliações do banco de dados permanentemente.\n\nTem certeza?'
+    );
+    if (!confirmado) return;
+
+    const confirmado2 = confirm('Última chance. Confirma a limpeza completa?');
+    if (!confirmado2) return;
+
+    try {
+        const res = await fetch('/api/clear-all', { method: 'DELETE' });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error);
+
+        alert(`✅ ${data.count} avaliações deletadas com sucesso.`);
+        loadData(); // recarrega o dashboard zerado
+    } catch (err) {
+        alert('Erro ao limpar: ' + err.message);
+    }
+}
 </script>
 </body>
 </html>
