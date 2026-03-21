@@ -441,34 +441,35 @@
         <div class="glass-card p-8 text-center border-t-4 border-red-500"><i data-lucide="alert-circle" class="w-7 h-7 text-red-500 mx-auto mb-3"></i><div class="text-4xl font-black text-red-600 mb-1" id="kpi-churn">—</div><div class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Alto Risco de Churn</div></div>
     </div>
 
-    <!-- DESTAQUES -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="glass-card p-8 border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 cursor-pointer hover:shadow-xl transition-all" onclick="abrirPerfilDestaque('mes')">
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-10 h-10 bg-amber-400 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="star" class="w-5 h-5 text-white"></i></div>
-                <div><p class="text-[10px] font-black uppercase tracking-widest text-amber-600">⭐ Melhor CS do Mês</p><p class="text-[9px] text-amber-500">Maior média — últimos 30 dias</p></div>
+    <!-- DESTAQUES — adaptam ao filtro ativo -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-card p-8 border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 cursor-pointer hover:shadow-xl transition-all" onclick="abrirPerfilDestaque('melhor')">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-amber-400 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="star" class="w-5 h-5 text-white"></i></div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-amber-600">⭐ Melhor CS</p>
+                        <p id="destaque-melhor-periodo" class="text-[9px] text-amber-500">Maior média no período</p>
+                    </div>
+                </div>
+                <span id="destaque-melhor-media" class="text-4xl font-black text-amber-400">—</span>
             </div>
-            <div id="destaque-mes-nome" class="text-2xl font-black text-[#002d72] mb-1">—</div>
-            <div id="destaque-mes-info" class="text-xs text-slate-500 mb-3">—</div>
-            <div id="destaque-mes-media" class="text-5xl font-black text-amber-400">—</div>
-        </div>
-        <div class="glass-card p-8 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 cursor-pointer hover:shadow-xl transition-all" onclick="abrirPerfilDestaque('semana')">
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-10 h-10 bg-blue-500 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="zap" class="w-5 h-5 text-white"></i></div>
-                <div><p class="text-[10px] font-black uppercase tracking-widest text-blue-600">⚡ Melhor CS da Semana</p><p class="text-[9px] text-blue-400">Maior média — últimos 7 dias</p></div>
-            </div>
-            <div id="destaque-semana-nome" class="text-2xl font-black text-[#002d72] mb-1">—</div>
-            <div id="destaque-semana-info" class="text-xs text-slate-500 mb-3">—</div>
-            <div id="destaque-semana-media" class="text-5xl font-black text-blue-400">—</div>
+            <div id="destaque-melhor-nome" class="text-2xl font-black text-[#002d72] mb-1">—</div>
+            <div id="destaque-melhor-info" class="text-xs text-slate-500">—</div>
         </div>
         <div class="glass-card p-8 border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-purple-50 cursor-pointer hover:shadow-xl transition-all" onclick="abrirPerfilDestaque('ativo')">
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-10 h-10 bg-violet-500 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="flame" class="w-5 h-5 text-white"></i></div>
-                <div><p class="text-[10px] font-black uppercase tracking-widest text-violet-600">🔥 Mais Ativo do Mês</p><p class="text-[9px] text-violet-400">Mais reuniões — últimos 30 dias</p></div>
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-violet-500 rounded-2xl flex items-center justify-center shadow-md"><i data-lucide="flame" class="w-5 h-5 text-white"></i></div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-violet-600">🔥 Mais Ativo</p>
+                        <p id="destaque-ativo-periodo" class="text-[9px] text-violet-400">Mais reuniões no período</p>
+                    </div>
+                </div>
+                <span id="destaque-ativo-count" class="text-4xl font-black text-violet-400">—</span>
             </div>
             <div id="destaque-ativo-nome" class="text-2xl font-black text-[#002d72] mb-1">—</div>
-            <div id="destaque-ativo-info" class="text-xs text-slate-500 mb-3">—</div>
-            <div id="destaque-ativo-count" class="text-5xl font-black text-violet-400">—</div>
+            <div id="destaque-ativo-info" class="text-xs text-slate-500">—</div>
         </div>
     </div>
 
@@ -577,7 +578,7 @@ const CK_LABELS = {
 // FIX: todasReunioes agora guarda TODOS os registros sem filtro de data.
 // openModalId busca primeiro em todasReunioes, depois em allReunioes como fallback.
 let allReunioes=[], todasReunioes=[], statsData={}, chartEvo=null, chartCoord=null, perfilRadar=null;
-let destaquesMes=null, destaquesSemana=null, destaquesAtivo=null;
+let destaquesMelhor=null, destaquesAtivo=null;
 let editandoId=null;
 
 // Cache de equipe
@@ -643,53 +644,58 @@ async function loadData() {
 }
 
 function calcDestaques() {
-    const agora = Date.now();
-    const umMes = 30*24*60*60*1000;
-    const umaSemana = 7*24*60*60*1000;
+    // Usa allReunioes — já filtrado por período/coordenador/analista
+    const dados = allReunioes;
 
-    function melhorMedia(arr) {
-        const por = {};
-        for(const r of arr) {
-            if(!r.analista_nome||!r.media_final) continue;
-            if(!por[r.analista_nome]) por[r.analista_nome]={nome:r.analista_nome,coord:r.coordenador,medias:[]};
-            por[r.analista_nome].medias.push(r.media_final);
-        }
-        return Object.values(por).map(a=>({...a,media:avgArr(a.medias),total:a.medias.length})).sort((a,b)=>b.media-a.media)[0]||null;
+    // Label do período ativo
+    const p = document.getElementById('f-periodo').value;
+    const periodoLabel = p === '7' ? 'Últimos 7 dias' : p === '30' ? 'Últimos 30 dias' : p === '90' ? 'Últimos 90 dias' : 'Todos os períodos';
+    document.getElementById('destaque-melhor-periodo').textContent = 'Maior média — ' + periodoLabel.toLowerCase();
+    document.getElementById('destaque-ativo-periodo').textContent  = 'Mais reuniões — ' + periodoLabel.toLowerCase();
+
+    // Melhor média
+    const porMedia = {};
+    for (const r of dados) {
+        if (!r.analista_nome || !r.media_final) continue;
+        if (!porMedia[r.analista_nome]) porMedia[r.analista_nome] = { nome: r.analista_nome, coord: r.coordenador, medias: [] };
+        porMedia[r.analista_nome].medias.push(r.media_final);
+    }
+    const rankMedia = Object.values(porMedia)
+        .map(a => ({ ...a, media: avgArr(a.medias), total: a.medias.length }))
+        .sort((a, b) => b.media - a.media);
+    destaquesMelhor = rankMedia[0] || null;
+
+    // Mais ativo
+    const porAtivo = {};
+    for (const r of dados) {
+        if (!r.analista_nome) continue;
+        if (!porAtivo[r.analista_nome]) porAtivo[r.analista_nome] = { nome: r.analista_nome, coord: r.coordenador, total: 0 };
+        porAtivo[r.analista_nome].total++;
+    }
+    const rankAtivo = Object.values(porAtivo).sort((a, b) => b.total - a.total);
+    destaquesAtivo = rankAtivo[0] || null;
+
+    // Renderiza Melhor CS
+    if (destaquesMelhor) {
+        document.getElementById('destaque-melhor-nome').textContent = destaquesMelhor.nome;
+        document.getElementById('destaque-melhor-info').textContent = (destaquesMelhor.coord ? destaquesMelhor.coord + ' · ' : '') + destaquesMelhor.total + ' avaliações';
+        document.getElementById('destaque-melhor-media').textContent = destaquesMelhor.media.toFixed(1);
+    } else {
+        document.getElementById('destaque-melhor-nome').textContent = 'Sem dados no período';
+        document.getElementById('destaque-melhor-info').textContent = '—';
+        document.getElementById('destaque-melhor-media').textContent = '—';
     }
 
-    function maisAtivo(arr) {
-        const por = {};
-        for(const r of arr) {
-            if(!r.analista_nome) continue;
-            if(!por[r.analista_nome]) por[r.analista_nome]={nome:r.analista_nome,coord:r.coordenador,total:0};
-            por[r.analista_nome].total++;
-        }
-        return Object.values(por).sort((a,b)=>b.total-a.total)[0]||null;
+    // Renderiza Mais Ativo
+    if (destaquesAtivo) {
+        document.getElementById('destaque-ativo-nome').textContent = destaquesAtivo.nome;
+        document.getElementById('destaque-ativo-info').textContent = (destaquesAtivo.coord ? destaquesAtivo.coord + ' · ' : '') + destaquesAtivo.total + ' reuniões';
+        document.getElementById('destaque-ativo-count').textContent = destaquesAtivo.total;
+    } else {
+        document.getElementById('destaque-ativo-nome').textContent = 'Sem dados no período';
+        document.getElementById('destaque-ativo-info').textContent = '—';
+        document.getElementById('destaque-ativo-count').textContent = '—';
     }
-
-    const doMes = todasReunioes.filter(r=>agora-new Date(r.data_reuniao||r.created_at).getTime()<=umMes);
-    const daSemana = todasReunioes.filter(r=>agora-new Date(r.data_reuniao||r.created_at).getTime()<=umaSemana);
-
-    destaquesMes = melhorMedia(doMes);
-    destaquesSemana = melhorMedia(daSemana);
-    destaquesAtivo = maisAtivo(doMes);
-
-    function renderCard(d, prefixo, tipo) {
-        if(d) {
-            document.getElementById(prefixo+'-nome').textContent=d.nome;
-            document.getElementById(prefixo+'-info').textContent=(d.coord||'')+(d.coord?' · ':'')+d.total+(tipo==='ativo'?' reuniões':' avaliações');
-            if(tipo==='ativo') document.getElementById(prefixo+'-count').textContent=d.total+' 🏅';
-            else document.getElementById(prefixo+'-media').textContent=d.media.toFixed(1)+'/5';
-        } else {
-            document.getElementById(prefixo+'-nome').textContent='Sem dados no período';
-            document.getElementById(prefixo+'-info').textContent='—';
-            if(tipo==='ativo') document.getElementById(prefixo+'-count').textContent='';
-            else document.getElementById(prefixo+'-media').textContent='';
-        }
-    }
-    renderCard(destaquesMes,'destaque-mes','media');
-    renderCard(destaquesSemana,'destaque-semana','media');
-    renderCard(destaquesAtivo,'destaque-ativo','ativo');
 }
 
 function showLoading(v){ document.getElementById('loading-overlay').style.display=v?'flex':'none'; }
@@ -885,7 +891,7 @@ function abrirPerfil(nome) {
 function closePerfil(){document.getElementById('perfil-overlay').classList.remove('open');}
 
 function abrirPerfilDestaque(tipo){
-    const d=tipo==='mes'?destaquesMes:tipo==='semana'?destaquesSemana:destaquesAtivo;
+    const d = tipo === 'melhor' ? destaquesMelhor : destaquesAtivo;
     if(d) abrirPerfil(d.nome);
 }
 
