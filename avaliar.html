@@ -22,9 +22,19 @@
         .markdown-content li { position:relative;padding-left:1.5rem;margin-bottom:0.4rem;color:#475569;font-size:0.85rem; }
         .markdown-content li::before { content:"•";position:absolute;left:0;color:#2563eb;font-weight:bold; }
         select { background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 0.5rem center;background-size:1.5em 1.5em;padding-right:2.5rem; }
+        /* banner de sucesso ao salvar */
+        #save-banner { display:none;position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:200;background:#059669;color:white;padding:0.75rem 1.5rem;border-radius:1rem;font-weight:700;font-size:0.875rem;box-shadow:0 8px 24px rgba(0,0,0,0.2);display:none;align-items:center;gap:0.5rem; }
+        #save-banner.visible { display:flex; }
     </style>
 </head>
 <body class="pb-20 antialiased">
+
+<!-- Banner de salvo -->
+<div id="save-banner">
+    <i data-lucide="check-circle" class="w-4 h-4"></i>
+    <span id="save-banner-text">Análise salva com sucesso!</span>
+    <a href="/" class="ml-2 underline text-emerald-100 hover:text-white">Ver no Dashboard →</a>
+</div>
 
 <nav class="bg-[#002d72] text-white py-4 px-8 sticky top-0 z-50 shadow-xl border-b border-blue-400">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
@@ -38,7 +48,7 @@
             </div>
         </div>
         <div class="flex items-center gap-4 flex-wrap justify-center md:justify-end">
-            <!-- Analista detectado automaticamente — exibido como badge -->
+            <!-- Analista detectado automaticamente -->
             <div id="analista-badge" class="hidden items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600/30 border border-emerald-400/50 text-emerald-200 text-sm font-bold">
                 <i data-lucide="user-check" class="w-4 h-4"></i>
                 <span id="analista-badge-nome">—</span>
@@ -72,7 +82,6 @@
                 <i data-lucide="message-square" class="text-blue-600"></i>
                 <h2 class="font-bold text-slate-800 text-lg">Submeter Transcrição do Cliente</h2>
             </div>
-            <!-- Info box -->
             <div class="flex items-start gap-3 mb-5 p-4 bg-blue-50 rounded-2xl border border-blue-100">
                 <i data-lucide="info" class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0"></i>
                 <p class="text-xs text-blue-700 font-medium">O nome do analista será detectado automaticamente pela IA a partir da transcrição. O coordenador é opcional.</p>
@@ -100,6 +109,7 @@
 
     <div id="results-section" class="hidden space-y-8">
 
+        <!-- Loading -->
         <div id="loading-spinner" class="glass-card p-12">
             <div class="max-w-lg mx-auto space-y-6">
                 <div id="step-scores" class="flex items-center gap-4 transition-opacity duration-500">
@@ -132,16 +142,21 @@
             <p id="loading-label" class="text-center text-slate-400 font-bold text-xs uppercase tracking-widest mt-10 pulse-text">Iniciando...</p>
         </div>
 
+        <!-- Resultado -->
         <div id="analysis-content" class="hidden space-y-8">
 
             <!-- Analista identificado -->
             <div id="analista-resultado" class="hidden glass-card p-6 border-l-4 border-emerald-500 flex items-center gap-4">
                 <div class="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-xl font-black text-emerald-600" id="analista-inicial">?</div>
-                <div>
+                <div class="flex-1">
                     <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Analista Identificado pela IA</p>
                     <p id="analista-nome-resultado" class="text-lg font-extrabold text-[#002d72]">—</p>
                     <p id="analista-coord-resultado" class="text-xs text-slate-500">—</p>
                 </div>
+                <!-- Botão "Ver no Dashboard" após salvar -->
+                <a id="btn-ver-dashboard" href="/" class="hidden flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i>Ver no Dashboard
+                </a>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -266,7 +281,7 @@
 <script>
 lucide.createIcons();
 
-// ── Mapeamento CS → Coordenador (detecção local como fallback) ─────────────
+// ── Mapeamento CS → Coordenador ─────────────────────────────────────────
 const CS_TO_COORDINATOR = {
   'brayan santos':'Sayuri','brayan':'Sayuri','camille vaz':'Sayuri','camille':'Sayuri',
   'carolina miranda':'Sayuri','carolina':'Sayuri','isaque silva':'Sayuri','isaque':'Sayuri',
@@ -284,90 +299,80 @@ const CS_TO_COORDINATOR = {
   'túlio morgado':'Michel','túlio':'Michel','tulio':'Michel',
 };
 
-// Detecção local (preenche coordenador automaticamente ao colar)
 function detectLocalCS(transcript) {
-    if (!transcript) return null;
-    const lower = transcript.toLowerCase();
-    for (const [name, coordinator] of Object.entries(CS_TO_COORDINATOR)) {
-        if (lower.includes(name)) return { nome: name, coordinator };
+    if(!transcript) return null;
+    const lower=transcript.toLowerCase();
+    for(const [name,coordinator] of Object.entries(CS_TO_COORDINATOR)){
+        if(lower.includes(name)) return {nome:name,coordinator};
     }
     return null;
 }
 
-document.getElementById('transcript-input').addEventListener('paste', function() {
-    setTimeout(() => {
-        const detected = detectLocalCS(this.value);
-        if (detected) {
-            // Pré-preenche coordenador se não selecionado
-            const sel = document.getElementById('coordinator-select');
-            if (!sel.value) sel.value = detected.coordinator;
-            showToast(`✅ Coordenador detectado: ${detected.coordinator}`);
+document.getElementById('transcript-input').addEventListener('paste',function(){
+    setTimeout(()=>{
+        const detected=detectLocalCS(this.value);
+        if(detected){
+            const sel=document.getElementById('coordinator-select');
+            if(!sel.value) sel.value=detected.coordinator;
+            showToast('✅ Coordenador detectado: '+detected.coordinator);
         }
-    }, 100);
+    },100);
 });
 
-document.getElementById('transcript-input').addEventListener('input', () => {
-    document.getElementById('char-count').textContent = document.getElementById('transcript-input').value.length.toLocaleString('pt-BR');
+document.getElementById('transcript-input').addEventListener('input',()=>{
+    document.getElementById('char-count').textContent=document.getElementById('transcript-input').value.length.toLocaleString('pt-BR');
 });
 
-// ── PDF ────────────────────────────────────────────────────────────────────
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+// ── PDF ─────────────────────────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-document.getElementById('pdf-upload').addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async function(event) { openPdfViewer(new Uint8Array(event.target.result), file.name); };
+document.getElementById('pdf-upload').addEventListener('change',async function(e){
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=async function(event){openPdfViewer(new Uint8Array(event.target.result),file.name);};
     reader.readAsArrayBuffer(file);
 });
 
-async function openPdfViewer(pdfData, filename) {
-    document.getElementById('pdf-title').textContent = filename;
-    document.getElementById('pdf-pages').innerHTML = '';
-    document.getElementById('pdf-loading').style.display = 'block';
-    const modal = document.getElementById('pdf-viewer-modal');
+async function openPdfViewer(pdfData,filename){
+    document.getElementById('pdf-title').textContent=filename;
+    document.getElementById('pdf-pages').innerHTML='';
+    document.getElementById('pdf-loading').style.display='block';
+    const modal=document.getElementById('pdf-viewer-modal');
     modal.classList.replace('hidden','flex');
-    setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('pdf-viewer-content').classList.replace('scale-95','scale-100'); }, 10);
-    try {
-        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const canvas = document.createElement('canvas');
-            const viewport = page.getViewport({ scale: 2 });
-            canvas.width = viewport.width; canvas.height = viewport.height;
-            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-            const div = document.createElement('div');
-            div.className = 'bg-white rounded-lg shadow-md overflow-hidden';
-            div.appendChild(canvas);
-            document.getElementById('pdf-pages').appendChild(div);
+    setTimeout(()=>{modal.classList.remove('opacity-0');document.getElementById('pdf-viewer-content').classList.replace('scale-95','scale-100');},10);
+    try{
+        const pdf=await pdfjsLib.getDocument({data:pdfData}).promise;
+        for(let i=1;i<=pdf.numPages;i++){
+            const page=await pdf.getPage(i);const canvas=document.createElement('canvas');
+            const viewport=page.getViewport({scale:2});canvas.width=viewport.width;canvas.height=viewport.height;
+            await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+            const div=document.createElement('div');div.className='bg-white rounded-lg shadow-md overflow-hidden';
+            div.appendChild(canvas);document.getElementById('pdf-pages').appendChild(div);
         }
-        document.getElementById('pdf-loading').style.display = 'none';
-    } catch(e) {
-        document.getElementById('pdf-pages').innerHTML = '<p class="text-red-600 font-bold">Erro ao carregar o PDF.</p>';
-        document.getElementById('pdf-loading').style.display = 'none';
+        document.getElementById('pdf-loading').style.display='none';
+    }catch(e){
+        document.getElementById('pdf-pages').innerHTML='<p class="text-red-600 font-bold">Erro ao carregar o PDF.</p>';
+        document.getElementById('pdf-loading').style.display='none';
     }
 }
 
-function closePdfViewer() {
-    const modal = document.getElementById('pdf-viewer-modal');
-    modal.classList.add('opacity-0');
-    document.getElementById('pdf-viewer-content').classList.replace('scale-100','scale-95');
-    setTimeout(() => modal.classList.replace('flex','hidden'), 300);
+function closePdfViewer(){
+    const modal=document.getElementById('pdf-viewer-modal');
+    modal.classList.add('opacity-0');document.getElementById('pdf-viewer-content').classList.replace('scale-100','scale-95');
+    setTimeout(()=>modal.classList.replace('flex','hidden'),300);
 }
 
-// ── Toast ──────────────────────────────────────────────────────────────────
-function showToast(msg) {
-    const t = document.createElement('div');
-    t.className = 'fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-50';
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+// ── Toast ───────────────────────────────────────────────────────────────
+function showToast(msg,color){
+    color=color||'bg-emerald-500';
+    const t=document.createElement('div');
+    t.className=`fixed bottom-4 right-4 ${color} text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-50 flex items-center gap-2`;
+    t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3500);
 }
 
-// ── Pillar store ───────────────────────────────────────────────────────────
-const pillarStore = {};
-let radarChartInstance = null;
-const fields = [
+// ── Pillar store ────────────────────────────────────────────────────────
+const pillarStore={};let radarChartInstance=null;
+const fields=[
     {l:'Consultividade',k:'consultividade'},{l:'Escuta Ativa',k:'escuta_ativa'},{l:'Jornada',k:'jornada_cliente'},
     {l:'Encantamento',k:'encantamento'},{l:'Objeções/Bugs',k:'objecoes'},{l:'Rapport',k:'rapport'},
     {l:'Autoridade',k:'autoridade'},{l:'Postura',k:'postura'},{l:'Gestão de Tempo',k:'gestao_tempo'},
@@ -376,129 +381,129 @@ const fields = [
     {l:'Ecossistema',k:'ecossistema_nibo'},{l:'Univ. Contábil',k:'universo_contabil'}
 ];
 
-// ── Progress bars ──────────────────────────────────────────────────────────
-function animateTo(barId, pctId, target, durationMs) {
-    return new Promise(resolve => {
-        const bar = document.getElementById(barId), pct = document.getElementById(pctId);
-        const start = parseFloat(bar.style.width)||0, steps=40, step=(target-start)/steps, delay=durationMs/steps;
-        let cur=start, i=0;
-        const t = setInterval(() => {
-            cur=Math.min(cur+step,target); bar.style.width=cur+'%';
-            if(pct) pct.textContent=Math.round(cur)+'%';
-            if(++i>=steps){clearInterval(t);resolve();}
-        }, delay);
+// ── Progress bars ───────────────────────────────────────────────────────
+function animateTo(barId,pctId,target,durationMs){
+    return new Promise(resolve=>{
+        const bar=document.getElementById(barId),pct=document.getElementById(pctId);
+        const start=parseFloat(bar.style.width)||0,steps=40,step=(target-start)/steps,delay=durationMs/steps;
+        let cur=start,i=0;
+        const t=setInterval(()=>{cur=Math.min(cur+step,target);bar.style.width=cur+'%';
+            if(pct)pct.textContent=Math.round(cur)+'%';if(++i>=steps){clearInterval(t);resolve();}},delay);
     });
 }
-function markDone(iconId) {
+function markDone(iconId){
     const el=document.getElementById(iconId);
-    if(el) el.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-4 h-4 text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>`;
+    if(el)el.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-4 h-4 text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>`;
 }
-function activate(rowId) { document.getElementById(rowId)?.classList.remove('opacity-30'); }
-function setLabel(text) { document.getElementById('loading-label').textContent = text; }
+function activate(rowId){document.getElementById(rowId)?.classList.remove('opacity-30');}
+function setLabel(text){document.getElementById('loading-label').textContent=text;}
 
-// ── ANÁLISE PRINCIPAL ──────────────────────────────────────────────────────
-const analyzeBtn = document.getElementById('analyze-btn');
+// ── ANÁLISE PRINCIPAL ───────────────────────────────────────────────────
+const analyzeBtn=document.getElementById('analyze-btn');
 
-async function handleAnalysis() {
-    const prompt = document.getElementById('transcript-input').value.trim();
-    if (!prompt) { alert('Cole uma transcrição antes de analisar.'); return; }
-
-    // Coordenador é opcional
-    const coordinator = document.getElementById('coordinator-select').value;
+async function handleAnalysis(){
+    const prompt=document.getElementById('transcript-input').value.trim();
+    if(!prompt){alert('Cole uma transcrição antes de analisar.');return;}
+    const coordinator=document.getElementById('coordinator-select').value;
 
     document.getElementById('results-section').classList.remove('hidden');
     document.getElementById('loading-spinner').classList.remove('hidden');
     document.getElementById('analysis-content').classList.add('hidden');
     document.getElementById('analista-resultado').classList.add('hidden');
-    ['bar-scores','bar-report'].forEach(id => document.getElementById(id).style.width='0%');
+    document.getElementById('btn-ver-dashboard').classList.add('hidden');
+    document.getElementById('save-banner').classList.remove('visible');
+    ['bar-scores','bar-report'].forEach(id=>document.getElementById(id).style.width='0%');
     activate('step-scores');
-    analyzeBtn.disabled = true;
-    document.getElementById('btn-text').textContent = 'Analisando...';
+    analyzeBtn.disabled=true;
+    document.getElementById('btn-text').textContent='Analisando...';
     setLabel('Lendo transcrição e identificando o analista...');
     animateTo('bar-scores','step-scores-pct',88,25000);
 
-    try {
-        const response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ prompt, coordinator })
+    try{
+        const response=await fetch('/api/analyze',{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({prompt,coordinator})
         });
-
         let data;
-        try { data = await response.json(); } catch { throw new Error('Erro de comunicação com o servidor.'); }
-        if (data.error) throw new Error(data.error);
+        try{data=await response.json();}catch{throw new Error('Erro de comunicação com o servidor.');}
+        if(data.error) throw new Error(data.error);
 
         await animateTo('bar-scores','step-scores-pct',100,300);
-        markDone('step-scores-icon');
-        activate('step-report');
+        markDone('step-scores-icon');activate('step-report');
         await animateTo('bar-report','step-report-pct',100,400);
         markDone('step-report-icon');
         setLabel('Análise concluída!');
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r=>setTimeout(r,500));
 
-        // Mostra analista identificado pela IA
-        const analistaNome = data.analista_nome || 'Não identificado';
-        const coordNome = data.coordinator || coordinator || '—';
+        // Mostra analista identificado
+        const analistaNome=data.analista_nome||'Não identificado';
+        const coordNome=data.coordinator||coordinator||'—';
         document.getElementById('analista-resultado').classList.remove('hidden');
-        document.getElementById('analista-inicial').textContent = analistaNome[0]?.toUpperCase() || '?';
-        document.getElementById('analista-nome-resultado').textContent = analistaNome;
-        document.getElementById('analista-coord-resultado').textContent = coordNome !== '—' ? `Coordenador: ${coordNome}` : 'Coordenador não identificado';
+        document.getElementById('analista-inicial').textContent=analistaNome[0]?.toUpperCase()||'?';
+        document.getElementById('analista-nome-resultado').textContent=analistaNome;
+        document.getElementById('analista-coord-resultado').textContent=coordNome!=='—'?`Coordenador: ${coordNome}`:'Coordenador não identificado';
 
+        // Renderiza dashboard
         renderDashboard(data);
 
         // Salva no Supabase
-        try {
-            const saveRes = await fetch('/api/save', {
-                method: 'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({
-                    analise: {
-                        ...data,
-                        // A IA já retorna analista_nome — usamos direto
-                        analista_nome: analistaNome
-                    },
-                    coordenador: coordinator || null
+        try{
+            const saveRes=await fetch('/api/save',{
+                method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                    analise:{...data,analista_nome:analistaNome},
+                    coordenador:coordinator||null
                 })
             });
-            if (!saveRes.ok) {
-                const err = await saveRes.json().catch(()=>({}));
-                console.warn('Aviso: análise não salva:', err.error || saveRes.status);
+            if(!saveRes.ok){
+                const err=await saveRes.json().catch(()=>({}));
+                console.warn('Aviso: análise não salva:',err.error||saveRes.status);
+                showToast('⚠️ Análise exibida mas não salva no banco.','bg-amber-500');
             } else {
-                showToast('✅ Análise salva com sucesso!');
+                // ✅ SUCESSO — mostra banner persistente e botão "Ver no Dashboard"
+                const banner=document.getElementById('save-banner');
+                document.getElementById('save-banner-text').textContent=`✅ ${analistaNome} salvo com sucesso!`;
+                banner.classList.add('visible');
+                document.getElementById('btn-ver-dashboard').classList.remove('hidden');
+                // Esconde banner após 8s mas mantém botão
+                setTimeout(()=>banner.classList.remove('visible'),8000);
             }
-        } catch(e) { console.warn('Aviso: erro ao salvar:', e.message); }
+        }catch(e){
+            console.warn('Aviso: erro ao salvar:',e.message);
+            showToast('⚠️ Análise exibida mas não salva.','bg-amber-500');
+        }
 
-    } catch(err) {
-        alert('Erro na análise: ' + err.message);
+    }catch(err){
+        alert('Erro na análise: '+err.message);
         document.getElementById('results-section').classList.add('hidden');
-    } finally {
-        analyzeBtn.disabled = false;
-        document.getElementById('btn-text').textContent = 'Analisar Sucesso do Cliente';
+    }finally{
+        analyzeBtn.disabled=false;
+        document.getElementById('btn-text').textContent='Analisar Sucesso do Cliente';
     }
 }
 
-// ── Render Dashboard ───────────────────────────────────────────────────────
-function renderDashboard(data) {
+// ── Render Dashboard ────────────────────────────────────────────────────
+function renderDashboard(data){
     document.getElementById('loading-spinner').classList.add('hidden');
     document.getElementById('analysis-content').classList.remove('hidden');
 
-    const media = data.media_final||0;
-    document.getElementById('media-final').textContent = media.toFixed(1);
-    document.getElementById('resumo-text').textContent = data.resumo_executivo||'—';
-    document.getElementById('saude-text').textContent  = data.saude_cliente||'N/A';
-    document.getElementById('churn-text').textContent  = data.risco_churn||'N/A';
-    document.getElementById('concorrentes-tags').innerHTML = (data.sistemas_citados||[]).map(c=>
+    const media=data.media_final||0;
+    document.getElementById('media-final').textContent=media.toFixed(1);
+    document.getElementById('resumo-text').textContent=data.resumo_executivo||'—';
+    document.getElementById('saude-text').textContent=data.saude_cliente||'N/A';
+    document.getElementById('churn-text').textContent=data.risco_churn||'N/A';
+    document.getElementById('concorrentes-tags').innerHTML=(data.sistemas_citados||[]).map(c=>
         `<span class="px-3 py-1 bg-slate-800 text-blue-200 text-[9px] font-black rounded-lg shadow uppercase tracking-widest flex items-center gap-1.5"><i data-lucide="cpu" class="w-3 h-3"></i> ${c}</span>`
     ).join('');
 
-    const status = document.getElementById('status-tag');
+    const status=document.getElementById('status-tag');
     if(media>=4.5){status.textContent='Elite CS';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg';}
     else if(media>=3.5){status.textContent='Alta Performance';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-700';}
     else{status.textContent='Acompanhamento';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700';}
 
-    const grid = document.getElementById('notas-grid');
-    grid.innerHTML = fields.map(f => {
-        const raw=data[`nota_${f.k}`], hasScore=raw!==null&&raw!==undefined, n=hasScore?raw:null;
+    const grid=document.getElementById('notas-grid');
+    grid.innerHTML=fields.map(f=>{
+        const raw=data[`nota_${f.k}`],hasScore=raw!==null&&raw!==undefined,n=hasScore?raw:null;
         const p=data[`porque_${f.k}`]||(hasScore?'Sem justificativa.':'Sem evidência na transcrição.');
         const m=data[`melhoria_${f.k}`]||'Critério de excelência atingido.';
         const c=!hasScore?'text-slate-300':n>=4?'text-emerald-500':n>=3?'text-blue-600':'text-red-500';
@@ -511,12 +516,15 @@ function renderDashboard(data) {
         </div>`;
     }).join('');
 
-    grid.addEventListener('click', e => {
+    // delegação de evento: remove listener antigo antes de adicionar novo
+    const newGrid=grid.cloneNode(true);
+    grid.parentNode.replaceChild(newGrid,grid);
+    newGrid.addEventListener('click',e=>{
         const card=e.target.closest('.pillar-card');
         if(card&&pillarStore[card.dataset.pillar]?.hasScore) openModal(pillarStore[card.dataset.pillar]);
     });
 
-    const tCS=parseFloat(data.tempo_fala_cs||0), tCli=parseFloat(data.tempo_fala_cliente||0);
+    const tCS=parseFloat(data.tempo_fala_cs||0),tCli=parseFloat(data.tempo_fala_cliente||0);
     document.getElementById('talk-time-container').innerHTML=`
         <div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Analista CS</span><span class="text-blue-600">${data.tempo_fala_cs||'0%'}</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-600" style="width:${tCS}%"></div></div></div>
         <div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente</span><span class="text-emerald-500">${data.tempo_fala_cliente||'0%'}</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500" style="width:${tCli}%"></div></div></div>`;
@@ -533,9 +541,11 @@ function renderDashboard(data) {
 
     renderRadar(data);
     lucide.createIcons();
+    // Rola para os resultados
+    document.getElementById('results-section').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function renderRadar(data) {
+function renderRadar(data){
     const ctx=document.getElementById('radarChart').getContext('2d');
     if(radarChartInstance) radarChartInstance.destroy();
     radarChartInstance=new Chart(ctx,{
@@ -545,11 +555,11 @@ function renderRadar(data) {
     });
 }
 
-// ── Modal pilar ────────────────────────────────────────────────────────────
-function openModal({label,score,colorClass,porque,melhoria}) {
+// ── Modal pilar ─────────────────────────────────────────────────────────
+function openModal({label,score,colorClass,porque,melhoria}){
     document.getElementById('modal-title').textContent=label;
     const scoreEl=document.getElementById('modal-score');
-    scoreEl.textContent=score; scoreEl.className=`text-5xl font-black leading-none ${colorClass}`;
+    scoreEl.textContent=score;scoreEl.className=`text-5xl font-black leading-none ${colorClass}`;
     document.getElementById('modal-text').textContent=porque;
     const container=document.getElementById('modal-improvement-container');
     const labelEl=document.getElementById('modal-improvement-label');
@@ -559,30 +569,29 @@ function openModal({label,score,colorClass,porque,melhoria}) {
     if(score>=5){
         container.className='rounded-2xl p-4 border border-emerald-100 bg-emerald-50 mt-2';
         labelEl.className='text-[9px] font-bold uppercase tracking-widest block text-emerald-700';
-        labelEl.textContent='Excelente!';
-        textEl.className='text-[12px] leading-relaxed font-medium text-emerald-900';
+        labelEl.textContent='Excelente!';textEl.className='text-[12px] leading-relaxed font-medium text-emerald-900';
         iconEl.setAttribute('data-lucide','check-circle');
-    } else {
+    }else{
         container.className='rounded-2xl p-4 border border-amber-100 bg-amber-50 mt-2';
         labelEl.className='text-[9px] font-bold uppercase tracking-widest block text-amber-700';
-        labelEl.textContent='O que faltou para o 5?';
-        textEl.className='text-[12px] leading-relaxed font-medium text-amber-900';
+        labelEl.textContent='O que faltou para o 5?';textEl.className='text-[12px] leading-relaxed font-medium text-amber-900';
         iconEl.setAttribute('data-lucide','target');
     }
-    const modal=document.getElementById('justification-modal'), modalBox=document.getElementById('modal-content-box');
+    const modal=document.getElementById('justification-modal'),modalBox=document.getElementById('modal-content-box');
     modal.classList.replace('hidden','flex');
-    setTimeout(()=>{ modal.classList.remove('opacity-0'); modalBox.classList.replace('scale-95','scale-100'); lucide.createIcons(); },10);
+    setTimeout(()=>{modal.classList.remove('opacity-0');modalBox.classList.replace('scale-95','scale-100');lucide.createIcons();},10);
 }
 
-function closeModal() {
-    const modal=document.getElementById('justification-modal'), modalBox=document.getElementById('modal-content-box');
-    modal.classList.add('opacity-0'); modalBox.classList.replace('scale-100','scale-95');
-    setTimeout(()=>{ modal.classList.replace('flex','hidden'); },300);
+function closeModal(){
+    const modal=document.getElementById('justification-modal'),modalBox=document.getElementById('modal-content-box');
+    modal.classList.add('opacity-0');modalBox.classList.replace('scale-100','scale-95');
+    setTimeout(()=>modal.classList.replace('flex','hidden'),300);
 }
 
 document.getElementById('justification-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
-analyzeBtn.addEventListener('click', handleAnalysis);
-document.getElementById('export-pdf-btn').addEventListener('click',()=>{ alert('Use Ctrl+P para imprimir como PDF.'); });
+analyzeBtn.addEventListener('click',handleAnalysis);
+document.getElementById('export-pdf-btn').addEventListener('click',()=>{alert('Use Ctrl+P para imprimir como PDF.');});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 </script>
 </body>
 </html>
