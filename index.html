@@ -50,7 +50,6 @@
         #perfil-box { background:#f1f5f9;border-radius:2.5rem;width:100%;max-width:900px;margin:auto;box-shadow:0 32px 80px rgba(0,0,0,0.3); }
         #edit-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem; }
         #edit-overlay.open { display:flex; }
-        /* Equipe modal */
         #equipe-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);z-index:250;display:none;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto; }
         #equipe-overlay.open { display:flex; }
         #equipe-box { background:white;border-radius:2.5rem;width:100%;max-width:760px;margin:auto;box-shadow:0 32px 80px rgba(0,0,0,0.3); }
@@ -62,6 +61,13 @@
         .md ul { list-style:none;padding:0;margin-bottom:1rem; }
         .md li { position:relative;padding-left:1.25rem;margin-bottom:0.3rem;color:#475569;font-size:0.82rem; }
         .md li::before { content:"•";position:absolute;left:0;color:#2563eb;font-weight:bold; }
+        /* ── Edição em lote ─────────────────────────────────────────── */
+        #batch-bar { position:fixed;bottom:0;left:0;right:0;z-index:600;transform:translateY(100%);transition:transform 0.35s cubic-bezier(.4,0,.2,1); }
+        #batch-bar.active { transform:translateY(0); }
+        .batch-cb { width:1rem;height:1rem;accent-color:#2563eb;cursor:pointer;flex-shrink:0; }
+        #select-all-cb { width:1rem;height:1rem;accent-color:#2563eb;cursor:pointer; }
+        .row-selected td { background:#eff6ff !important; }
+        .rtbl th:first-child, .rtbl td:first-child { width:2.5rem;padding-left:1rem;padding-right:0.25rem; }
     </style>
 </head>
 <body class="pb-20 antialiased">
@@ -76,7 +82,6 @@
 <!-- MODAL DETALHE AVALIAÇÃO -->
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal-box" style="max-width:780px">
-        <!-- Header -->
         <div class="sticky top-0 bg-white px-8 py-5 border-b border-slate-100 rounded-t-[2.5rem] flex justify-between items-center z-10">
             <div class="flex items-center gap-4">
                 <div id="modal-avatar" class="w-11 h-11 rounded-2xl bg-blue-100 flex items-center justify-center text-lg font-black text-blue-700">—</div>
@@ -91,10 +96,7 @@
                 <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
             </div>
         </div>
-
         <div class="p-7 space-y-6">
-
-            <!-- Faixa azul: média + resumo + saúde/churn -->
             <div class="bg-gradient-to-br from-[#002d72] to-blue-700 rounded-3xl p-6 text-white">
                 <div class="flex items-start gap-6">
                     <div class="flex-shrink-0 text-center">
@@ -114,16 +116,11 @@
                                 <p id="modal-churn" class="text-xs font-bold">—</p>
                             </div>
                         </div>
-                        <!-- Barra de fala única CS vs Cliente -->
                         <div>
                             <div class="text-[8px] font-black text-blue-300 uppercase tracking-widest mb-2">Tempo de Fala</div>
                             <div class="h-5 w-full rounded-full overflow-hidden flex" id="modal-fala-bar">
-                                <div id="modal-fala-cs" class="h-full bg-white/80 transition-all duration-700 flex items-center justify-center" style="width:50%">
-                                    <span class="text-[9px] font-black text-[#002d72] px-1">CS</span>
-                                </div>
-                                <div id="modal-fala-cli" class="h-full bg-blue-400/60 transition-all duration-700 flex items-center justify-center" style="width:50%">
-                                    <span class="text-[9px] font-black text-white px-1">Cliente</span>
-                                </div>
+                                <div id="modal-fala-cs" class="h-full bg-white/80 transition-all duration-700 flex items-center justify-center" style="width:50%"><span class="text-[9px] font-black text-[#002d72] px-1">CS</span></div>
+                                <div id="modal-fala-cli" class="h-full bg-blue-400/60 transition-all duration-700 flex items-center justify-center" style="width:50%"><span class="text-[9px] font-black text-white px-1">Cliente</span></div>
                             </div>
                             <div class="flex justify-between mt-1">
                                 <span id="modal-fala-cs-pct" class="text-[9px] font-bold text-blue-200">—</span>
@@ -133,8 +130,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Pilares com justificativa -->
             <div>
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Notas por Pilar</span>
@@ -142,8 +137,6 @@
                 </div>
                 <div id="modal-pilares" class="grid grid-cols-2 gap-2"></div>
             </div>
-
-            <!-- Tooltip justificativa (aparece ao clicar) -->
             <div id="modal-pilar-detalhe" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2">
                 <div class="flex items-center justify-between">
                     <span id="modal-pd-nome" class="text-[10px] font-black uppercase text-slate-500 tracking-widest">—</span>
@@ -155,8 +148,6 @@
                     <p id="modal-pd-melhoria" class="text-xs text-amber-900 font-medium leading-relaxed">—</p>
                 </div>
             </div>
-
-            <!-- Fortes + Oportunidades -->
             <div class="grid grid-cols-2 gap-4">
                 <div class="bg-emerald-50 rounded-3xl p-5 border border-emerald-100">
                     <span class="text-[9px] font-black uppercase tracking-widest text-emerald-700 block mb-3 flex items-center gap-1.5"><i data-lucide="trending-up" class="w-3 h-3"></i> Pontos Fortes</span>
@@ -167,8 +158,6 @@
                     <ul id="modal-atencao" class="space-y-1.5 text-xs font-semibold text-amber-900"></ul>
                 </div>
             </div>
-
-            <!-- Relatório -->
             <div>
                 <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-4 border-b pb-3">Relatório de Auditoria</span>
                 <div id="modal-relatorio" class="md"></div>
@@ -182,9 +171,7 @@
     <div class="bg-white rounded-[2rem] p-8 max-w-md w-full mx-4 shadow-2xl">
         <div class="flex justify-between items-center mb-6">
             <h2 class="font-extrabold text-lg text-[#002d72]">Editar Registro</h2>
-            <button onclick="closeEdicao()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors">
-                <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
-            </button>
+            <button onclick="closeEdicao()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
         </div>
         <div class="space-y-4">
             <div>
@@ -208,9 +195,7 @@
     <div id="perfil-box" class="space-y-6 p-6">
         <div class="bg-gradient-to-br from-[#002d72] to-blue-800 rounded-3xl p-8 text-white">
             <div class="flex items-center justify-between mb-6">
-                <button onclick="closePerfil()" class="bg-white/20 hover:bg-white/30 p-2.5 rounded-2xl transition-all">
-                    <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
-                </button>
+                <button onclick="closePerfil()" class="bg-white/20 hover:bg-white/30 p-2.5 rounded-2xl transition-all"><i data-lucide="arrow-left" class="w-5 h-5 text-white"></i></button>
                 <span class="text-[10px] font-black uppercase tracking-widest text-blue-200">Perfil do Analista</span>
                 <div class="w-10"></div>
             </div>
@@ -226,24 +211,13 @@
                 </div>
             </div>
             <div class="grid grid-cols-3 gap-4 mt-6">
-                <div class="bg-white/10 rounded-2xl p-4 text-center border border-white/20">
-                    <div id="perfil-total" class="text-3xl font-black">—</div>
-                    <div class="text-[9px] font-bold text-blue-200 uppercase tracking-wide mt-1">Avaliações</div>
-                </div>
-                <div class="bg-emerald-500/20 rounded-2xl p-4 text-center border border-emerald-400/30">
-                    <div id="perfil-melhor" class="text-3xl font-black text-emerald-300">—</div>
-                    <div class="text-[9px] font-bold text-emerald-200 uppercase tracking-wide mt-1">Melhor Nota</div>
-                </div>
-                <div class="bg-red-500/20 rounded-2xl p-4 text-center border border-red-400/30">
-                    <div id="perfil-pior" class="text-3xl font-black text-red-300">—</div>
-                    <div class="text-[9px] font-bold text-red-200 uppercase tracking-wide mt-1">Menor Nota</div>
-                </div>
+                <div class="bg-white/10 rounded-2xl p-4 text-center border border-white/20"><div id="perfil-total" class="text-3xl font-black">—</div><div class="text-[9px] font-bold text-blue-200 uppercase tracking-wide mt-1">Avaliações</div></div>
+                <div class="bg-emerald-500/20 rounded-2xl p-4 text-center border border-emerald-400/30"><div id="perfil-melhor" class="text-3xl font-black text-emerald-300">—</div><div class="text-[9px] font-bold text-emerald-200 uppercase tracking-wide mt-1">Melhor Nota</div></div>
+                <div class="bg-red-500/20 rounded-2xl p-4 text-center border border-red-400/30"><div id="perfil-pior" class="text-3xl font-black text-red-300">—</div><div class="text-[9px] font-bold text-red-200 uppercase tracking-wide mt-1">Menor Nota</div></div>
             </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="glass-card p-8 flex items-center justify-center" style="min-height:320px">
-                <canvas id="perfil-radar"></canvas>
-            </div>
+            <div class="glass-card p-8 flex items-center justify-center" style="min-height:320px"><canvas id="perfil-radar"></canvas></div>
             <div class="glass-card p-8">
                 <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>Média por Pilar</h3>
                 <div id="perfil-pilares" class="space-y-3"></div>
@@ -264,55 +238,38 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     MODAL DE EQUIPE — novo
-     ══════════════════════════════════════════════════════════ -->
+<!-- MODAL DE EQUIPE -->
 <div id="equipe-overlay" onclick="if(event.target===this)closeEquipe()">
     <div id="equipe-box" class="overflow-hidden">
-
-        <!-- Header -->
         <div class="bg-gradient-to-br from-[#002d72] to-blue-800 px-8 py-7 text-white">
             <div class="flex items-center justify-between mb-1">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
-                        <i data-lucide="users" class="w-5 h-5 text-white"></i>
-                    </div>
+                    <div class="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center"><i data-lucide="users" class="w-5 h-5 text-white"></i></div>
                     <div>
                         <h2 class="font-extrabold text-xl">Gerenciar Equipe</h2>
                         <p class="text-blue-200 text-xs font-semibold">Analistas e coordenadores ativos</p>
                     </div>
                 </div>
-                <button onclick="closeEquipe()" class="bg-white/20 hover:bg-white/30 p-2.5 rounded-2xl transition-all">
-                    <i data-lucide="x" class="w-5 h-5 text-white"></i>
-                </button>
+                <button onclick="closeEquipe()" class="bg-white/20 hover:bg-white/30 p-2.5 rounded-2xl transition-all"><i data-lucide="x" class="w-5 h-5 text-white"></i></button>
             </div>
         </div>
-
-        <!-- Adicionar analista -->
         <div class="px-8 py-5 border-b border-slate-100 bg-slate-50">
             <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Adicionar Analista</p>
             <div class="flex gap-3">
-                <input id="eq-novo-nome" type="text" placeholder="Nome completo do analista"
-                    class="flex-1 p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white" />
-                <select id="eq-novo-coord"
-                    class="p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white min-w-[160px]">
+                <input id="eq-novo-nome" type="text" placeholder="Nome completo do analista" class="flex-1 p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white" />
+                <select id="eq-novo-coord" class="p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white min-w-[160px]">
                     <option value="">Coordenador...</option>
                     <option value="Tayanara">Tayanara</option>
                     <option value="Sayuri">Sayuri</option>
                     <option value="Michel">Michel</option>
                 </select>
-                <button onclick="adicionarAnalista()" class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Adicionar
-                </button>
+                <button onclick="adicionarAnalista()" class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar</button>
             </div>
             <div id="eq-add-msg" class="hidden mt-2 text-xs font-bold"></div>
         </div>
-
-        <!-- Filtro por coordenador -->
         <div class="px-8 py-4 border-b border-slate-100 flex items-center gap-3">
             <i data-lucide="filter" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
-            <select id="eq-filter-coord" onchange="renderEquipeList()"
-                class="p-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white">
+            <select id="eq-filter-coord" onchange="renderEquipeList()" class="p-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white">
                 <option value="">Todos os coordenadores</option>
                 <option value="Tayanara">Tayanara</option>
                 <option value="Sayuri">Sayuri</option>
@@ -320,32 +277,12 @@
             </select>
             <span id="eq-badge" class="text-xs text-slate-400 font-semibold ml-auto">— analistas</span>
         </div>
-
-        <!-- Loading state -->
-        <div id="eq-loading" class="py-12 text-center text-slate-400 font-semibold text-sm">
-            <div class="inline-block w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-            <p>Carregando equipe...</p>
-        </div>
-
-        <!-- Lista de analistas -->
-        <div id="eq-list" class="hidden max-h-[420px] overflow-y-auto">
-            <!-- preenchido por renderEquipeList() -->
-        </div>
-
-        <!-- Estado vazio -->
-        <div id="eq-empty" class="hidden py-12 text-center">
-            <i data-lucide="users" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i>
-            <p class="text-slate-400 font-semibold text-sm">Nenhum analista encontrado.</p>
-        </div>
-
-        <!-- Footer -->
+        <div id="eq-loading" class="py-12 text-center text-slate-400 font-semibold text-sm"><div class="inline-block w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div><p>Carregando equipe...</p></div>
+        <div id="eq-list" class="hidden max-h-[420px] overflow-y-auto"></div>
+        <div id="eq-empty" class="hidden py-12 text-center"><i data-lucide="users" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-slate-400 font-semibold text-sm">Nenhum analista encontrado.</p></div>
         <div class="px-8 py-5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-            <button onclick="carregarEquipe(true)" class="text-xs text-slate-400 hover:text-slate-600 font-semibold flex items-center gap-1.5 transition-colors">
-                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Ver inativos
-            </button>
-            <button onclick="closeEquipe()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-bold transition-all">
-                Fechar
-            </button>
+            <button onclick="carregarEquipe(true)" class="text-xs text-slate-400 hover:text-slate-600 font-semibold flex items-center gap-1.5 transition-colors"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Ver inativos</button>
+            <button onclick="closeEquipe()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-bold transition-all">Fechar</button>
         </div>
     </div>
 </div>
@@ -355,9 +292,7 @@
     <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl">
         <div class="flex justify-between items-center mb-6">
             <h2 class="font-extrabold text-lg text-[#002d72]">Editar Analista</h2>
-            <button onclick="closeEqEdit()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors">
-                <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
-            </button>
+            <button onclick="closeEqEdit()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
         </div>
         <input type="hidden" id="eq-edit-id" />
         <div class="space-y-4">
@@ -382,6 +317,82 @@
     </div>
 </div>
 
+<!-- ══ NOVO: MODAL AÇÃO EM LOTE ══════════════════════════════════════════ -->
+<div id="batch-modal-overlay" onclick="if(event.target===this)closeBatchModal()" style="position:fixed;inset:0;background:rgba(15,23,42,0.55);backdrop-filter:blur(5px);z-index:700;display:none;align-items:center;justify-content:center;padding:1rem;">
+    <div class="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="font-extrabold text-lg text-[#002d72]" id="batch-modal-title">Edição em Lote</h2>
+                <p id="batch-modal-subtitle" class="text-xs text-slate-400 font-semibold mt-0.5">—</p>
+            </div>
+            <button onclick="closeBatchModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
+        </div>
+        <!-- Reatribuir analista -->
+        <div id="bm-analista" class="hidden space-y-3">
+            <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block">Novo analista</label>
+            <input id="bm-analista-input" type="text" placeholder="Nome completo do analista"
+                class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300" />
+        </div>
+        <!-- Trocar coordenador -->
+        <div id="bm-coord" class="hidden space-y-3">
+            <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block">Novo coordenador</label>
+            <select id="bm-coord-select" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300">
+                <option value="">Sem coordenador</option>
+                <option value="Tayanara">Tayanara</option>
+                <option value="Sayuri">Sayuri</option>
+                <option value="Michel">Michel</option>
+            </select>
+        </div>
+        <!-- Editar data -->
+        <div id="bm-data" class="hidden space-y-3">
+            <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block">Nova data</label>
+            <input id="bm-data-input" type="date"
+                class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300" />
+        </div>
+        <!-- Excluir -->
+        <div id="bm-delete" class="hidden">
+            <div class="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-4">
+                <div class="w-10 h-10 rounded-2xl bg-red-100 flex items-center justify-center flex-shrink-0"><i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i></div>
+                <div>
+                    <p class="font-bold text-red-700 text-sm">Esta ação é irreversível.</p>
+                    <p id="bm-delete-msg" class="text-xs text-red-500 mt-1 font-semibold">— registros serão excluídos permanentemente.</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-7">
+            <button onclick="closeBatchModal()" class="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
+            <button id="bm-confirm-btn" onclick="executeBatch()" class="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all bg-blue-600 hover:bg-blue-700">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ NOVO: BARRA FLUTUANTE DE LOTE ══════════════════════════════════ -->
+<div id="batch-bar" class="bg-[#002d72] border-t-2 border-blue-400 shadow-2xl">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center"><i data-lucide="check-square" class="w-4 h-4 text-white"></i></div>
+            <span id="batch-count-label" class="text-white font-black text-sm">0 selecionados</span>
+        </div>
+        <div class="flex gap-2 ml-auto flex-wrap">
+            <button onclick="openBatchModal('reassign_analista')" class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/20">
+                <i data-lucide="user-cog" class="w-3.5 h-3.5"></i>Trocar Analista
+            </button>
+            <button onclick="openBatchModal('reassign_coordenador')" class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/20">
+                <i data-lucide="shield" class="w-3.5 h-3.5"></i>Trocar Coordenador
+            </button>
+            <button onclick="openBatchModal('edit_data')" class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/20">
+                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>Editar Data
+            </button>
+            <button id="batch-delete-btn" onclick="openBatchModal('delete')" class="hidden items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Excluir
+            </button>
+            <button onclick="clearBatchSelection()" class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/20">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- NAVBAR -->
 <nav class="bg-[#002d72] text-white py-4 px-8 sticky top-0 z-50 shadow-xl border-b border-blue-400">
     <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
@@ -397,7 +408,6 @@
             <button onclick="loadData()" class="flex items-center gap-2 px-4 py-2 bg-blue-800 hover:bg-blue-900 rounded-xl text-sm font-bold transition-all border border-blue-600">
                 <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span class="hidden md:inline">Atualizar</span>
             </button>
-            <!-- Botão Equipe -->
             <button onclick="openEquipe()" class="flex items-center gap-2 px-4 py-2 bg-violet-700 hover:bg-violet-800 text-white rounded-xl text-sm font-bold transition-all shadow border border-violet-500">
                 <i data-lucide="users" class="w-4 h-4"></i><span class="hidden md:inline">Equipe</span>
             </button>
@@ -442,7 +452,7 @@
         <div class="glass-card p-8 text-center border-t-4 border-red-500"><i data-lucide="alert-circle" class="w-7 h-7 text-red-500 mx-auto mb-3"></i><div class="text-4xl font-black text-red-600 mb-1" id="kpi-churn">—</div><div class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Alto Risco de Churn</div></div>
     </div>
 
-    <!-- DESTAQUES — adaptam ao filtro ativo -->
+    <!-- DESTAQUES -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="glass-card p-8 border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 cursor-pointer hover:shadow-xl transition-all" onclick="abrirPerfilDestaque('melhor')">
             <div class="flex items-center justify-between mb-5">
@@ -539,11 +549,21 @@
     <div class="glass-card overflow-hidden">
         <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
             <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-slate-500"></i>Todas as Avaliações</h2>
-            <span class="text-xs text-slate-400 font-semibold" id="badge-total">—</span>
+            <div class="flex items-center gap-3">
+                <span id="batch-hint" class="hidden text-[10px] text-blue-500 font-semibold uppercase tracking-widest flex items-center gap-1">
+                    <i data-lucide="check-square" class="w-3 h-3"></i>Selecione registros para editar em lote
+                </span>
+                <span class="text-xs text-slate-400 font-semibold" id="badge-total">—</span>
+            </div>
         </div>
         <div class="overflow-x-auto">
             <table class="rtbl w-full border-collapse">
-                <thead><tr><th>Data</th><th>Analista</th><th>Coordenador</th><th>Média CS</th><th>Saúde</th><th>Churn</th><th>Origem</th><th></th></tr></thead>
+                <thead>
+                    <tr>
+                        <th class="w-10"><input type="checkbox" id="select-all-cb" title="Selecionar todos" onchange="toggleSelectAll(this.checked)" /></th>
+                        <th>Data</th><th>Analista</th><th>Coordenador</th><th>Média CS</th><th>Saúde</th><th>Churn</th><th>Origem</th><th></th>
+                    </tr>
+                </thead>
                 <tbody id="tbody-reunioes"></tbody>
             </table>
             <div id="empty-reunioes" class="hidden text-center py-12"><i data-lucide="inbox" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-slate-400 font-semibold">Nenhuma avaliação encontrada</p></div>
@@ -575,26 +595,175 @@ const CK_LABELS = {
     explicou_canal_suporte:'Explicou Canal de Suporte',
 };
 
-// ── Cache global de registros ──────────────────────────────────────────────
-// FIX: todasReunioes agora guarda TODOS os registros sem filtro de data.
-// openModalId busca primeiro em todasReunioes, depois em allReunioes como fallback.
 let allReunioes=[], todasReunioes=[], statsData={}, chartEvo=null, chartCoord=null, perfilRadar=null;
 let destaquesMelhor=null, destaquesAtivo=null;
 let editandoId=null;
+let equipeData=[];
+let mostrandoInativos=false;
 
-// Cache de equipe
-let equipeData = [];
-let mostrandoInativos = false;
+// ── EDIÇÃO EM LOTE ─────────────────────────────────────────────────────────
+let batchSelectedIds = new Set();
+let batchAction = null;
+let isBatchUser = false;
+let isAdminUser = false;
 
+// Whitelist client-side — espelha o backend em api/batch.js
+// ⚠️ Adicione aqui os emails dos coordenadores autorizados
+const BATCH_EMAILS = [
+    'sthephany.talasca@nibo.com.br',
+    // 'sayuri.xxx@nibo.com.br',
+    // 'tayanara.xxx@nibo.com.br',
+    // 'michel.xxx@nibo.com.br',
+];
+const ADMIN_EMAIL_CLIENT = 'sthephany.talasca@nibo.com.br';
+
+function initBatchForUser(email) {
+    const lower = email.toLowerCase();
+    isBatchUser = BATCH_EMAILS.includes(lower);
+    isAdminUser = lower === ADMIN_EMAIL_CLIENT;
+
+    if (isBatchUser) {
+        // Mostra hint na tabela
+        const hint = document.getElementById('batch-hint');
+        if (hint) { hint.classList.remove('hidden'); hint.classList.add('flex'); }
+        // Checkbox select-all visível
+        const masterCb = document.getElementById('select-all-cb');
+        if (masterCb) masterCb.style.display = '';
+    } else {
+        const masterCb = document.getElementById('select-all-cb');
+        if (masterCb) masterCb.style.display = 'none';
+    }
+
+    // Botão excluir em lote: só admin
+    if (isAdminUser) {
+        const btn = document.getElementById('batch-delete-btn');
+        if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); }
+    }
+}
+
+function toggleSelectAll(checked) {
+    document.querySelectorAll('.batch-cb').forEach(cb => {
+        cb.checked = checked;
+        cb.closest('tr')?.classList.toggle('row-selected', checked);
+        const id = parseInt(cb.dataset.id);
+        if (checked) batchSelectedIds.add(id);
+        else batchSelectedIds.delete(id);
+    });
+    updateBatchBar();
+}
+
+function onRowCheckboxChange(cb) {
+    const id = parseInt(cb.dataset.id);
+    const row = cb.closest('tr');
+    if (cb.checked) { batchSelectedIds.add(id); row?.classList.add('row-selected'); }
+    else { batchSelectedIds.delete(id); row?.classList.remove('row-selected'); }
+    const all = document.querySelectorAll('.batch-cb');
+    const checked = document.querySelectorAll('.batch-cb:checked');
+    const masterCb = document.getElementById('select-all-cb');
+    if (masterCb) {
+        masterCb.checked = all.length > 0 && checked.length === all.length;
+        masterCb.indeterminate = checked.length > 0 && checked.length < all.length;
+    }
+    updateBatchBar();
+}
+
+function updateBatchBar() {
+    const bar = document.getElementById('batch-bar');
+    const count = batchSelectedIds.size;
+    document.getElementById('batch-count-label').textContent =
+        count === 1 ? '1 registro selecionado' : `${count} registros selecionados`;
+    if (count > 0 && isBatchUser) bar.classList.add('active');
+    else bar.classList.remove('active');
+}
+
+function clearBatchSelection() {
+    batchSelectedIds.clear();
+    document.querySelectorAll('.batch-cb').forEach(cb => {
+        cb.checked = false;
+        cb.closest('tr')?.classList.remove('row-selected');
+    });
+    const master = document.getElementById('select-all-cb');
+    if (master) { master.checked = false; master.indeterminate = false; }
+    updateBatchBar();
+}
+
+function openBatchModal(action) {
+    if (!batchSelectedIds.size) return;
+    batchAction = action;
+    const count = batchSelectedIds.size;
+    ['bm-analista','bm-coord','bm-data','bm-delete'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+    });
+    const confirmBtn = document.getElementById('bm-confirm-btn');
+    const configs = {
+        reassign_analista:    { title:'Trocar Analista em Lote',    section:'bm-analista', btnClass:'bg-blue-600 hover:bg-blue-700',   btnText:'Aplicar' },
+        reassign_coordenador: { title:'Trocar Coordenador em Lote', section:'bm-coord',    btnClass:'bg-indigo-600 hover:bg-indigo-700', btnText:'Aplicar' },
+        edit_data:            { title:'Editar Data em Lote',         section:'bm-data',     btnClass:'bg-violet-600 hover:bg-violet-700', btnText:'Aplicar' },
+        delete:               { title:'Excluir Registros',           section:'bm-delete',   btnClass:'bg-red-600 hover:bg-red-700',       btnText:'Excluir permanentemente' },
+    };
+    const cfg = configs[action];
+    if (!cfg) return;
+    document.getElementById('batch-modal-title').textContent = cfg.title;
+    document.getElementById('batch-modal-subtitle').textContent = `${count} registro${count!==1?'s':''} selecionado${count!==1?'s':''}`;
+    document.getElementById(cfg.section).classList.remove('hidden');
+    confirmBtn.className = `flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all ${cfg.btnClass}`;
+    confirmBtn.textContent = cfg.btnText;
+    if (action === 'delete') {
+        document.getElementById('bm-delete-msg').textContent = `${count} registro${count!==1?'s':''} será${count!==1?'ão':''} excluído${count!==1?'s':''} permanentemente.`;
+    }
+    document.getElementById('batch-modal-overlay').style.display = 'flex';
+    lucide.createIcons();
+}
+
+function closeBatchModal() {
+    document.getElementById('batch-modal-overlay').style.display = 'none';
+    batchAction = null;
+}
+
+async function executeBatch() {
+    if (!batchAction || !batchSelectedIds.size) return;
+    const ids = [...batchSelectedIds];
+    let payload = {};
+    if (batchAction === 'reassign_analista') {
+        const val = document.getElementById('bm-analista-input').value.trim();
+        if (!val) { alert('Informe o nome do analista.'); return; }
+        payload = { analista_nome: val };
+    } else if (batchAction === 'reassign_coordenador') {
+        payload = { coordenador: document.getElementById('bm-coord-select').value };
+    } else if (batchAction === 'edit_data') {
+        const val = document.getElementById('bm-data-input').value;
+        if (!val) { alert('Selecione uma data.'); return; }
+        payload = { data_reuniao: val };
+    } else if (batchAction === 'delete') {
+        if (!confirm(`Confirma a exclusão de ${ids.length} registro(s)?\nEsta ação não pode ser desfeita.`)) return;
+    }
+    const confirmBtn = document.getElementById('bm-confirm-btn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Aguarde...';
+    try {
+        const res = await fetch('/api/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: batchAction, ids, payload }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erro desconhecido');
+        closeBatchModal();
+        clearBatchSelection();
+        showToast(`✅ ${data.count} registro(s) atualizados.`);
+        await loadData();
+    } catch (err) {
+        alert('Erro: ' + err.message);
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirmar';
+    }
+}
+
+// ── DADOS ──────────────────────────────────────────────────────────────────
 function avgArr(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 
-// ── FIX: helper para buscar registro por id em qualquer cache ────────────────
-// Antes, se todasReunioes estivesse vazio (ex: segunda requisição ainda não voltou),
-// o modal abria sem dados. Agora buscamos em múltiplas fontes.
 function findReuniaoById(id) {
-    return todasReunioes.find(x => x.id === id)
-        || allReunioes.find(x => x.id === id)
-        || null;
+    return todasReunioes.find(x=>x.id===id) || allReunioes.find(x=>x.id===id) || null;
 }
 
 async function loadData() {
@@ -607,31 +776,24 @@ async function loadData() {
         if(p&&p!=='0') params.append('periodo',p);
         if(coord) params.append('coordenador',coord);
         if(anal) params.append('analista',anal);
-
-        // FIX: fazemos as duas chamadas em paralelo.
-        // Se a segunda (periodo=0) falhar, usamos os dados do filtro como fallback.
         const [res, resTodas] = await Promise.all([
             fetch('/api/dashboard?'+params.toString()),
-            fetch('/api/dashboard?periodo=0').catch(() => null) // não deixa travar se falhar
+            fetch('/api/dashboard?periodo=0').catch(()=>null)
         ]);
         if(!res.ok) throw new Error('HTTP '+res.status);
         const data = await res.json();
-
-        allReunioes = data.reunioes || [];
-        statsData   = data.stats   || {};
-
-        // FIX: se a segunda requisição funcionou, usamos ela; senão, usamos allReunioes
+        allReunioes = data.reunioes||[];
+        statsData   = data.stats||{};
         if(resTodas && resTodas.ok) {
             const dataTodas = await resTodas.json();
-            todasReunioes = dataTodas.reunioes || [];
+            todasReunioes = dataTodas.reunioes||[];
         } else {
-            todasReunioes = [...allReunioes]; // fallback: mesmos dados
+            todasReunioes = [...allReunioes];
         }
-
         const origem=document.getElementById('f-origem').value;
         if(origem==='auto') allReunioes=allReunioes.filter(r=>r.analise_json?.origem==='drive_automatico');
         if(origem==='manual') allReunioes=allReunioes.filter(r=>r.analise_json?.origem!=='drive_automatico');
-
+        // Preserva seleção após reload
         calcDestaques();
         populateFilters();
         renderAll();
@@ -645,57 +807,43 @@ async function loadData() {
 }
 
 function calcDestaques() {
-    // Usa allReunioes — já filtrado por período/coordenador/analista
-    const dados = allReunioes;
-
-    // Label do período ativo
-    const p = document.getElementById('f-periodo').value;
-    const periodoLabel = p === '7' ? 'Últimos 7 dias' : p === '30' ? 'Últimos 30 dias' : p === '90' ? 'Últimos 90 dias' : 'Todos os períodos';
-    document.getElementById('destaque-melhor-periodo').textContent = 'Maior média — ' + periodoLabel.toLowerCase();
-    document.getElementById('destaque-ativo-periodo').textContent  = 'Mais reuniões — ' + periodoLabel.toLowerCase();
-
-    // Melhor média
-    const porMedia = {};
-    for (const r of dados) {
-        if (!r.analista_nome || !r.media_final) continue;
-        if (!porMedia[r.analista_nome]) porMedia[r.analista_nome] = { nome: r.analista_nome, coord: r.coordenador, medias: [] };
+    const dados=allReunioes;
+    const p=document.getElementById('f-periodo').value;
+    const periodoLabel=p==='7'?'Últimos 7 dias':p==='30'?'Últimos 30 dias':p==='90'?'Últimos 90 dias':'Todos os períodos';
+    document.getElementById('destaque-melhor-periodo').textContent='Maior média — '+periodoLabel.toLowerCase();
+    document.getElementById('destaque-ativo-periodo').textContent='Mais reuniões — '+periodoLabel.toLowerCase();
+    const porMedia={};
+    for(const r of dados){
+        if(!r.analista_nome||!r.media_final) continue;
+        if(!porMedia[r.analista_nome]) porMedia[r.analista_nome]={nome:r.analista_nome,coord:r.coordenador,medias:[]};
         porMedia[r.analista_nome].medias.push(r.media_final);
     }
-    const rankMedia = Object.values(porMedia)
-        .map(a => ({ ...a, media: avgArr(a.medias), total: a.medias.length }))
-        .sort((a, b) => b.media - a.media);
-    destaquesMelhor = rankMedia[0] || null;
-
-    // Mais ativo
-    const porAtivo = {};
-    for (const r of dados) {
-        if (!r.analista_nome) continue;
-        if (!porAtivo[r.analista_nome]) porAtivo[r.analista_nome] = { nome: r.analista_nome, coord: r.coordenador, total: 0 };
+    const rankMedia=Object.values(porMedia).map(a=>({...a,media:avgArr(a.medias),total:a.medias.length})).sort((a,b)=>b.media-a.media);
+    destaquesMelhor=rankMedia[0]||null;
+    const porAtivo={};
+    for(const r of dados){
+        if(!r.analista_nome) continue;
+        if(!porAtivo[r.analista_nome]) porAtivo[r.analista_nome]={nome:r.analista_nome,coord:r.coordenador,total:0};
         porAtivo[r.analista_nome].total++;
     }
-    const rankAtivo = Object.values(porAtivo).sort((a, b) => b.total - a.total);
-    destaquesAtivo = rankAtivo[0] || null;
-
-    // Renderiza Melhor CS
-    if (destaquesMelhor) {
-        document.getElementById('destaque-melhor-nome').textContent = destaquesMelhor.nome;
-        document.getElementById('destaque-melhor-info').textContent = (destaquesMelhor.coord ? destaquesMelhor.coord + ' · ' : '') + destaquesMelhor.total + ' avaliações';
-        document.getElementById('destaque-melhor-media').textContent = destaquesMelhor.media.toFixed(1);
+    destaquesAtivo=Object.values(porAtivo).sort((a,b)=>b.total-a.total)[0]||null;
+    if(destaquesMelhor){
+        document.getElementById('destaque-melhor-nome').textContent=destaquesMelhor.nome;
+        document.getElementById('destaque-melhor-info').textContent=(destaquesMelhor.coord?destaquesMelhor.coord+' · ':'')+destaquesMelhor.total+' avaliações';
+        document.getElementById('destaque-melhor-media').textContent=destaquesMelhor.media.toFixed(1);
     } else {
-        document.getElementById('destaque-melhor-nome').textContent = 'Sem dados no período';
-        document.getElementById('destaque-melhor-info').textContent = '—';
-        document.getElementById('destaque-melhor-media').textContent = '—';
+        document.getElementById('destaque-melhor-nome').textContent='Sem dados no período';
+        document.getElementById('destaque-melhor-info').textContent='—';
+        document.getElementById('destaque-melhor-media').textContent='—';
     }
-
-    // Renderiza Mais Ativo
-    if (destaquesAtivo) {
-        document.getElementById('destaque-ativo-nome').textContent = destaquesAtivo.nome;
-        document.getElementById('destaque-ativo-info').textContent = (destaquesAtivo.coord ? destaquesAtivo.coord + ' · ' : '') + destaquesAtivo.total + ' reuniões';
-        document.getElementById('destaque-ativo-count').textContent = destaquesAtivo.total;
+    if(destaquesAtivo){
+        document.getElementById('destaque-ativo-nome').textContent=destaquesAtivo.nome;
+        document.getElementById('destaque-ativo-info').textContent=(destaquesAtivo.coord?destaquesAtivo.coord+' · ':'')+destaquesAtivo.total+' reuniões';
+        document.getElementById('destaque-ativo-count').textContent=destaquesAtivo.total;
     } else {
-        document.getElementById('destaque-ativo-nome').textContent = 'Sem dados no período';
-        document.getElementById('destaque-ativo-info').textContent = '—';
-        document.getElementById('destaque-ativo-count').textContent = '—';
+        document.getElementById('destaque-ativo-nome').textContent='Sem dados no período';
+        document.getElementById('destaque-ativo-info').textContent='—';
+        document.getElementById('destaque-ativo-count').textContent='—';
     }
 }
 
@@ -710,14 +858,9 @@ function populateFilters() {
     af.innerHTML='<option value="">Todos os analistas</option>'+analistas.map(a=>`<option value="${a}"${a===ca?' selected':''}>${a}</option>`).join('');
 }
 
-function renderAll() {
-    renderKPIs();renderSaudeChurn();renderEvo();
-    renderRanking();renderPilares();renderCoord();
-    renderChecklist();renderReunioes();
-    lucide.createIcons();
-}
+function renderAll(){renderKPIs();renderSaudeChurn();renderEvo();renderRanking();renderPilares();renderCoord();renderChecklist();renderReunioes();lucide.createIcons();}
 
-function renderKPIs() {
+function renderKPIs(){
     const s=statsData;
     document.getElementById('kpi-total').textContent=s.total??'—';
     document.getElementById('kpi-media').textContent=s.media_geral!=null?s.media_geral.toFixed(1):'—';
@@ -725,7 +868,7 @@ function renderKPIs() {
     document.getElementById('kpi-churn').textContent=s.churnStats?.alto??'—';
 }
 
-function renderSaudeChurn() {
+function renderSaudeChurn(){
     const ss=statsData.saudeStats||{},cs=statsData.churnStats||{};
     document.getElementById('s-saudavel').textContent=ss.saudavel??'—';
     document.getElementById('s-risco').textContent=ss.risco??'—';
@@ -737,7 +880,7 @@ function renderSaudeChurn() {
     document.getElementById('c-nd').textContent=cs.indefinido??'—';
 }
 
-function renderEvo() {
+function renderEvo(){
     const evo=statsData.evolucao||[];
     document.getElementById('badge-semanas').textContent=evo.length+' semanas';
     const labels=evo.map(e=>new Date(e.semana).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}));
@@ -750,7 +893,7 @@ function renderEvo() {
     });
 }
 
-function renderRanking() {
+function renderRanking(){
     const ranking=statsData.ranking||[];
     document.getElementById('badge-ranking').textContent=ranking.length+' analistas';
     const tbody=document.getElementById('tbody-ranking'),empty=document.getElementById('empty-ranking');
@@ -770,12 +913,11 @@ function renderRanking() {
     }).join('');
 }
 
-function renderPilares() {
+function renderPilares(){
     const pt=statsData.pilaresTime||{};
     const ordenados=PILLARS.map(p=>({...p,val:pt[p.k]||0})).filter(p=>p.val>0).sort((a,b)=>b.val-a.val);
     document.getElementById('pilares-list').innerHTML=ordenados.map((p,i)=>{
-        const pct=(p.val/5)*100;
-        const color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';
+        const pct=(p.val/5)*100,color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';
         const isMelhor=i===0,isPior=i===ordenados.length-1;
         const badge=isMelhor?'<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>'
                   :isPior?'<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>':'';
@@ -788,7 +930,7 @@ function renderPilares() {
     }).join('');
 }
 
-function renderCoord() {
+function renderCoord(){
     const pc=statsData.porCoordenador||{};
     const labels=Object.keys(pc),vals=labels.map(k=>pc[k].media),totals=labels.map(k=>pc[k].total);
     const colors=['#2563eb','#7c3aed','#db2777','#059669','#d97706'];
@@ -800,21 +942,22 @@ function renderCoord() {
     });
 }
 
-function renderChecklist() {
+function renderChecklist(){
     const ck=statsData.ckRates||{};
     document.getElementById('ck-list').innerHTML=Object.entries(CK_LABELS).map(([key,label])=>{
-        const pct=ck[key]??0;
-        const color=pct<50?'#ef4444':pct<75?'#f59e0b':'#10b981';
+        const pct=ck[key]??0,color=pct<50?'#ef4444':pct<75?'#f59e0b':'#10b981';
         return `<div class="ck-row"><span style="font-weight:600">${label}</span><div style="display:flex;align-items:center"><div class="ck-bar-bg"><div class="ck-bar-fill" style="width:${pct}%;background:${color}"></div></div><span style="font-weight:800;font-size:0.78rem;color:${color};min-width:2.5rem;text-align:right">${pct}%</span></div></div>`;
     }).join('');
 }
 
-function renderReunioes() {
+function renderReunioes(){
     const tbody=document.getElementById('tbody-reunioes'),empty=document.getElementById('empty-reunioes');
     document.getElementById('badge-total').textContent=allReunioes.length+' registros';
     if(!allReunioes.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
     empty.classList.add('hidden');
     tbody.innerHTML=allReunioes.map(r=>{
+        const analistaNome=r.analista_nome||'—';
+        const naoId=analistaNome.toLowerCase().includes('identificado')||analistaNome==='—';
         const media=r.media_final??0;
         const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
         const cv=(r.risco_churn||'').toLowerCase();
@@ -822,9 +965,9 @@ function renderReunioes() {
         const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
         const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
         const isAuto=r.analise_json?.origem==='drive_automatico';
-        const analistaNome=r.analista_nome||'—';
-        const naoId=analistaNome.toLowerCase().includes('identificado')||analistaNome==='—';
-        return `<tr>
+        const isChecked=batchSelectedIds.has(r.id);
+        return `<tr class="${isChecked?'row-selected':''}">
+            <td>${isBatchUser?`<input type="checkbox" class="batch-cb" data-id="${r.id}" ${isChecked?'checked':''} onchange="onRowCheckboxChange(this)" />`:'<span class="opacity-0 w-4 h-4 inline-block"></span>'}</td>
             <td class="text-slate-500">${data}</td>
             <td>
                 <button onclick="abrirPerfil('${analistaNome.replace(/'/g,"\\\'")}')" class="font-bold ${naoId?'text-red-500':'text-blue-600'} hover:underline text-left">${analistaNome}</button>
@@ -847,113 +990,58 @@ function renderReunioes() {
 
 // ── PERFIL DO ANALISTA ────────────────────────────────────────────────────
 function abrirPerfil(nome) {
-    if(!nome || nome==='—' || nome.toLowerCase().includes('identificado')) return;
-
-    const nLower = nome.toLowerCase().trim();
-
-    // Busca em todasReunioes primeiro (histórico completo), depois fallback em allReunioes
-    let reunioes = todasReunioes.filter(r => (r.analista_nome||'').toLowerCase().trim() === nLower);
-
-    // Se não achou (pode ser registro do Drive com nome levemente diferente), tenta allReunioes
-    if (!reunioes.length) {
-        reunioes = allReunioes.filter(r => (r.analista_nome||'').toLowerCase().trim() === nLower);
+    if(!nome||nome==='—'||nome.toLowerCase().includes('identificado')) return;
+    const nLower=nome.toLowerCase().trim();
+    let reunioes=todasReunioes.filter(r=>(r.analista_nome||'').toLowerCase().trim()===nLower);
+    if(!reunioes.length) reunioes=allReunioes.filter(r=>(r.analista_nome||'').toLowerCase().trim()===nLower);
+    if(!reunioes.length){
+        const todos=[...todasReunioes,...allReunioes];
+        const uniq=Object.values(Object.fromEntries(todos.map(r=>[r.id,r])));
+        reunioes=uniq.filter(r=>{const rn=(r.analista_nome||'').toLowerCase().trim();return rn.includes(nLower)||nLower.includes(rn);});
     }
-
-    // Último recurso: busca parcial (tolera espaço duplo, acento diferente etc.)
-    if (!reunioes.length) {
-        const todos = [...todasReunioes, ...allReunioes];
-        // remove duplicatas por id
-        const uniq = Object.values(Object.fromEntries(todos.map(r => [r.id, r])));
-        reunioes = uniq.filter(r => {
-            const rn = (r.analista_nome||'').toLowerCase().trim();
-            return rn.includes(nLower) || nLower.includes(rn);
-        });
-    }
-
-    if (!reunioes.length) {
-        alert('Sem avaliações encontradas para ' + nome);
-        return;
-    }
-
-    // Remove duplicatas (pode ter vindo dos dois arrays)
-    reunioes = Object.values(Object.fromEntries(reunioes.map(r => [r.id, r])));
-    // Ordena por data mais recente primeiro
-    reunioes.sort((a, b) => new Date(b.data_reuniao||b.created_at) - new Date(a.data_reuniao||a.created_at));
-
-    document.getElementById('perfil-avatar').textContent = nome.trim()[0].toUpperCase();
-    document.getElementById('perfil-nome').textContent = nome;
-    document.getElementById('perfil-coord').textContent = reunioes[0]?.coordenador || '—';
-
-    const medias = reunioes.map(r=>r.media_final).filter(Boolean);
-    document.getElementById('perfil-media').textContent = medias.length ? avgArr(medias).toFixed(1) : '—';
-    document.getElementById('perfil-total').textContent = reunioes.length;
-    document.getElementById('perfil-melhor').textContent = medias.length ? Math.max(...medias).toFixed(1) : '—';
-    document.getElementById('perfil-pior').textContent = medias.length ? Math.min(...medias).toFixed(1) : '—';
-
-    const pilaresComMedia = PILLARS.map(p => {
-        const vals = reunioes.map(r=>r['nota_'+p.k]).filter(v=>v!=null);
-        return {...p, val: vals.length ? +avgArr(vals).toFixed(1) : null};
-    }).filter(p=>p.val!==null).sort((a,b)=>b.val-a.val);
-
-    document.getElementById('perfil-pilares').innerHTML = pilaresComMedia.map((p,i) => {
-        const pct=(p.val/5)*100, color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';
-        const isMelhor=i===0, isPior=i===pilaresComMedia.length-1;
-        const badge = isMelhor ? '<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>'
-                    : isPior   ? '<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>' : '';
-        const rowStyle = isMelhor ? 'background:rgba(16,185,129,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;'
-                       : isPior   ? 'background:rgba(239,68,68,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;' : '';
-        return `<div style="display:flex;align-items:center;gap:0.75rem;${rowStyle}">
-            <span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:9rem;text-align:right">${p.l}${badge}</span>
-            <div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-            <span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${p.val}</span>
-        </div>`;
+    if(!reunioes.length){alert('Sem avaliações encontradas para '+nome);return;}
+    reunioes=Object.values(Object.fromEntries(reunioes.map(r=>[r.id,r])));
+    reunioes.sort((a,b)=>new Date(b.data_reuniao||b.created_at)-new Date(a.data_reuniao||a.created_at));
+    document.getElementById('perfil-avatar').textContent=nome.trim()[0].toUpperCase();
+    document.getElementById('perfil-nome').textContent=nome;
+    document.getElementById('perfil-coord').textContent=reunioes[0]?.coordenador||'—';
+    const medias=reunioes.map(r=>r.media_final).filter(Boolean);
+    document.getElementById('perfil-media').textContent=medias.length?avgArr(medias).toFixed(1):'—';
+    document.getElementById('perfil-total').textContent=reunioes.length;
+    document.getElementById('perfil-melhor').textContent=medias.length?Math.max(...medias).toFixed(1):'—';
+    document.getElementById('perfil-pior').textContent=medias.length?Math.min(...medias).toFixed(1):'—';
+    const pilaresComMedia=PILLARS.map(p=>{const vals=reunioes.map(r=>r['nota_'+p.k]).filter(v=>v!=null);return{...p,val:vals.length?+avgArr(vals).toFixed(1):null};}).filter(p=>p.val!==null).sort((a,b)=>b.val-a.val);
+    document.getElementById('perfil-pilares').innerHTML=pilaresComMedia.map((p,i)=>{
+        const pct=(p.val/5)*100,color=p.val<3?'#ef4444':p.val<4?'#f59e0b':'#10b981';
+        const isMelhor=i===0,isPior=i===pilaresComMedia.length-1;
+        const badge=isMelhor?'<span style="font-size:0.6rem;font-weight:800;background:#dcfce7;color:#16a34a;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Melhor</span>':isPior?'<span style="font-size:0.6rem;font-weight:800;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.3rem">Atenção</span>':'';
+        const rowStyle=isMelhor?'background:rgba(16,185,129,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':isPior?'background:rgba(239,68,68,0.07);border-radius:0.75rem;padding:0.2rem 0.4rem;':'';
+        return `<div style="display:flex;align-items:center;gap:0.75rem;${rowStyle}"><span style="font-size:0.7rem;font-weight:600;color:#64748b;min-width:9rem;text-align:right">${p.l}${badge}</span><div class="pilar-bar-bg"><div class="pilar-bar-fill" style="width:${pct}%;background:${color}"></div></div><span style="font-size:0.75rem;font-weight:800;color:#0f172a;min-width:2rem;text-align:right">${p.val}</span></div>`;
     }).join('');
-
-    const ctx = document.getElementById('perfil-radar').getContext('2d');
-    if (perfilRadar) perfilRadar.destroy();
-    perfilRadar = new Chart(ctx, {
-        type:'radar',
-        data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Média',data:PILLARS.map(p=>{
-            const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);
-            return v.length ? +avgArr(v).toFixed(1) : 0;
-        }),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1e3a8a'}]},
-        options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}
-    });
-
-    document.getElementById('perfil-badge-total').textContent = reunioes.length + ' avaliações';
-    document.getElementById('perfil-tbody').innerHTML = reunioes.map(r => {
+    const ctx=document.getElementById('perfil-radar').getContext('2d');
+    if(perfilRadar) perfilRadar.destroy();
+    perfilRadar=new Chart(ctx,{type:'radar',data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Média',data:PILLARS.map(p=>{const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;}),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1e3a8a'}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}});
+    document.getElementById('perfil-badge-total').textContent=reunioes.length+' avaliações';
+    document.getElementById('perfil-tbody').innerHTML=reunioes.map(r=>{
         const media=r.media_final??0;
         const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
         const cv=(r.risco_churn||'').toLowerCase();
         const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';
         const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
         const dataStr=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
-        return `<tr onclick="openModalId(${r.id})" style="cursor:pointer">
-            <td class="text-slate-500 font-semibold">${dataStr}</td>
-            <td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td>
-            <td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td>
-            <td><span class="tag-${churnCls}">${churnLabel}</span></td>
-            <td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td>
-        </tr>`;
+        return `<tr onclick="openModalId(${r.id})" style="cursor:pointer"><td class="text-slate-500 font-semibold">${dataStr}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td></tr>`;
     }).join('');
-
     document.getElementById('perfil-overlay').classList.add('open');
-    document.getElementById('perfil-overlay').scrollTop = 0;
+    document.getElementById('perfil-overlay').scrollTop=0;
     lucide.createIcons();
 }
 
 function closePerfil(){document.getElementById('perfil-overlay').classList.remove('open');}
+function abrirPerfilDestaque(tipo){const d=tipo==='melhor'?destaquesMelhor:destaquesAtivo;if(d) abrirPerfil(d.nome);}
 
-function abrirPerfilDestaque(tipo){
-    const d = tipo === 'melhor' ? destaquesMelhor : destaquesAtivo;
-    if(d) abrirPerfil(d.nome);
-}
-
-// ── EDITAR REGISTRO ───────────────────────────────────────────────────────
-function abrirEdicaoId(id) {
-    // FIX: usa helper findReuniaoById para buscar em múltiplos caches
-    const r = findReuniaoById(id);
-    if(!r) return;
+// ── EDITAR REGISTRO INDIVIDUAL ────────────────────────────────────────────
+function abrirEdicaoId(id){
+    const r=findReuniaoById(id);if(!r) return;
     editandoId=id;
     document.getElementById('edit-analista').value=r.analista_nome||'';
     document.getElementById('edit-coordenador').value=r.coordenador||'';
@@ -961,385 +1049,214 @@ function abrirEdicaoId(id) {
     document.getElementById('modal-overlay').classList.remove('open');
     lucide.createIcons();
 }
-
-function abrirEdicao() {
-    if(!editandoId) return;
-    abrirEdicaoId(editandoId);
-}
-
+function abrirEdicao(){if(!editandoId) return;abrirEdicaoId(editandoId);}
 function closeEdicao(){document.getElementById('edit-overlay').classList.remove('open');}
-
-async function salvarEdicao() {
+async function salvarEdicao(){
     const analista=document.getElementById('edit-analista').value.trim();
     const coordenador=document.getElementById('edit-coordenador').value.trim();
     if(!analista){alert('Nome do analista é obrigatório.');return;}
-    try {
-        const res=await fetch('/api/reassign',{
-            method:'PATCH',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({reuniao_id:editandoId, analista_nome:analista, coordenador_nome:coordenador})
-        });
+    try{
+        const res=await fetch('/api/reassign',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({reuniao_id:editandoId,analista_nome:analista,coordenador_nome:coordenador})});
         const data=await res.json();
         if(!res.ok) throw new Error(data.error);
-        closeEdicao();
-        await loadData();
-        showToast('✅ Registro atualizado!');
-    } catch(err){alert('Erro ao salvar: '+err.message);}
+        closeEdicao();await loadData();showToast('✅ Registro atualizado!');
+    }catch(err){alert('Erro ao salvar: '+err.message);}
 }
 
 // ── MODAL AVALIAÇÃO ────────────────────────────────────────────────────────
 function openModalId(id){
-    editandoId = id;
-    // FIX: usa helper findReuniaoById
-    const r = findReuniaoById(id);
-    if(r) {
-        renderModal(r);
-    } else {
-        // registro não está em cache — buscar diretamente na API
-        // (pode acontecer se o dashboard foi aberto antes da 2ª requisição terminar)
-        fetch('/api/dashboard?periodo=0')
-            .then(r => r.json())
-            .then(data => {
-                todasReunioes = data.reunioes || todasReunioes;
-                const registro = todasReunioes.find(x => x.id === id);
-                if(registro) renderModal(registro);
-                else alert('Avaliação não encontrada. Tente atualizar a página.');
-            })
-            .catch(() => alert('Erro ao buscar avaliação.'));
+    editandoId=id;
+    const r=findReuniaoById(id);
+    if(r){renderModal(r);}
+    else{
+        fetch('/api/dashboard?periodo=0').then(r=>r.json()).then(data=>{
+            todasReunioes=data.reunioes||todasReunioes;
+            const registro=todasReunioes.find(x=>x.id===id);
+            if(registro) renderModal(registro);
+            else alert('Avaliação não encontrada. Tente atualizar a página.');
+        }).catch(()=>alert('Erro ao buscar avaliação.'));
     }
 }
 
 function renderModal(r){
-    const aj = r.analise_json || {}, media = r.media_final ?? 0;
-    const dataStr = new Date(r.data_reuniao || r.created_at).toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'});
-    const nome = r.analista_nome || '—';
-
-    // Header
-    document.getElementById('modal-avatar').textContent = nome[0]?.toUpperCase() || '?';
-    document.getElementById('modal-analista').textContent = nome;
-    document.getElementById('modal-meta').textContent = `${r.coordenador || '—'} · ${dataStr}`;
-
-    // Média e status
-    document.getElementById('modal-media').textContent = media.toFixed(1);
-    document.getElementById('modal-status-tag').textContent = media>=4.5?'Elite CS':media>=3.5?'Alta Performance':'Acompanhamento';
-    document.getElementById('modal-resumo').textContent = aj.resumo_executivo || '—';
-    document.getElementById('modal-saude').textContent = r.saude_cliente || '—';
-    document.getElementById('modal-churn').textContent = r.risco_churn || '—';
-
-    // Barra de fala única
-    const tCS  = parseFloat(aj.tempo_fala_cs  || r.tempo_fala_cs  || '50') || 50;
-    const tCli = parseFloat(aj.tempo_fala_cliente || r.tempo_fala_cliente || '50') || 50;
-    document.getElementById('modal-fala-cs').style.width  = tCS  + '%';
-    document.getElementById('modal-fala-cli').style.width = tCli + '%';
-    document.getElementById('modal-fala-cs-pct').textContent  = 'CS ' + tCS + '%';
-    document.getElementById('modal-fala-cli-pct').textContent = 'Cliente ' + tCli + '%';
-    // Esconde label se a fatia for pequena demais
-    document.getElementById('modal-fala-cs').querySelector('span').style.display  = tCS  > 15 ? '' : 'none';
-    document.getElementById('modal-fala-cli').querySelector('span').style.display = tCli > 15 ? '' : 'none';
-
-    // Pilares — grid 2 colunas, cada card mostra nota + nome + início da justificativa
+    const aj=r.analise_json||{},media=r.media_final??0;
+    const dataStr=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+    const nome=r.analista_nome||'—';
+    document.getElementById('modal-avatar').textContent=nome[0]?.toUpperCase()||'?';
+    document.getElementById('modal-analista').textContent=nome;
+    document.getElementById('modal-meta').textContent=`${r.coordenador||'—'} · ${dataStr}`;
+    document.getElementById('modal-media').textContent=media.toFixed(1);
+    document.getElementById('modal-status-tag').textContent=media>=4.5?'Elite CS':media>=3.5?'Alta Performance':'Acompanhamento';
+    document.getElementById('modal-resumo').textContent=aj.resumo_executivo||'—';
+    document.getElementById('modal-saude').textContent=r.saude_cliente||'—';
+    document.getElementById('modal-churn').textContent=r.risco_churn||'—';
+    const tCS=parseFloat(aj.tempo_fala_cs||r.tempo_fala_cs||'50')||50;
+    const tCli=parseFloat(aj.tempo_fala_cliente||r.tempo_fala_cliente||'50')||50;
+    document.getElementById('modal-fala-cs').style.width=tCS+'%';
+    document.getElementById('modal-fala-cli').style.width=tCli+'%';
+    document.getElementById('modal-fala-cs-pct').textContent='CS '+tCS+'%';
+    document.getElementById('modal-fala-cli-pct').textContent='Cliente '+tCli+'%';
+    document.getElementById('modal-fala-cs').querySelector('span').style.display=tCS>15?'':'none';
+    document.getElementById('modal-fala-cli').querySelector('span').style.display=tCli>15?'':'none';
     document.getElementById('modal-pilar-detalhe').classList.add('hidden');
-    document.getElementById('modal-pilares').innerHTML = PILLARS.map(p => {
-        const val = r['nota_' + p.k];
-        const hasVal = val != null;
-        const porque = aj['porque_' + p.k] || '—';
-        const bg  = !hasVal ? 'bg-slate-50 opacity-60' : val>=4 ? 'bg-emerald-50 hover:bg-emerald-100' : val>=3 ? 'bg-blue-50 hover:bg-blue-100' : 'bg-red-50 hover:bg-red-100';
-        const tc  = !hasVal ? 'text-slate-300' : val>=4 ? 'text-emerald-600' : val>=3 ? 'text-blue-600' : 'text-red-500';
-        const cur = hasVal ? 'cursor-pointer' : 'cursor-default';
+    document.getElementById('modal-pilares').innerHTML=PILLARS.map(p=>{
+        const val=r['nota_'+p.k],hasVal=val!=null;
+        const porque=aj['porque_'+p.k]||'—';
+        const bg=!hasVal?'bg-slate-50 opacity-60':val>=4?'bg-emerald-50 hover:bg-emerald-100':val>=3?'bg-blue-50 hover:bg-blue-100':'bg-red-50 hover:bg-red-100';
+        const tc=!hasVal?'text-slate-300':val>=4?'text-emerald-600':val>=3?'text-blue-600':'text-red-500';
+        const cur=hasVal?'cursor-pointer':'cursor-default';
         return `<div data-pk="${p.k}" class="pilar-modal-card ${bg} ${cur} rounded-2xl p-3 border border-slate-100 flex items-center gap-3 transition-all select-none">
-            <div class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg ${tc} bg-white shadow-sm border border-slate-100">${hasVal ? val : '—'}</div>
-            <div class="flex-1 min-w-0">
-                <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">${p.l}</div>
-                <p class="text-[11px] text-slate-500 font-medium leading-snug truncate">${hasVal ? porque : 'Sem evidência'}</p>
-            </div>
-            ${hasVal ? '<i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300 flex-shrink-0"></i>' : ''}
+            <div class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg ${tc} bg-white shadow-sm border border-slate-100">${hasVal?val:'—'}</div>
+            <div class="flex-1 min-w-0"><div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">${p.l}</div><p class="text-[11px] text-slate-500 font-medium leading-snug truncate">${hasVal?porque:'Sem evidência'}</p></div>
+            ${hasVal?'<i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300 flex-shrink-0"></i>':''}
         </div>`;
     }).join('');
-
-    // Clique no pilar → expande detalhe abaixo
-    document.getElementById('modal-pilares').addEventListener('click', function handler(e) {
-        const card = e.target.closest('.pilar-modal-card');
-        if (!card || !card.dataset.pk) return;
-        const pk = card.dataset.pk;
-        const pillar = PILLARS.find(p => p.k === pk);
-        const val = r['nota_' + pk];
-        if (val == null) return;
-
-        const porque  = aj['porque_' + pk]   || 'Sem justificativa.';
-        const melhoria = aj['melhoria_' + pk] || '';
-
-        const tc = val>=4 ? 'text-emerald-600' : val>=3 ? 'text-blue-600' : 'text-red-500';
-        document.getElementById('modal-pd-nome').textContent = pillar?.l || pk;
-        const notaEl = document.getElementById('modal-pd-nota');
-        notaEl.textContent = val;
-        notaEl.className = `text-2xl font-black ${tc}`;
-        document.getElementById('modal-pd-porque').textContent = porque;
-
-        const melhoriaBox = document.getElementById('modal-pd-melhoria-box');
-        if (melhoria && melhoria !== 'Excelência atingida.' && val < 5) {
-            document.getElementById('modal-pd-melhoria').textContent = melhoria;
-            melhoriaBox.classList.remove('hidden');
-        } else {
-            melhoriaBox.classList.add('hidden');
-        }
-
-        const det = document.getElementById('modal-pilar-detalhe');
-        det.classList.remove('hidden');
-        det.scrollIntoView({ behavior:'smooth', block:'nearest' });
-
-        // Highlight no card selecionado
-        document.querySelectorAll('.pilar-modal-card').forEach(c => c.style.outline = '');
-        card.style.outline = '2px solid #2563eb';
-    }, { once: false });
-
-    // Fortes / Atenção
-    document.getElementById('modal-fortes').innerHTML = (aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('') || '<li class="text-slate-400">—</li>';
-    document.getElementById('modal-atencao').innerHTML = (aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('') || '<li class="text-slate-400">—</li>';
-
-    // Relatório
-    const rel = aj.justificativa_detalhada || '';
-    document.getElementById('modal-relatorio').innerHTML = rel
-        ? rel.replace(/## (.+)/g,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>')
-        : '<p class="text-slate-400">Relatório não disponível.</p>';
-
+    document.getElementById('modal-pilares').addEventListener('click',function handler(e){
+        const card=e.target.closest('.pilar-modal-card');
+        if(!card||!card.dataset.pk) return;
+        const pk=card.dataset.pk,pillar=PILLARS.find(p=>p.k===pk),val=r['nota_'+pk];
+        if(val==null) return;
+        const porque=aj['porque_'+pk]||'Sem justificativa.',melhoria=aj['melhoria_'+pk]||'';
+        const tc=val>=4?'text-emerald-600':val>=3?'text-blue-600':'text-red-500';
+        document.getElementById('modal-pd-nome').textContent=pillar?.l||pk;
+        const notaEl=document.getElementById('modal-pd-nota');notaEl.textContent=val;notaEl.className=`text-2xl font-black ${tc}`;
+        document.getElementById('modal-pd-porque').textContent=porque;
+        const melhoriaBox=document.getElementById('modal-pd-melhoria-box');
+        if(melhoria&&melhoria!=='Excelência atingida.'&&val<5){document.getElementById('modal-pd-melhoria').textContent=melhoria;melhoriaBox.classList.remove('hidden');}
+        else melhoriaBox.classList.add('hidden');
+        const det=document.getElementById('modal-pilar-detalhe');det.classList.remove('hidden');det.scrollIntoView({behavior:'smooth',block:'nearest'});
+        document.querySelectorAll('.pilar-modal-card').forEach(c=>c.style.outline='');
+        card.style.outline='2px solid #2563eb';
+    },{once:false});
+    document.getElementById('modal-fortes').innerHTML=(aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
+    document.getElementById('modal-atencao').innerHTML=(aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
+    const rel=aj.justificativa_detalhada||'';
+    document.getElementById('modal-relatorio').innerHTML=rel?rel.replace(/## (.+)/g,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>'):'<p class="text-slate-400">Relatório não disponível.</p>';
     document.getElementById('modal-overlay').classList.add('open');
-    document.getElementById('modal-overlay').querySelector('.modal-box').scrollTop = 0;
+    document.getElementById('modal-overlay').querySelector('.modal-box').scrollTop=0;
     lucide.createIcons();
 }
 
-async function excluirRegistro(id, nome) {
-    if (!confirm(`Excluir a avaliação de "${nome}"?\n\nEssa ação não pode ser desfeita.`)) return;
-    try {
-        const res = await fetch('/api/records', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ modo: 'single', id })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-        showToast('🗑️ Avaliação excluída.');
-        await loadData();
-    } catch(err) { alert('Erro ao excluir: ' + err.message); }
+async function excluirRegistro(id,nome){
+    if(!confirm(`Excluir a avaliação de "${nome}"?\n\nEssa ação não pode ser desfeita.`)) return;
+    try{
+        const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({modo:'single',id})});
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.error);
+        showToast('🗑️ Avaliação excluída.');await loadData();
+    }catch(err){alert('Erro ao excluir: '+err.message);}
 }
 
-async function excluirRegistroModal() {
-    if (!editandoId) return;
-    const r = findReuniaoById(editandoId);
-    const nome = r?.analista_nome || 'este registro';
+async function excluirRegistroModal(){
+    if(!editandoId) return;
+    const r=findReuniaoById(editandoId);
+    const nome=r?.analista_nome||'este registro';
     closeModal();
-    await excluirRegistro(editandoId, nome);
+    await excluirRegistro(editandoId,nome);
 }
 
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closePerfil();closeEdicao();closeEquipe();closeEqEdit();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closePerfil();closeEdicao();closeEquipe();closeEqEdit();closeBatchModal();}});
 
-// ══════════════════════════════════════════════════════════════════════════
-// MODAL DE EQUIPE
-// ══════════════════════════════════════════════════════════════════════════
-
-function openEquipe() {
-    document.getElementById('equipe-overlay').classList.add('open');
-    document.getElementById('equipe-overlay').scrollTop = 0;
-    carregarEquipe(false);
-}
-
-function closeEquipe() {
-    document.getElementById('equipe-overlay').classList.remove('open');
-    mostrandoInativos = false;
-}
-
-async function carregarEquipe(incluirInativos) {
-    mostrandoInativos = !!incluirInativos;
+// ── MODAL DE EQUIPE ───────────────────────────────────────────────────────
+function openEquipe(){document.getElementById('equipe-overlay').classList.add('open');document.getElementById('equipe-overlay').scrollTop=0;carregarEquipe(false);}
+function closeEquipe(){document.getElementById('equipe-overlay').classList.remove('open');mostrandoInativos=false;}
+async function carregarEquipe(incluirInativos){
+    mostrandoInativos=!!incluirInativos;
     document.getElementById('eq-loading').classList.remove('hidden');
     document.getElementById('eq-list').classList.add('hidden');
     document.getElementById('eq-empty').classList.add('hidden');
-
-    try {
-        const url = '/api/team' + (incluirInativos ? '?incluir_inativos=1' : '');
-        const res = await fetch(url);
-        if(!res.ok) throw new Error('HTTP ' + res.status);
-        equipeData = await res.json();
-        renderEquipeList();
-    } catch(e) {
+    try{
+        const url='/api/team'+(incluirInativos?'?incluir_inativos=1':'');
+        const res=await fetch(url);if(!res.ok) throw new Error('HTTP '+res.status);
+        equipeData=await res.json();renderEquipeList();
+    }catch(e){
         document.getElementById('eq-loading').classList.add('hidden');
         document.getElementById('eq-empty').classList.remove('hidden');
-        document.getElementById('eq-empty').innerHTML = `<i data-lucide="alert-circle" class="w-8 h-8 text-red-300 mx-auto mb-2"></i><p class="text-red-400 font-semibold text-sm">Erro ao carregar equipe: ${e.message}</p>`;
+        document.getElementById('eq-empty').innerHTML=`<i data-lucide="alert-circle" class="w-8 h-8 text-red-300 mx-auto mb-2"></i><p class="text-red-400 font-semibold text-sm">Erro: ${e.message}</p>`;
         lucide.createIcons();
     }
 }
-
-function renderEquipeList() {
-    const filtroCoord = document.getElementById('eq-filter-coord').value;
-    let lista = equipeData;
-    if(filtroCoord) lista = lista.filter(a => a.coordenador === filtroCoord);
-
+function renderEquipeList(){
+    const filtroCoord=document.getElementById('eq-filter-coord').value;
+    let lista=filtroCoord?equipeData.filter(a=>a.coordenador===filtroCoord):equipeData;
     document.getElementById('eq-loading').classList.add('hidden');
-    document.getElementById('eq-badge').textContent = lista.length + ' analista' + (lista.length !== 1 ? 's' : '');
-
-    if(!lista.length) {
-        document.getElementById('eq-list').classList.add('hidden');
-        document.getElementById('eq-empty').classList.remove('hidden');
-        document.getElementById('eq-empty').innerHTML = '<i data-lucide="users" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-slate-400 font-semibold text-sm">Nenhum analista encontrado.</p>';
-        lucide.createIcons();
-        return;
-    }
-
+    document.getElementById('eq-badge').textContent=lista.length+' analista'+(lista.length!==1?'s':'');
+    if(!lista.length){document.getElementById('eq-list').classList.add('hidden');document.getElementById('eq-empty').classList.remove('hidden');document.getElementById('eq-empty').innerHTML='<i data-lucide="users" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-slate-400 font-semibold text-sm">Nenhum analista encontrado.</p>';lucide.createIcons();return;}
     document.getElementById('eq-empty').classList.add('hidden');
     document.getElementById('eq-list').classList.remove('hidden');
-
-    // Agrupar por coordenador
-    const grupos = {};
-    for(const a of lista) {
-        const coord = a.coordenador || 'Sem Coordenador';
-        if(!grupos[coord]) grupos[coord] = [];
-        grupos[coord].push(a);
-    }
-
-    const coordColors = { 'Tayanara':'#2563eb', 'Sayuri':'#7c3aed', 'Michel':'#059669', 'Sem Coordenador':'#94a3b8' };
-
-    document.getElementById('eq-list').innerHTML = Object.entries(grupos).map(([coord, analistas]) => {
-        const cor = coordColors[coord] || '#64748b';
-        const rows = analistas.map(a => {
-            const inatBadge = !a.ativo ? '<span style="font-size:0.6rem;font-weight:700;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.4rem">Inativo</span>' : '';
-            return `<div class="eq-row">
-                <div class="w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white flex-shrink-0" style="background:${cor}22;color:${cor}">
-                    ${a.nome.trim()[0].toUpperCase()}
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="font-bold text-slate-800 text-sm truncate">${a.nome}${inatBadge}</p>
-                    <p class="text-xs text-slate-400">${a.coordenador || '—'}</p>
-                </div>
-                <div class="flex gap-1.5 flex-shrink-0">
-                    <button onclick="abrirEqEdit(${a.id})" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all" title="Editar">
-                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                    </button>
-                    ${a.ativo ? `<button onclick="desativarAnalista(${a.id},'${a.nome.replace(/'/g,"\\\'")}')" class="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-all" title="Remover">
-                        <i data-lucide="user-minus" class="w-3.5 h-3.5"></i>
-                    </button>` : `<button onclick="reativarAnalista(${a.id})" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-all" title="Reativar">
-                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
-                    </button>`}
-                </div>
-            </div>`;
+    const grupos={};
+    for(const a of lista){const coord=a.coordenador||'Sem Coordenador';if(!grupos[coord]) grupos[coord]=[];grupos[coord].push(a);}
+    const coordColors={'Tayanara':'#2563eb','Sayuri':'#7c3aed','Michel':'#059669','Sem Coordenador':'#94a3b8'};
+    document.getElementById('eq-list').innerHTML=Object.entries(grupos).map(([coord,analistas])=>{
+        const cor=coordColors[coord]||'#64748b';
+        const rows=analistas.map(a=>{
+            const inatBadge=!a.ativo?'<span style="font-size:0.6rem;font-weight:700;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.4rem">Inativo</span>':'';
+            return `<div class="eq-row"><div class="w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white flex-shrink-0" style="background:${cor}22;color:${cor}">${a.nome.trim()[0].toUpperCase()}</div><div class="flex-1 min-w-0"><p class="font-bold text-slate-800 text-sm truncate">${a.nome}${inatBadge}</p><p class="text-xs text-slate-400">${a.coordenador||'—'}</p></div><div class="flex gap-1.5 flex-shrink-0"><button onclick="abrirEqEdit(${a.id})" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all" title="Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>${a.ativo?`<button onclick="desativarAnalista(${a.id},'${a.nome.replace(/'/g,"\\\'")}')" class="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-all" title="Remover"><i data-lucide="user-minus" class="w-3.5 h-3.5"></i></button>`:`<button onclick="reativarAnalista(${a.id})" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-all" title="Reativar"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i></button>`}</div></div>`;
         }).join('');
-
-        return `<div>
-            <div class="px-8 py-2 bg-slate-50 border-y border-slate-100 flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full flex-shrink-0" style="background:${cor}"></div>
-                <span class="text-[10px] font-black uppercase tracking-widest" style="color:${cor}">${coord}</span>
-                <span class="ml-auto text-[10px] text-slate-400 font-semibold">${analistas.length} analista${analistas.length!==1?'s':''}</span>
-            </div>
-            ${rows}
-        </div>`;
+        return `<div><div class="px-8 py-2 bg-slate-50 border-y border-slate-100 flex items-center gap-2"><div class="w-2 h-2 rounded-full flex-shrink-0" style="background:${cor}"></div><span class="text-[10px] font-black uppercase tracking-widest" style="color:${cor}">${coord}</span><span class="ml-auto text-[10px] text-slate-400 font-semibold">${analistas.length} analista${analistas.length!==1?'s':''}</span></div>${rows}</div>`;
     }).join('');
-
     lucide.createIcons();
 }
-
-async function adicionarAnalista() {
-    const nome = document.getElementById('eq-novo-nome').value.trim();
-    const coord = document.getElementById('eq-novo-coord').value;
-    const msg = document.getElementById('eq-add-msg');
-
-    if(!nome) { mostrarMsgEquipe('Nome é obrigatório.', 'erro'); return; }
-
-    try {
-        const res = await fetch('/api/team', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ nome, coordenador: coord || null })
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.error);
-
-        document.getElementById('eq-novo-nome').value = '';
-        document.getElementById('eq-novo-coord').value = '';
-
-        if(data.reativado) mostrarMsgEquipe('✅ Analista reativado com sucesso!', 'ok');
-        else mostrarMsgEquipe('✅ Analista adicionado!', 'ok');
-
+async function adicionarAnalista(){
+    const nome=document.getElementById('eq-novo-nome').value.trim();
+    const coord=document.getElementById('eq-novo-coord').value;
+    if(!nome){mostrarMsgEquipe('Nome é obrigatório.','erro');return;}
+    try{
+        const res=await fetch('/api/team',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,coordenador:coord||null})});
+        const data=await res.json();if(!res.ok) throw new Error(data.error);
+        document.getElementById('eq-novo-nome').value='';document.getElementById('eq-novo-coord').value='';
+        mostrarMsgEquipe(data.reativado?'✅ Analista reativado!':'✅ Analista adicionado!','ok');
         await carregarEquipe(mostrandoInativos);
-    } catch(e) {
-        mostrarMsgEquipe('Erro: ' + e.message, 'erro');
-    }
+    }catch(e){mostrarMsgEquipe('Erro: '+e.message,'erro');}
 }
-
-async function desativarAnalista(id, nome) {
-    if(!confirm(`Remover "${nome}" da equipe ativa?\n\nEle não será deletado — só ficará inativo.`)) return;
-    try {
-        const res = await fetch('/api/team', {
-            method: 'DELETE',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ id })
-        });
+async function desativarAnalista(id,nome){
+    if(!confirm(`Remover "${nome}" da equipe ativa?`)) return;
+    try{
+        const res=await fetch('/api/team',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
         if(!res.ok) throw new Error((await res.json()).error);
-        mostrarMsgEquipe('✅ Analista removido.', 'ok');
-        await carregarEquipe(mostrandoInativos);
-    } catch(e) { alert('Erro: ' + e.message); }
+        mostrarMsgEquipe('✅ Analista removido.','ok');await carregarEquipe(mostrandoInativos);
+    }catch(e){alert('Erro: '+e.message);}
 }
-
-async function reativarAnalista(id) {
-    const analista = equipeData.find(a => a.id === id);
-    if(!analista) return;
-    try {
-        const res = await fetch('/api/team', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ nome: analista.nome, coordenador: analista.coordenador })
-        });
+async function reativarAnalista(id){
+    const analista=equipeData.find(a=>a.id===id);if(!analista) return;
+    try{
+        const res=await fetch('/api/team',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:analista.nome,coordenador:analista.coordenador})});
         if(!res.ok) throw new Error((await res.json()).error);
-        mostrarMsgEquipe('✅ Analista reativado!', 'ok');
-        await carregarEquipe(mostrandoInativos);
-    } catch(e) { alert('Erro: ' + e.message); }
+        mostrarMsgEquipe('✅ Analista reativado!','ok');await carregarEquipe(mostrandoInativos);
+    }catch(e){alert('Erro: '+e.message);}
 }
-
-function mostrarMsgEquipe(texto, tipo) {
-    const el = document.getElementById('eq-add-msg');
-    el.textContent = texto;
-    el.className = 'mt-2 text-xs font-bold ' + (tipo === 'ok' ? 'text-emerald-600' : 'text-red-500');
-    el.classList.remove('hidden');
-    setTimeout(() => el.classList.add('hidden'), 3500);
+function mostrarMsgEquipe(texto,tipo){
+    const el=document.getElementById('eq-add-msg');
+    el.textContent=texto;el.className='mt-2 text-xs font-bold '+(tipo==='ok'?'text-emerald-600':'text-red-500');
+    el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),3500);
 }
-
-// Edit analista — modal de equipe
-function abrirEqEdit(id) {
-    const a = equipeData.find(x => x.id === id);
-    if(!a) return;
-    document.getElementById('eq-edit-id').value = id;
-    document.getElementById('eq-edit-nome').value = a.nome;
-    document.getElementById('eq-edit-coord').value = a.coordenador || '';
-    document.getElementById('eq-edit-overlay').style.display = 'flex';
+function abrirEqEdit(id){
+    const a=equipeData.find(x=>x.id===id);if(!a) return;
+    document.getElementById('eq-edit-id').value=id;
+    document.getElementById('eq-edit-nome').value=a.nome;
+    document.getElementById('eq-edit-coord').value=a.coordenador||'';
+    document.getElementById('eq-edit-overlay').style.display='flex';
     lucide.createIcons();
 }
-
-function closeEqEdit() {
-    document.getElementById('eq-edit-overlay').style.display = 'none';
-}
-
-async function salvarEqEdit() {
-    const id = parseInt(document.getElementById('eq-edit-id').value);
-    const nome = document.getElementById('eq-edit-nome').value.trim();
-    const coord = document.getElementById('eq-edit-coord').value;
-    if(!nome) { alert('Nome é obrigatório.'); return; }
-    try {
-        const res = await fetch('/api/team', {
-            method: 'PATCH',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ id, nome, coordenador: coord || null })
-        });
+function closeEqEdit(){document.getElementById('eq-edit-overlay').style.display='none';}
+async function salvarEqEdit(){
+    const id=parseInt(document.getElementById('eq-edit-id').value);
+    const nome=document.getElementById('eq-edit-nome').value.trim();
+    const coord=document.getElementById('eq-edit-coord').value;
+    if(!nome){alert('Nome é obrigatório.');return;}
+    try{
+        const res=await fetch('/api/team',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,nome,coordenador:coord||null})});
         if(!res.ok) throw new Error((await res.json()).error);
-        closeEqEdit();
-        mostrarMsgEquipe('✅ Analista atualizado!', 'ok');
-        await carregarEquipe(mostrandoInativos);
-    } catch(e) { alert('Erro: ' + e.message); }
+        closeEqEdit();mostrarMsgEquipe('✅ Analista atualizado!','ok');await carregarEquipe(mostrandoInativos);
+    }catch(e){alert('Erro: '+e.message);}
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────
-function showToast(msg) {
+function showToast(msg){
     const t=document.createElement('div');
-    t.className='fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-[500]';
-    t.textContent=msg;
-    document.body.appendChild(t);
-    setTimeout(()=>t.remove(),3000);
+    t.className='fixed bottom-20 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-bold z-[500] flex items-center gap-2';
+    t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
 }
 
 // ── Auth & clearAll ───────────────────────────────────────────────────────
@@ -1348,10 +1265,12 @@ async function checkAuthAndLoad(){
         const me=await fetch('/api/me');
         if(me.status===401||me.status===403){window.location.href='/api/auth';return;}
         const user=await me.json();
-        if(user.email?.toLowerCase()==='sthephany.talasca@nibo.com.br'){
+        if(user.email?.toLowerCase()===ADMIN_EMAIL_CLIENT){
             const btn=document.getElementById('btn-clear-all');
             btn.classList.remove('hidden');btn.classList.add('flex');
         }
+        // Inicializa edição em lote para usuários autorizados
+        initBatchForUser(user.email);
         loadData();
     }catch(e){window.location.href='/api/auth';}
 }
@@ -1361,10 +1280,8 @@ async function clearAllData(){
     if(!confirm('Última chance. Confirma?')) return;
     try{
         const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({modo:'all'})});
-        const data=await res.json();
-        if(!res.ok) throw new Error(data.error);
-        alert(`✅ ${data.count} avaliações deletadas.`);
-        loadData();
+        const data=await res.json();if(!res.ok) throw new Error(data.error);
+        alert(`✅ ${data.count} avaliações deletadas.`);loadData();
     }catch(err){alert('Erro: '+err.message);}
 }
 
