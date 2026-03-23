@@ -741,7 +741,7 @@ async function executeBatch() {
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Aguarde...';
     try {
-        const res = await fetch('/api/batch', {
+        const res = await fetch('/api/records', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: batchAction, ids, payload }),
@@ -772,7 +772,7 @@ async function loadData() {
         const p=document.getElementById('f-periodo').value;
         const coord=document.getElementById('f-coordenador').value;
         const anal=document.getElementById('f-analista').value;
-        const params=new URLSearchParams();
+        const params=new SearchParams();
         if(p&&p!=='0') params.append('periodo',p);
         if(coord) params.append('coordenador',coord);
         if(anal) params.append('analista',anal);
@@ -1167,8 +1167,8 @@ async function carregarEquipe(incluirInativos){
     document.getElementById('eq-list').classList.add('hidden');
     document.getElementById('eq-empty').classList.add('hidden');
     try{
-        const url='/api/team'+(incluirInativos?'?incluir_inativos=1':'');
-        const res=await fetch(url);if(!res.ok) throw new Error('HTTP '+res.status);
+        const ='/api/team'+(incluirInativos?'?incluir_inativos=1':'');
+        const res=await fetch();if(!res.ok) throw new Error('HTTP '+res.status);
         equipeData=await res.json();renderEquipeList();
     }catch(e){
         document.getElementById('eq-loading').classList.add('hidden');
