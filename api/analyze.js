@@ -399,10 +399,10 @@ export default async function handler(req, res) {
         numbers.coordinator   = coordinator || numbers.coordinator || null;
 
         // 2. Meta (inclui nome_cliente) + justificativas em paralelo
-        const [meta, textsA, textsB] = await Promise.all([
-            withRetry(() => getMeta(prompt, numbers),   'getMeta'),
-            withRetry(() => getTextsA(prompt, numbers), 'getTextsA'),
-            withRetry(() => getTextsB(prompt, numbers), 'getTextsB'),
+       // 2. Meta (inclui nome_cliente) + justificativas em sequência
+        const meta   = await withRetry(() => getMeta(prompt, numbers),   'getMeta');
+        const textsA = await withRetry(() => getTextsA(prompt, numbers), 'getTextsA');
+        const textsB = await withRetry(() => getTextsB(prompt, numbers), 'getTextsB');
         ]);
         const texts = Object.assign({}, textsA, textsB);
 
