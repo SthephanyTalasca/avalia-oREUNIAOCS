@@ -72,13 +72,13 @@ function safeParse(text, label) {
 }
 
 async function withRetry(fn, label, attempts) {
-    attempts = attempts || 3;
+    attempts = attempts || 5;
     let lastErr;
     for (let i = 0; i < attempts; i++) {
         try { return await fn(); } catch (e) {
             lastErr = e;
             console.error(label + ' tentativa ' + (i + 1) + ' falhou:', e.message);
-            if (i < attempts - 1) await new Promise(function(r) { setTimeout(r, 1000 * (i + 1)); });
+            if (i < attempts - 1) await new Promise(function(r) { setTimeout(r, 8000 * (i + 1)); });
         }
     }
     throw lastErr;
