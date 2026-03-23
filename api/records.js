@@ -15,12 +15,17 @@ function getSession(req) {
 }
 
 export default async function handler(req, res) {
-    const session = getSession(req);
-    if (!session) return res.status(401).json({ error: 'Não autorizado' });
+    if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
     if (req.method !== 'DELETE') return res.status(405).json({ error: 'Método não permitido' });
 
-    const { modo, id, nome } = req.body || {};
-    let url;
+    // Lê o body manualmente se vier como string (Vercel às vezes não faz parse em DELETE)
+    let body = req.body;
+    if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    body = body || {};
+
+    const { modo, id, nome } = body;
 
     if (modo === 'nao_id') {
         url = `${SUPABASE_URL}/rest/v1/cs_reunioes?analista_nome=ilike.*identificado*`;
