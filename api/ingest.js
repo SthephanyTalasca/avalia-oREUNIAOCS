@@ -423,6 +423,7 @@ export default async function handler(req, res) {
         const analise = Object.assign({}, numbers, meta, texts, {
             analista_nome: analistaNome,
             justificativa_detalhada: justificativa_detalhada,
+            file_url: file_url || null,
         });
 
         // 4. Salva no Supabase
