@@ -305,6 +305,7 @@ async function salvarNoSupabase(analise, analistaNome, driveFileId, dataReuniao)
         analista_nome:          analistaNome,
         drive_file_id:          driveFileId  || null,
         data_reuniao:           dataReuniao  || null,
+        file_url:               analise.file_url || null,
         media_final:            analise.media_final          || null,
         saude_cliente:          analise.saude_cliente        || null,
         risco_churn:            analise.risco_churn          || null,
@@ -363,7 +364,8 @@ export default async function handler(req, res) {
     const file_name   = body.file_name;
     const data_reuniao= body.data_reuniao;
     const drive_file_id = body.drive_file_id;
-
+ const file_url      = body.file_url;
+     
     if (!transcript || transcript.trim().length < 50) {
         return res.status(400).json({ error: 'Transcricao ausente ou muito curta.' });
     }
