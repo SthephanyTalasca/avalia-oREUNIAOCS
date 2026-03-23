@@ -74,7 +74,7 @@ function calcStats(reunioes) {
     const porCoordenador = {};
     for (const r of reunioes) {
         if (!porCoordenador[r.coordenador])
-            porCoordenador[r.coordenador] = { total:0, medias:[], churn_alto:0 };
+            porCoordenador[r.coordenador] = { total:0, medias:[], _alto:0 };
         const c = porCoordenador[r.coordenador];
         c.total++;
         if (r.media_final && r.media_final > 0) c.medias.push(r.media_final);
@@ -162,7 +162,7 @@ for (const r of reunioes) {
     else
         churnStats.indefinido++;
 }
-    }
+    
 
     // ── Checklist ────────────────────────────────────────────────────────
     const ckKeys = ['definiu_prazo_implementacao','alinhou_dever_de_casa','validou_certificado_digital',
