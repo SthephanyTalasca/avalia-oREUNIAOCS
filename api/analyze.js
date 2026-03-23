@@ -403,7 +403,6 @@ export default async function handler(req, res) {
         const meta   = await withRetry(() => getMeta(prompt, numbers),   'getMeta');
         const textsA = await withRetry(() => getTextsA(prompt, numbers), 'getTextsA');
         const textsB = await withRetry(() => getTextsB(prompt, numbers), 'getTextsB');
-        ]);
         const texts = Object.assign({}, textsA, textsB);
 
         ALL_PILLARS.forEach(function(p) {
