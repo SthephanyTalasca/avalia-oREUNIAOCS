@@ -299,6 +299,25 @@ async function jaExisteNoBanco(driveFileId) {
     const rows = await r.json();
     return Array.isArray(rows) && rows.length > 0;
 }
+// ─── Busca coordenador da analista no banco ───────────────────────────────────
+async function buscarCoordenador(analistaNome) {
+    if (!analistaNome) return null;
+    try {
+        const r = await fetch(
+            SUPABASE_URL + '/rest/v1/cs_analistas?nome=ilike.' + 
+            encodeURIComponent(analistaNome) + '&select=coordenador&limit=1',
+            { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } }
+        );
+        const rows = await r.json();
+        return (Array.isArray(rows) && rows[0]?.coordenador) || null;
+    } catch (e) {
+        console.error('Erro ao buscar coordenador:', e.message);
+        return null;
+    }
+}
+
+// Busca coordenador da analista
+const coordenador = await buscarCoordenador(analistaNome);
 
 async function salvarNoSupabase(analise, analistaNome, driveFileId, dataReuniao) {
     const row = {
@@ -328,7 +347,9 @@ async function salvarNoSupabase(analise, analistaNome, driveFileId, dataReuniao)
         nota_dominio_negocio:   analise.nota_dominio_negocio  || null,
         nota_ecossistema_nibo:  analise.nota_ecossistema_nibo || null,
         nota_universo_contabil: analise.nota_universo_contabil || null,
+        coordenador: coordenador || null,
         analise_json:           analise,
+        
     };
 
     const r = await fetch(SUPABASE_URL + '/rest/v1/cs_reunioes', {
