@@ -107,7 +107,13 @@ async function getNumbers(transcript) {
                 'Auditor de CS do Nibo. Leia a transcricao. ' +
                 'Para cada pilar retorne nota 1-5. Sem evidencia = -1. ' +
                 'media_final = media das notas diferentes de -1. ' +
-                'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100.',
+                'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100. ' +
+                'Para o checklist: ck_prazo=true se definiu prazo de implementacao, ' +
+                'ck_dever_casa=true se alinhou dever de casa com o cliente, ' +
+                'ck_certificado=true se validou certificado digital ou acesso ao sistema, ' +
+                'ck_proximo_passo=true se agendou proxima reuniao ou proximo passo, ' +
+                'ck_dor_vendas=true se conectou com a dor identificada em vendas, ' +
+                'ck_suporte=true se explicou o canal de suporte ao cliente.',
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -299,12 +305,13 @@ async function jaExisteNoBanco(driveFileId) {
     const rows = await r.json();
     return Array.isArray(rows) && rows.length > 0;
 }
+
 // ─── Busca coordenador da analista no banco ───────────────────────────────────
 async function buscarCoordenador(analistaNome) {
     if (!analistaNome) return null;
     try {
         const r = await fetch(
-            SUPABASE_URL + '/rest/v1/cs_analistas?nome=ilike.' + 
+            SUPABASE_URL + '/rest/v1/cs_analistas?nome=ilike.' +
             encodeURIComponent(analistaNome) + '&select=coordenador&limit=1',
             { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } }
         );
@@ -316,15 +323,14 @@ async function buscarCoordenador(analistaNome) {
     }
 }
 
-// Busca coordenador da analista
-const coordenador = await buscarCoordenador(analistaNome);
-
-async function salvarNoSupabase(analise, analistaNome, driveFileId, dataReuniao) {
+// ─── Salva no Supabase ────────────────────────────────────────────────────────
+async function salvarNoSupabase(analise, analistaNome, driveFileId, dataReuniao, coordenador) {
     const row = {
         analista_nome:          analistaNome,
-        drive_file_id:          driveFileId  || null,
-        data_reuniao:           dataReuniao  || null,
-        file_url:               analise.file_url || null,
+        coordenador:            coordenador          || null,
+        drive_file_id:          driveFileId          || null,
+        data_reuniao:           dataReuniao          || null,
+        file_url:               analise.file_url     || null,
         media_final:            analise.media_final          || null,
         saude_cliente:          analise.saude_cliente        || null,
         risco_churn:            analise.risco_churn          || null,
@@ -347,9 +353,7 @@ async function salvarNoSupabase(analise, analistaNome, driveFileId, dataReuniao)
         nota_dominio_negocio:   analise.nota_dominio_negocio  || null,
         nota_ecossistema_nibo:  analise.nota_ecossistema_nibo || null,
         nota_universo_contabil: analise.nota_universo_contabil || null,
-        coordenador: coordenador || null,
         analise_json:           analise,
-        
     };
 
     const r = await fetch(SUPABASE_URL + '/rest/v1/cs_reunioes', {
@@ -379,14 +383,14 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Nao autorizado.' });
     }
 
-    const body        = req.body || {};
-    const transcript  = body.transcript;
-    const folder_name = body.folder_name;
-    const file_name   = body.file_name;
-    const data_reuniao= body.data_reuniao;
+    const body          = req.body || {};
+    const transcript    = body.transcript;
+    const folder_name   = body.folder_name;
+    const file_name     = body.file_name;
+    const data_reuniao  = body.data_reuniao;
     const drive_file_id = body.drive_file_id;
- const file_url      = body.file_url;
-     
+    const file_url      = body.file_url;
+
     if (!transcript || transcript.trim().length < 50) {
         return res.status(400).json({ error: 'Transcricao ausente ou muito curta.' });
     }
@@ -399,7 +403,6 @@ export default async function handler(req, res) {
         }
     } catch (e) {
         console.error('Erro ao checar duplicata:', e.message);
-        // Continua mesmo se a checagem falhar
     }
 
     const analistaNome = (folder_name || 'Nao identificado').trim();
@@ -409,14 +412,16 @@ export default async function handler(req, res) {
         // 1. Notas numericas
         const numbers = await withRetry(function() { return getNumbers(transcript); }, 'getNumbers');
 
-        // 2. Meta + justificativas em paralelo
+        // 2. Meta + justificativas + coordenador em paralelo ✅
         const results = await Promise.all([
             withRetry(function() { return getMeta(transcript, numbers);   }, 'getMeta'),
             withRetry(function() { return getTextsA(transcript, numbers); }, 'getTextsA'),
             withRetry(function() { return getTextsB(transcript, numbers); }, 'getTextsB'),
+            buscarCoordenador(analistaNome), // ✅ dentro do handler async, funciona!
         ]);
-        const meta   = results[0];
-        const texts  = Object.assign({}, results[1], results[2]);
+        const meta        = results[0];
+        const texts       = Object.assign({}, results[1], results[2]);
+        const coordenador = results[3];
 
         // Fallbacks
         ALL_PILLARS.forEach(function(p) {
@@ -442,20 +447,21 @@ export default async function handler(req, res) {
         );
 
         const analise = Object.assign({}, numbers, meta, texts, {
-            analista_nome: analistaNome,
+            analista_nome:           analistaNome,
             justificativa_detalhada: justificativa_detalhada,
-            file_url: file_url || null,
+            file_url:                file_url || null,
         });
 
         // 4. Salva no Supabase
-        const id = await salvarNoSupabase(analise, analistaNome, drive_file_id, data_reuniao);
+        const id = await salvarNoSupabase(analise, analistaNome, drive_file_id, data_reuniao, coordenador);
 
-        console.log('Salvo! ID: ' + id + ' | Analista: ' + analistaNome + ' | Media: ' + numbers.media_final);
+        console.log('Salvo! ID: ' + id + ' | Analista: ' + analistaNome + ' | Media: ' + numbers.media_final + ' | Coordenador: ' + coordenador);
         return res.status(200).json({
             ok: true,
             id: id,
             analista: analistaNome,
             media_final: numbers.media_final,
+            coordenador: coordenador,
         });
 
     } catch (err) {
