@@ -15,10 +15,10 @@ function getSession(req) {
 }
 
 export default async function handler(req, res) {
-    if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
+    const session = getSession(req); // ← guarda o retorno
+    if (!session) return res.status(401).json({ error: 'Não autorizado' });
     if (req.method !== 'DELETE') return res.status(405).json({ error: 'Método não permitido' });
 
-    // Lê o body manualmente se vier como string (Vercel às vezes não faz parse em DELETE)
     let body = req.body;
     if (typeof body === 'string') {
         try { body = JSON.parse(body); } catch { body = {}; }
@@ -26,6 +26,7 @@ export default async function handler(req, res) {
     body = body || {};
 
     const { modo, id, nome } = body;
+    let url; // ← declara a variável antes de usar
 
     if (modo === 'nao_id') {
         url = `${SUPABASE_URL}/rest/v1/cs_reunioes?analista_nome=ilike.*identificado*`;
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
     } else if (modo === 'single' && id) {
         url = `${SUPABASE_URL}/rest/v1/cs_reunioes?id=eq.${id}`;
     } else if (modo === 'all') {
-        if (session.email.toLowerCase() !== ADMIN_EMAIL)
+        if (session.email.toLowerCase() !== ADMIN_EMAIL) // ← agora session existe
             return res.status(403).json({ error: 'Acesso negado.' });
         url = `${SUPABASE_URL}/rest/v1/cs_reunioes?id=gt.0`;
     } else {
