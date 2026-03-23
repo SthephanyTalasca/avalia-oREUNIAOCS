@@ -147,17 +147,21 @@ function calcStats(reunioes) {
     }
 
     // ── Risco de Churn ───────────────────────────────────────────────────
-    const churnStats = { alto: 0, medio: 0, baixo: 0, indefinido: 0 };
-    for (const r of reunioes) {
-        const v = (r.risco_churn || '').toLowerCase();
-        if (v.includes('alto') || v.includes('crítico') || v.includes('critico'))
-            churnStats.alto++;
-        else if (v.includes('médio') || v.includes('medio') || v.includes('moderado'))
-            churnStats.medio++;
-        else if (v.includes('baixo'))
-            churnStats.baixo++;
-        else
-            churnStats.indefinido++;
+
+const churnStats = { alto: 0, medio: 0, baixo: 0, indefinido: 0 };
+for (const r of reunioes) {
+    const v = (r.risco_churn || '').toLowerCase();
+    const temNegacao = /\bnão\b|\bnao\b|\bsem\b|\bnenhum/.test(v);
+
+    if (!temNegacao && (/\balto\b/.test(v) || /\bcrítico\b/.test(v) || /\bcritico\b/.test(v)))
+        churnStats.alto++;
+    else if (/\bmédio\b/.test(v) || /\bmedio\b/.test(v) || /\bmoderando\b/.test(v))
+        churnStats.medio++;
+    else if (/\bbaixo\b/.test(v))
+        churnStats.baixo++;
+    else
+        churnStats.indefinido++;
+}
     }
 
     // ── Checklist ────────────────────────────────────────────────────────
