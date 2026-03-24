@@ -3,6 +3,12 @@
   "buildCommand": null,
   "outputDirectory": ".",
   "functions": {
+    "api/ingest.js": {
+      "maxDuration": 300
+    },
+    "api/analyze.js": {
+      "maxDuration": 300
+    },
     "api/*.js": {
       "maxDuration": 30
     }
