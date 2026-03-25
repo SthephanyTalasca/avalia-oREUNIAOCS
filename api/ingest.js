@@ -96,26 +96,29 @@ function makeTextSchema(pairs) {
     return { type: Type.OBJECT, properties: props, required: req };
 }
 
-// ── CORRIGIDO: captura data E hora do cabeçalho da transcrição ─────────────
+// ── CORRIGIDO: captura data E hora, trata GMT-03:00, formato Supabase ─────
 function parseDataReuniao(rawDate) {
     if (!rawDate) return null;
-    const s = String(rawDate).trim();
+    // Remove timezone suffix tipo " GMT-03:00" ou "Z" — usa horário local da reunião
+    const s = String(rawDate).trim().replace(/\s*GMT[+-]\d{2}:\d{2}$/i, '').replace(/Z$/, '').trim();
 
-    // Já está em formato ISO completo com hora: 2025-03-10T14:30:00
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return s.slice(0, 19);
+    // Já está em formato ISO: 2025-03-10T14:30:00 ou 2025-03-10 14:30:00
+    if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(s)) {
+        return s.slice(0, 19).replace('T', ' ');
+    }
 
-    // Só data ISO sem hora: 2025-03-10
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s + 'T00:00:00';
+    // Só data ISO: 2025-03-10
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s + ' 00:00:00';
 
-    // DD/MM/YYYY HH:MM ou DD-MM-YYYY HH:MM
+    // DD/MM/YYYY HH:MM
     const dmyHm = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})/);
     if (dmyHm) {
-        return `${dmyHm[3]}-${dmyHm[2].padStart(2,'0')}-${dmyHm[1].padStart(2,'0')}T${dmyHm[4].padStart(2,'0')}:${dmyHm[5]}:00`;
+        return `${dmyHm[3]}-${dmyHm[2].padStart(2,'0')}-${dmyHm[1].padStart(2,'0')} ${dmyHm[4].padStart(2,'0')}:${dmyHm[5]}:00`;
     }
 
     // DD/MM/YYYY sem hora
     const dmy = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-    if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}T00:00:00`;
+    if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')} 00:00:00`;
 
     const meses = {
         janeiro:1, jan:1, fevereiro:2, fev:2,
@@ -128,20 +131,20 @@ function parseDataReuniao(rawDate) {
 
     const norm = s.toLowerCase().replace(/\./g, '');
 
-    // "10 de mar de 2025 às 14:30" — formato exato do Gemini Notes
+    // "25 de mar de 2026 às 14:24" — GMT já removido acima
     const extHm = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})\s+(?:às|as|a)\s+(\d{1,2}):(\d{2})/);
     if (extHm && meses[extHm[2]]) {
-        return `${extHm[3]}-${String(meses[extHm[2]]).padStart(2,'0')}-${extHm[1].padStart(2,'0')}T${extHm[4].padStart(2,'0')}:${extHm[5]}:00`;
+        return `${extHm[3]}-${String(meses[extHm[2]]).padStart(2,'0')}-${extHm[1].padStart(2,'0')} ${extHm[4].padStart(2,'0')}:${extHm[5]}:00`;
     }
 
-    // "10 de mar de 2025" sem hora
+    // "25 de mar de 2026" sem hora
     const ext = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})/);
     if (ext && meses[ext[2]]) {
-        return `${ext[3]}-${String(meses[ext[2]]).padStart(2,'0')}-${ext[1].padStart(2,'0')}T00:00:00`;
+        return `${ext[3]}-${String(meses[ext[2]]).padStart(2,'0')}-${ext[1].padStart(2,'0')} 00:00:00`;
     }
 
     const d = new Date(s);
-    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 19);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 19).replace('T', ' ');
 
     return null;
 }
@@ -161,10 +164,10 @@ async function getNumbers(transcript) {
                 'media_final = media das notas diferentes de -1. ' +
                 'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100. ' +
                 'data_reuniao: extraia a data E hora exata da reuniao do cabecalho da transcricao. ' +
-                'O cabecalho do Gemini Notes tem o formato: "Reuniao em DD de mmm. de AAAA as HH:MM". ' +
-                'Exemplo: "Reuniao em 10 de mar. de 2025 as 14:30" → retorne "2025-03-10T14:30:00". ' +
-                'Exemplo: "Reuniao em 5 de jan. de 2025 as 09:15" → retorne "2025-01-05T09:15:00". ' +
-                'OBRIGATORIO: retorne no formato ISO 8601 com hora: YYYY-MM-DDTHH:MM:00. ' +
+                'O cabecalho do Gemini Notes tem o formato: "Reuniao em DD de mmm. de AAAA as HH:MM GMT-03:00". ' +
+                'Exemplo: "Reuniao em 25 de mar. de 2026 as 14:24 GMT-03:00" → retorne "2026-03-25 14:24:00". ' +
+                'Exemplo: "Reuniao em 5 de jan. de 2025 as 09:15 GMT-03:00" → retorne "2025-01-05 09:15:00". ' +
+                'OBRIGATORIO: retorne no formato "YYYY-MM-DD HH:MM:00" (sem T, sem GMT, sem timezone). ' +
                 'NUNCA retorne a data de hoje. Se nao encontrar data no cabecalho, retorne null. ' +
                 'Para o checklist: ck_prazo=true se definiu prazo de implementacao, ' +
                 'ck_dever_casa=true se alinhou dever de casa com o cliente, ' +
