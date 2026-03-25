@@ -23,8 +23,10 @@ export default async function handler(req, res) {
     try {
         const row = {
             coordenador:            coordenador || null,
-            nome_cliente:           analise.nome_cliente           || 'Não identificado', // ✨ NOVO
+            nome_cliente:           analise.nome_cliente           || 'Não identificado',
             analista_nome:          analise.analista_nome          || 'Não identificado',
+            // CORRIGIDO: salva data_reuniao com hora diretamente no campo
+            data_reuniao:           analise.data_reuniao           || null,
             media_final:            analise.media_final            || null,
             saude_cliente:          analise.saude_cliente          || null,
             risco_churn:            analise.risco_churn            || null,
@@ -47,7 +49,7 @@ export default async function handler(req, res) {
             nota_dominio_negocio:   analise.nota_dominio_negocio   || null,
             nota_ecossistema_nibo:  analise.nota_ecossistema_nibo  || null,
             nota_universo_contabil: analise.nota_universo_contabil || null,
-            analise_json: analise
+            analise_json: analise,
         };
 
         const r = await fetch(`${SUPABASE_URL}/rest/v1/cs_reunioes`, {
