@@ -96,7 +96,58 @@ function makeTextSchema(pairs) {
     return { type: Type.OBJECT, properties: props, required: req };
 }
 
+// ── CORRIGIDO: captura data E hora do cabeçalho da transcrição ─────────────
+function parseDataReuniao(rawDate) {
+    if (!rawDate) return null;
+    const s = String(rawDate).trim();
+
+    // Já está em formato ISO completo com hora: 2025-03-10T14:30:00
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return s.slice(0, 19);
+
+    // Só data ISO sem hora: 2025-03-10
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s + 'T00:00:00';
+
+    // DD/MM/YYYY HH:MM ou DD-MM-YYYY HH:MM
+    const dmyHm = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})/);
+    if (dmyHm) {
+        return `${dmyHm[3]}-${dmyHm[2].padStart(2,'0')}-${dmyHm[1].padStart(2,'0')}T${dmyHm[4].padStart(2,'0')}:${dmyHm[5]}:00`;
+    }
+
+    // DD/MM/YYYY sem hora
+    const dmy = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}T00:00:00`;
+
+    const meses = {
+        janeiro:1, jan:1, fevereiro:2, fev:2,
+        março:3, mar:3, marco:3, abril:4, abr:4,
+        maio:5, junho:6, jun:6, julho:7, jul:7,
+        agosto:8, ago:8, setembro:9, set:9,
+        outubro:10, out:10, novembro:11, nov:11,
+        dezembro:12, dez:12,
+    };
+
+    const norm = s.toLowerCase().replace(/\./g, '');
+
+    // "10 de mar de 2025 às 14:30" — formato exato do Gemini Notes
+    const extHm = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})\s+(?:às|as|a)\s+(\d{1,2}):(\d{2})/);
+    if (extHm && meses[extHm[2]]) {
+        return `${extHm[3]}-${String(meses[extHm[2]]).padStart(2,'0')}-${extHm[1].padStart(2,'0')}T${extHm[4].padStart(2,'0')}:${extHm[5]}:00`;
+    }
+
+    // "10 de mar de 2025" sem hora
+    const ext = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})/);
+    if (ext && meses[ext[2]]) {
+        return `${ext[3]}-${String(meses[ext[2]]).padStart(2,'0')}-${ext[1].padStart(2,'0')}T00:00:00`;
+    }
+
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 19);
+
+    return null;
+}
+
 // ─── Gemini ───────────────────────────────────────────────────────────────────
+// CORRIGIDO: instrução reforçada para extrair data+hora e nunca usar data de hoje
 async function getNumbers(transcript) {
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -109,6 +160,12 @@ async function getNumbers(transcript) {
                 'Para cada pilar retorne nota 1-5. Sem evidencia = -1. ' +
                 'media_final = media das notas diferentes de -1. ' +
                 'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100. ' +
+                'data_reuniao: extraia a data E hora exata da reuniao do cabecalho da transcricao. ' +
+                'O cabecalho do Gemini Notes tem o formato: "Reuniao em DD de mmm. de AAAA as HH:MM". ' +
+                'Exemplo: "Reuniao em 10 de mar. de 2025 as 14:30" → retorne "2025-03-10T14:30:00". ' +
+                'Exemplo: "Reuniao em 5 de jan. de 2025 as 09:15" → retorne "2025-01-05T09:15:00". ' +
+                'OBRIGATORIO: retorne no formato ISO 8601 com hora: YYYY-MM-DDTHH:MM:00. ' +
+                'NUNCA retorne a data de hoje. Se nao encontrar data no cabecalho, retorne null. ' +
                 'Para o checklist: ck_prazo=true se definiu prazo de implementacao, ' +
                 'ck_dever_casa=true se alinhou dever de casa com o cliente, ' +
                 'ck_certificado=true se validou certificado digital ou acesso ao sistema, ' +
@@ -121,6 +178,7 @@ async function getNumbers(transcript) {
                     media_final:            { type: Type.NUMBER },
                     tempo_fala_cs_pct:      { type: Type.NUMBER },
                     tempo_fala_cliente_pct: { type: Type.NUMBER },
+                    data_reuniao:           { type: Type.STRING, nullable: true },
                     nota_consultividade:    { type: Type.NUMBER },
                     nota_escuta_ativa:      { type: Type.NUMBER },
                     nota_jornada_cliente:   { type: Type.NUMBER },
@@ -159,10 +217,12 @@ async function getNumbers(transcript) {
     });
     const parsed = safeParse(res.text, 'getNumbers');
     ALL_PILLARS.forEach(function(p) {
-        if (parsed['nota_' + p[0]] === -1) parsed['nota_' + p[0]] = null;
+        if (parsed['nota_' + p[0]] === -1 || parsed['nota_' + p[0]] === 0) parsed['nota_' + p[0]] = null;
     });
     parsed.tempo_fala_cs      = (parsed.tempo_fala_cs_pct      || 50) + '%';
     parsed.tempo_fala_cliente = (parsed.tempo_fala_cliente_pct || 50) + '%';
+    // CORRIGIDO: usa o novo parseDataReuniao que preserva a hora
+    parsed.data_reuniao = parseDataReuniao(parsed.data_reuniao) || null;
     parsed.checklist_cs = {
         definiu_prazo_implementacao: parsed.ck_prazo         || false,
         alinhou_dever_de_casa:       parsed.ck_dever_casa    || false,
@@ -174,6 +234,7 @@ async function getNumbers(transcript) {
     return parsed;
 }
 
+// CORRIGIDO: instrução muito mais forte para identificar o cliente
 async function getMeta(transcript, numbers) {
     const notasStr = ALL_PILLARS
         .filter(function(p) { return numbers['nota_' + p[0]] !== null; })
@@ -188,12 +249,21 @@ async function getMeta(transcript, numbers) {
             systemInstruction:
                 'Auditor de CS do Nibo. Notas: ' + notasStr + '. ' +
                 'Retorne os campos solicitados em JSON. ' +
+                'nome_cliente: OBRIGATORIO — identifique o nome da empresa, escritorio contabil ou cliente sendo atendido na reuniao. ' +
+                'Procure em toda a transcricao por: (1) nome do escritorio ou empresa do cliente, ' +
+                '(2) nome de quem esta sendo atendido pelo CS, ' +
+                '(3) qualquer mencao a "escritorio", "empresa", "cliente", "razao social", "CNPJ", ' +
+                '(4) como o CS se dirige a pessoa — "Fulano da Empresa X". ' +
+                'Leia o inicio E o final da transcricao com atencao especial. ' +
+                'Prefira o nome da empresa/escritorio ao nome pessoal. ' +
+                'So retorne "Nao identificado" se absolutamente nao houver NENHUMA pista na transcricao. ' +
                 'pontos_fortes e pontos_atencao: max 4 itens cada, frases curtas. ' +
                 'sistemas_citados: ferramentas/sistemas mencionados pelo cliente. ' +
                 'resumo_executivo: 1 frase. saude_cliente: 1 frase. risco_churn: 1 frase.',
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
+                    nome_cliente:     { type: Type.STRING },
                     resumo_executivo: { type: Type.STRING },
                     saude_cliente:    { type: Type.STRING },
                     risco_churn:      { type: Type.STRING },
@@ -201,7 +271,7 @@ async function getMeta(transcript, numbers) {
                     pontos_fortes:    { type: Type.ARRAY, items: { type: Type.STRING } },
                     pontos_atencao:   { type: Type.ARRAY, items: { type: Type.STRING } },
                 },
-                required: ['resumo_executivo','saude_cliente','risco_churn',
+                required: ['nome_cliente', 'resumo_executivo','saude_cliente','risco_churn',
                            'sistemas_citados','pontos_fortes','pontos_atencao'],
             },
         },
@@ -266,8 +336,13 @@ async function getRelatorio(numbers, meta, texts, analistaNome) {
         return '- **' + p[1] + '**: ' + nota + '/5 — ' + pq + suf;
     }).filter(Boolean).join('\n');
 
+    const clienteLine = meta.nome_cliente && meta.nome_cliente !== 'Nao identificado'
+        ? `Cliente: **${meta.nome_cliente}**\n\n`
+        : '';
+
     const prompt =
         'Coordenador de CS do Nibo — feedback sobre a analista **' + analistaNome + '**.\n\n' +
+        clienteLine +
         'NOTAS:\n' + linhas + '\n\n' +
         'Media: ' + (numbers.media_final || '?') + '/5' +
         ' | Saude: ' + (meta.saude_cliente || '') +
@@ -339,6 +414,9 @@ async function salvarResultado(id, analise, coordenador) {
     const update = {
         status:                  'concluido',
         coordenador:             coordenador                      || null,
+        // CORRIGIDO: salva nome_cliente e data_reuniao com hora
+        nome_cliente:            analise.nome_cliente             || 'Não identificado',
+        data_reuniao:            analise.data_reuniao             || null,
         media_final:             analise.media_final              || null,
         saude_cliente:           analise.saude_cliente            || null,
         risco_churn:             analise.risco_churn              || null,
@@ -440,6 +518,7 @@ export default async function handler(req, res) {
                     texts['melhoria_' + k] = texts['melhoria_' + k] || 'Excelencia atingida.';
                 }
             });
+            meta.nome_cliente     = meta.nome_cliente     || 'Não identificado';
             meta.resumo_executivo = meta.resumo_executivo || 'Reuniao de onboarding realizada.';
             meta.saude_cliente    = meta.saude_cliente    || 'Nao avaliado.';
             meta.risco_churn      = meta.risco_churn      || 'Nao avaliado.';
@@ -502,6 +581,8 @@ export default async function handler(req, res) {
             analista_nome: analistaNome,
             drive_file_id: drive_file_id || null,
             file_url:      file_url      || null,
+            // data_reuniao vinda do Apps Script (data de criação do arquivo)
+            // será sobrescrita pelo Gemini ao processar com a data real da transcrição
             data_reuniao:  data_reuniao  || null,
             status:        'pendente',
             analise_json:  { transcript: transcript, file_name: file_name || null },
