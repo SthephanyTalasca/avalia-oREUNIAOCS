@@ -65,14 +65,26 @@ function detectAnalista(transcript) {
     return null;
 }
 
+// ── CORRIGIDO: captura data E hora do cabeçalho da transcrição ────────────
 function parseDataReuniao(rawDate) {
     if (!rawDate) return null;
     const s = String(rawDate).trim();
 
-    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    // Já está em formato ISO completo com hora: 2025-03-10T14:30:00
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return s.slice(0, 19);
 
+    // Só data ISO sem hora: 2025-03-10
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s + 'T00:00:00';
+
+    // DD/MM/YYYY HH:MM ou DD-MM-YYYY HH:MM
+    const dmyHm = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})/);
+    if (dmyHm) {
+        return `${dmyHm[3]}-${dmyHm[2].padStart(2,'0')}-${dmyHm[1].padStart(2,'0')}T${dmyHm[4].padStart(2,'0')}:${dmyHm[5]}:00`;
+    }
+
+    // DD/MM/YYYY sem hora
     const dmy = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-    if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
+    if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}T00:00:00`;
 
     const meses = {
         janeiro:1, jan:1, fevereiro:2, fev:2,
@@ -84,11 +96,21 @@ function parseDataReuniao(rawDate) {
     };
 
     const norm = s.toLowerCase().replace(/\./g, '');
+
+    // "10 de mar de 2025 às 14:30" — formato exato do Gemini Notes
+    const extHm = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})\s+(?:às|as|a)\s+(\d{1,2}):(\d{2})/);
+    if (extHm && meses[extHm[2]]) {
+        return `${extHm[3]}-${String(meses[extHm[2]]).padStart(2,'0')}-${extHm[1].padStart(2,'0')}T${extHm[4].padStart(2,'0')}:${extHm[5]}:00`;
+    }
+
+    // "10 de mar de 2025" sem hora
     const ext = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})/);
-    if (ext && meses[ext[2]]) return `${ext[3]}-${String(meses[ext[2]]).padStart(2,'0')}-${ext[1].padStart(2,'0')}`;
+    if (ext && meses[ext[2]]) {
+        return `${ext[3]}-${String(meses[ext[2]]).padStart(2,'0')}-${ext[1].padStart(2,'0')}T00:00:00`;
+    }
 
     const d = new Date(s);
-    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 19);
 
     return null;
 }
@@ -154,6 +176,7 @@ async function withRetry(fn, label, attempts) {
 }
 
 // ── CHAMADA 1: notas + checklist + data_reuniao ───────────────────────────
+// CORRIGIDO: instrução reforçada para extrair data+hora e nunca usar data de hoje
 async function getNumbers(transcript) {
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -166,9 +189,12 @@ async function getNumbers(transcript) {
                 'Para cada pilar retorne nota 1-5. Sem evidência = -1. ' +
                 'media_final = média das notas diferentes de -1. ' +
                 'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100. ' +
-                'data_reuniao: extraia a data da reunião do cabeçalho da transcrição. ' +
-                'O cabeçalho costuma ter o formato "Reunião em DD de mmm. de AAAA às HH:MM". ' +
-                'Retorne APENAS a data no formato YYYY-MM-DD. Se não encontrar, retorne null.',
+                'data_reuniao: extraia a data E hora exata da reunião do cabeçalho da transcrição. ' +
+                'O cabeçalho do Gemini Notes tem o formato: "Reunião em DD de mmm. de AAAA às HH:MM". ' +
+                'Exemplo: "Reunião em 10 de mar. de 2025 às 14:30" → retorne "2025-03-10T14:30:00". ' +
+                'Exemplo: "Reunião em 5 de jan. de 2025 às 09:15" → retorne "2025-01-05T09:15:00". ' +
+                'OBRIGATÓRIO: retorne no formato ISO 8601 com hora: YYYY-MM-DDTHH:MM:00. ' +
+                'NUNCA retorne a data de hoje. Se não encontrar data no cabeçalho, retorne null.',
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -245,10 +271,7 @@ async function getNumbers(transcript) {
 }
 
 // ── CHAMADA 2: meta-textos + nome_cliente ─────────────────────────────────
-// 💡 APRENDIZADO: adicionamos nome_cliente ao responseSchema.
-//    O responseSchema funciona como um "contrato" com a IA:
-//    você declara quais campos quer, seus tipos, e quais são obrigatórios.
-//    A IA garante que o JSON retornado vai ter exatamente esses campos.
+// CORRIGIDO: instrução muito mais forte para identificar o cliente
 async function getMeta(transcript, numbers) {
     const notasStr = ALL_PILLARS
         .filter(p => numbers['nota_' + p[0]] !== null)
@@ -264,17 +287,21 @@ async function getMeta(transcript, numbers) {
             systemInstruction:
                 'Auditor de CS do Nibo. Notas: ' + notasStr + '. ' +
                 'Retorne os campos solicitados em JSON. ' +
-                // ✨ Instrução para o novo campo:
-                'nome_cliente: nome da empresa ou pessoa cliente identificada na transcrição. ' +
-                'Procure por quem está sendo atendido — nome do escritório, empresa ou contato. ' +
-                'Se não conseguir identificar claramente, retorne "Não identificado". ' +
+                'nome_cliente: OBRIGATÓRIO — identifique o nome da empresa, escritório contábil ou cliente sendo atendido na reunião. ' +
+                'Procure em toda a transcrição por: (1) nome do escritório ou empresa do cliente, ' +
+                '(2) nome de quem está sendo atendido pelo CS, ' +
+                '(3) qualquer menção a "escritório", "empresa", "cliente", "razão social", "CNPJ", ' +
+                '(4) como o CS se dirige à pessoa — "Fulano da Empresa X". ' +
+                'Leia o início E o final da transcrição com atenção especial. ' +
+                'Prefira o nome da empresa/escritório ao nome pessoal. ' +
+                'Só retorne "Não identificado" se absolutamente não houver NENHUMA pista na transcrição. ' +
                 'pontos_fortes e pontos_atencao: máx 4 itens cada, frases curtas. ' +
                 'sistemas_citados: ferramentas/sistemas mencionados pelo cliente. ' +
                 'resumo_executivo: 1 frase. saude_cliente: 1 frase. risco_churn: 1 frase.',
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
-                    nome_cliente:     { type: Type.STRING },  // ✨ NOVO
+                    nome_cliente:     { type: Type.STRING },
                     resumo_executivo: { type: Type.STRING },
                     saude_cliente:    { type: Type.STRING },
                     risco_churn:      { type: Type.STRING },
@@ -342,7 +369,6 @@ async function getRelatorio(numbers, meta, texts, coordinator) {
     }).filter(Boolean).join('\n');
 
     const coordinatorLine = coordinator ? `Coordenador responsável: **${coordinator}**\n\n` : '';
-    // ✨ Nome do cliente aparece também no relatório gerado
     const clienteLine = meta.nome_cliente && meta.nome_cliente !== 'Não identificado'
         ? `Cliente: **${meta.nome_cliente}**\n\n`
         : '';
@@ -388,7 +414,7 @@ export default async function handler(req, res) {
     try {
         const detectado = detectAnalista(prompt);
 
-        // 1. Notas + data_reuniao
+        // 1. Notas + data_reuniao (com hora)
         const numbers = await withRetry(() => getNumbers(prompt), 'getNumbers');
 
         if (detectado) {
@@ -398,8 +424,7 @@ export default async function handler(req, res) {
         numbers.analista_nome = numbers.analista_nome || 'Não identificado';
         numbers.coordinator   = coordinator || numbers.coordinator || null;
 
-        // 2. Meta (inclui nome_cliente) + justificativas em paralelo
-       // 2. Meta (inclui nome_cliente) + justificativas em sequência
+        // 2. Meta (inclui nome_cliente) + justificativas em sequência
         const meta   = await withRetry(() => getMeta(prompt, numbers),   'getMeta');
         const textsA = await withRetry(() => getTextsA(prompt, numbers), 'getTextsA');
         const textsB = await withRetry(() => getTextsB(prompt, numbers), 'getTextsB');
@@ -416,7 +441,7 @@ export default async function handler(req, res) {
             }
         });
 
-        meta.nome_cliente     = meta.nome_cliente     || 'Não identificado'; // ✨
+        meta.nome_cliente     = meta.nome_cliente     || 'Não identificado';
         meta.resumo_executivo = meta.resumo_executivo || 'Reunião de onboarding realizada.';
         meta.saude_cliente    = meta.saude_cliente    || 'Não avaliado.';
         meta.risco_churn      = meta.risco_churn      || 'Não avaliado.';
@@ -435,6 +460,7 @@ export default async function handler(req, res) {
                 coordinator: numbers.coordinator,
                 analista_nome: numbers.analista_nome,
                 data_reuniao: numbers.data_reuniao || null,
+                nome_cliente: meta.nome_cliente,
             })
         );
 
