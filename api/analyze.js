@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
+import { getConfig } from './config.js';
 
 export const maxDuration = 300;
 export const config = { api: { bodyParser: { sizeLimit: '20mb' } } };
@@ -25,42 +26,23 @@ const ALL_PILLARS = [
     ['universo_contabil', 'Universo Contábil'],
 ];
 
-const CS_MAP = {
-    'brayan santos': { nome: 'Brayan Santos', coordinator: 'Sayuri' },
-    'camille vaz': { nome: 'Camille Vaz', coordinator: 'Sayuri' },
-    'carolina miranda': { nome: 'Carolina Miranda', coordinator: 'Sayuri' },
-    'isaque silva': { nome: 'Isaque Silva', coordinator: 'Sayuri' },
-    'larissa mota': { nome: 'Larissa Mota', coordinator: 'Sayuri' },
-    'nat vieira': { nome: 'Nat Vieira', coordinator: 'Sayuri' },
-    'vinícius oliveira': { nome: 'Vinícius Oliveira', coordinator: 'Sayuri' },
-    'vinicius oliveira': { nome: 'Vinícius Oliveira', coordinator: 'Sayuri' },
-    'ana de battisti': { nome: 'Ana De Battisti', coordinator: 'Tayanara' },
-    'ana battisti': { nome: 'Ana De Battisti', coordinator: 'Tayanara' },
-    'denis silva': { nome: 'Denis Silva', coordinator: 'Tayanara' },
-    'larissa teixeira': { nome: 'Larissa Teixeira', coordinator: 'Tayanara' },
-    'lorrayne moreira': { nome: 'Lorrayne Moreira', coordinator: 'Tayanara' },
-    'micaelle martins': { nome: 'Micaelle Martins', coordinator: 'Tayanara' },
-    'sthephany talasca': { nome: 'Sthephany Talasca', coordinator: 'Tayanara' },
-    'thais silva': { nome: 'Thais Silva', coordinator: 'Tayanara' },
-    'willian martins': { nome: 'Willian Martins', coordinator: 'Tayanara' },
-    'yuri santos': { nome: 'Yuri Santos', coordinator: 'Tayanara' },
-    'aline almeida': { nome: 'Aline Almeida', coordinator: 'Michel' },
-    'bianca kim': { nome: 'Bianca Kim', coordinator: 'Michel' },
-    'jéssica barreiro': { nome: 'Jéssica Barreiro', coordinator: 'Michel' },
-    'jessica barreiro': { nome: 'Jéssica Barreiro', coordinator: 'Michel' },
-    'julia rodrigues': { nome: 'Julia Rodrigues', coordinator: 'Michel' },
-    'maria fernanda': { nome: 'Maria Fernanda', coordinator: 'Michel' },
-    'maryana alves': { nome: 'Maryana Alves', coordinator: 'Michel' },
-    'rafaele oliveira': { nome: 'Rafaele Oliveira', coordinator: 'Michel' },
-    'túlio morgado': { nome: 'Túlio Morgado', coordinator: 'Michel' },
-    'tulio morgado': { nome: 'Túlio Morgado', coordinator: 'Michel' },
-};
-
-function detectAnalista(transcript) {
-    const lower = transcript.toLowerCase();
-    const sorted = Object.keys(CS_MAP).sort((a, b) => b.length - a.length);
-    for (const key of sorted) {
-        if (lower.includes(key)) return CS_MAP[key];
+// ── Detecção de analista via Supabase (dinâmica) ──────────────────────────
+async function detectAnalista(transcript) {
+    if (!transcript) return null;
+    try {
+        const { CS_TO_COORDINATOR } = await getConfig();
+        const lower = transcript.toLowerCase();
+        const sorted = Object.keys(CS_TO_COORDINATOR).sort((a, b) => b.length - a.length);
+        for (const key of sorted) {
+            if (lower.includes(key)) {
+                return {
+                    nome: key,
+                    coordinator: CS_TO_COORDINATOR[key],
+                };
+            }
+        }
+    } catch (e) {
+        console.error('detectAnalista falhou:', e.message);
     }
     return null;
 }
@@ -68,24 +50,19 @@ function detectAnalista(transcript) {
 // ── CORRIGIDO: captura data E hora, trata GMT-03:00, formato Supabase ─────
 function parseDataReuniao(rawDate) {
     if (!rawDate) return null;
-    // Remove timezone suffix tipo " GMT-03:00" ou "Z" — usa horário local da reunião
     const s = String(rawDate).trim().replace(/\s*GMT[+-]\d{2}:\d{2}$/i, '').replace(/Z$/, '').trim();
 
-    // Já está em formato ISO: 2025-03-10T14:30:00 ou 2025-03-10 14:30:00
     if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(s)) {
         return s.slice(0, 19).replace('T', ' ');
     }
 
-    // Só data ISO sem hora: 2025-03-10
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s + ' 00:00:00';
 
-    // DD/MM/YYYY HH:MM ou DD-MM-YYYY HH:MM
     const dmyHm = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})/);
     if (dmyHm) {
         return `${dmyHm[3]}-${dmyHm[2].padStart(2,'0')}-${dmyHm[1].padStart(2,'0')} ${dmyHm[4].padStart(2,'0')}:${dmyHm[5]}:00`;
     }
 
-    // DD/MM/YYYY sem hora
     const dmy = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
     if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')} 00:00:00`;
 
@@ -100,13 +77,11 @@ function parseDataReuniao(rawDate) {
 
     const norm = s.toLowerCase().replace(/\./g, '');
 
-    // "25 de mar de 2026 às 14:24" — formato exato do Gemini Notes (GMT já removido acima)
     const extHm = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})\s+(?:às|as|a)\s+(\d{1,2}):(\d{2})/);
     if (extHm && meses[extHm[2]]) {
         return `${extHm[3]}-${String(meses[extHm[2]]).padStart(2,'0')}-${extHm[1].padStart(2,'0')} ${extHm[4].padStart(2,'0')}:${extHm[5]}:00`;
     }
 
-    // "25 de mar de 2026" sem hora
     const ext = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})/);
     if (ext && meses[ext[2]]) {
         return `${ext[3]}-${String(meses[ext[2]]).padStart(2,'0')}-${ext[1].padStart(2,'0')} 00:00:00`;
@@ -178,8 +153,6 @@ async function withRetry(fn, label, attempts) {
     throw lastErr;
 }
 
-// ── CHAMADA 1: notas + checklist + data_reuniao ───────────────────────────
-// CORRIGIDO: instrução reforçada para extrair data+hora e nunca usar data de hoje
 async function getNumbers(transcript) {
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -273,8 +246,6 @@ async function getNumbers(transcript) {
     return parsed;
 }
 
-// ── CHAMADA 2: meta-textos + nome_cliente ─────────────────────────────────
-// CORRIGIDO: instrução muito mais forte para identificar o cliente
 async function getMeta(transcript, numbers) {
     const notasStr = ALL_PILLARS
         .filter(p => numbers['nota_' + p[0]] !== null)
@@ -320,7 +291,6 @@ async function getMeta(transcript, numbers) {
     return safeParse(res.text, 'getMeta');
 }
 
-// ── CHAMADA 3A: justificativas pilares 1-9 ────────────────────────────────
 async function getTextsA(transcript, numbers) {
     const group = ALL_PILLARS.slice(0, 9);
     const notasStr = group
@@ -340,7 +310,6 @@ async function getTextsA(transcript, numbers) {
     return safeParse(res.text, 'getTextsA');
 }
 
-// ── CHAMADA 3B: justificativas pilares 10-17 ─────────────────────────────
 async function getTextsB(transcript, numbers) {
     const group = ALL_PILLARS.slice(9);
     const notasStr = group
@@ -360,7 +329,6 @@ async function getTextsB(transcript, numbers) {
     return safeParse(res.text, 'getTextsB');
 }
 
-// ── CHAMADA 4: relatório ──────────────────────────────────────────────────
 async function getRelatorio(numbers, meta, texts, coordinator) {
     const linhas = ALL_PILLARS.map(function(p) {
         const k = p[0], nota = numbers['nota_' + k];
@@ -415,9 +383,9 @@ export default async function handler(req, res) {
     if (!prompt) return res.status(400).json({ error: 'Transcrição obrigatória.' });
 
     try {
-        const detectado = detectAnalista(prompt);
+        // ✅ Detecção dinâmica via Supabase
+        const detectado = await detectAnalista(prompt);
 
-        // 1. Notas + data_reuniao (com hora)
         const numbers = await withRetry(() => getNumbers(prompt), 'getNumbers');
 
         if (detectado) {
@@ -427,7 +395,6 @@ export default async function handler(req, res) {
         numbers.analista_nome = numbers.analista_nome || 'Não identificado';
         numbers.coordinator   = coordinator || numbers.coordinator || null;
 
-        // 2. Meta (inclui nome_cliente) + justificativas em sequência
         const meta   = await withRetry(() => getMeta(prompt, numbers),   'getMeta');
         const textsA = await withRetry(() => getTextsA(prompt, numbers), 'getTextsA');
         const textsB = await withRetry(() => getTextsB(prompt, numbers), 'getTextsB');
@@ -452,7 +419,6 @@ export default async function handler(req, res) {
         meta.pontos_fortes    = meta.pontos_fortes    || [];
         meta.pontos_atencao   = meta.pontos_atencao   || [];
 
-        // 3. Relatório
         const justificativa_detalhada = await withRetry(
             () => getRelatorio(numbers, meta, texts, numbers.coordinator), 'getRelatorio'
         );
