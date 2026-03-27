@@ -3,13 +3,14 @@
 // GET  /api/ingest → não faz mais nada (cron pode ser desativado)
 //
 // ⚡ Gemini foi movido para o Apps Script — sem timeout no Vercel
+// ⚡ Usa SUPABASE_SERVICE_KEY para bypassar RLS no INSERT
 
 export const maxDuration = 30;
 export const config = { api: { bodyParser: { sizeLimit: '20mb' } } };
 
-const SUPABASE_URL  = process.env.SUPABASE_URL;
-const SUPABASE_KEY  = process.env.SUPABASE_ANON_KEY;
-const INGEST_SECRET = process.env.INGEST_SECRET || 'nibo_cs_2026_drive';
+const SUPABASE_URL    = process.env.SUPABASE_URL;
+const SUPABASE_KEY    = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+const INGEST_SECRET   = process.env.INGEST_SECRET || 'nibo_cs_2026_drive';
 
 const ALL_PILLARS = [
     'consultividade','escuta_ativa','jornada_cliente','encantamento','objecoes',
@@ -86,7 +87,7 @@ export default async function handler(req, res) {
             file_url:                file_url      || null,
             nome_cliente:            analise?.nome_cliente       || 'Nao identificado',
             data_reuniao:            analise?.data_reuniao       || null,
-            media_final:             analise?.media_final        || null,
+            media_final:             analise?.media_final        ?? null,
             saude_cliente:           analise?.saude_cliente      || null,
             risco_churn:             analise?.risco_churn        || null,
             tempo_fala_cs:           analise?.tempo_fala_cs      || null,
