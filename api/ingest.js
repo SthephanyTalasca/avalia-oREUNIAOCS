@@ -1,6 +1,11 @@
 // api/ingest.js — CS Auditor
 // POST /api/ingest  → recebe transcrição do Apps Script e salva como pendente (rápido)
 // GET  /api/ingest  → processa 1 transcrição pendente com Gemini (chamado pelo cron)
+//
+// ⚡ OTIMIZADO: 3 chamadas paralelas ao Gemini (era 5 sequenciais)
+//    getNumbers + [getMeta ‖ getTextsAll] — sem getRelatorio no cron
+//    Meta: terminar em <28s para não estourar o timeout do Vercel free tier
+
 import { GoogleGenAI, Type } from '@google/genai';
 
 export const maxDuration = 300;
@@ -73,50 +78,32 @@ function safeParse(text, label) {
 }
 
 async function withRetry(fn, label, attempts) {
-    attempts = attempts || 5;
+    attempts = attempts || 3;
     let lastErr;
     for (let i = 0; i < attempts; i++) {
         try { return await fn(); } catch (e) {
             lastErr = e;
             console.error(label + ' tentativa ' + (i + 1) + ' falhou:', e.message);
-            if (i < attempts - 1) await new Promise(function(r) { setTimeout(r, 8000 * (i + 1)); });
+            if (i < attempts - 1) await new Promise(function(r) { setTimeout(r, 3000 * (i + 1)); });
         }
     }
     throw lastErr;
 }
 
-function makeTextSchema(pairs) {
-    const props = {}, req = [];
-    pairs.forEach(function(p) {
-        const k = p[0];
-        props['porque_'   + k] = { type: Type.STRING };
-        props['melhoria_' + k] = { type: Type.STRING };
-        req.push('porque_' + k, 'melhoria_' + k);
-    });
-    return { type: Type.OBJECT, properties: props, required: req };
-}
-
-// ── CORRIGIDO: captura data E hora, trata GMT-03:00, formato Supabase ─────
+// ─── parseDataReuniao ─────────────────────────────────────────────────────────
 function parseDataReuniao(rawDate) {
     if (!rawDate) return null;
-    // Remove timezone suffix tipo " GMT-03:00" ou "Z" — usa horário local da reunião
     const s = String(rawDate).trim().replace(/\s*GMT[+-]\d{2}:\d{2}$/i, '').replace(/Z$/, '').trim();
 
-    // Já está em formato ISO: 2025-03-10T14:30:00 ou 2025-03-10 14:30:00
-    if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(s)) {
+    if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(s))
         return s.slice(0, 19).replace('T', ' ');
-    }
 
-    // Só data ISO: 2025-03-10
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s + ' 00:00:00';
 
-    // DD/MM/YYYY HH:MM
     const dmyHm = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})/);
-    if (dmyHm) {
+    if (dmyHm)
         return `${dmyHm[3]}-${dmyHm[2].padStart(2,'0')}-${dmyHm[1].padStart(2,'0')} ${dmyHm[4].padStart(2,'0')}:${dmyHm[5]}:00`;
-    }
 
-    // DD/MM/YYYY sem hora
     const dmy = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
     if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')} 00:00:00`;
 
@@ -131,17 +118,13 @@ function parseDataReuniao(rawDate) {
 
     const norm = s.toLowerCase().replace(/\./g, '');
 
-    // "25 de mar de 2026 às 14:24" — GMT já removido acima
     const extHm = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})\s+(?:às|as|a)\s+(\d{1,2}):(\d{2})/);
-    if (extHm && meses[extHm[2]]) {
+    if (extHm && meses[extHm[2]])
         return `${extHm[3]}-${String(meses[extHm[2]]).padStart(2,'0')}-${extHm[1].padStart(2,'0')} ${extHm[4].padStart(2,'0')}:${extHm[5]}:00`;
-    }
 
-    // "25 de mar de 2026" sem hora
     const ext = norm.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})/);
-    if (ext && meses[ext[2]]) {
+    if (ext && meses[ext[2]])
         return `${ext[3]}-${String(meses[ext[2]]).padStart(2,'0')}-${ext[1].padStart(2,'0')} 00:00:00`;
-    }
 
     const d = new Date(s);
     if (!isNaN(d.getTime())) return d.toISOString().slice(0, 19).replace('T', ' ');
@@ -149,8 +132,7 @@ function parseDataReuniao(rawDate) {
     return null;
 }
 
-// ─── Gemini ───────────────────────────────────────────────────────────────────
-// CORRIGIDO: instrução reforçada para extrair data+hora e nunca usar data de hoje
+// ─── Gemini: CHAMADA 1 — notas numéricas + checklist ─────────────────────────
 async function getNumbers(transcript) {
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -165,16 +147,15 @@ async function getNumbers(transcript) {
                 'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100. ' +
                 'data_reuniao: extraia a data E hora exata da reuniao do cabecalho da transcricao. ' +
                 'O cabecalho do Gemini Notes tem o formato: "Reuniao em DD de mmm. de AAAA as HH:MM GMT-03:00". ' +
-                'Exemplo: "Reuniao em 25 de mar. de 2026 as 14:24 GMT-03:00" → retorne "2026-03-25 14:24:00". ' +
-                'Exemplo: "Reuniao em 5 de jan. de 2025 as 09:15 GMT-03:00" → retorne "2025-01-05 09:15:00". ' +
-                'OBRIGATORIO: retorne no formato "YYYY-MM-DD HH:MM:00" (sem T, sem GMT, sem timezone). ' +
-                'NUNCA retorne a data de hoje. Se nao encontrar data no cabecalho, retorne null. ' +
-                'Para o checklist: ck_prazo=true se definiu prazo de implementacao, ' +
-                'ck_dever_casa=true se alinhou dever de casa com o cliente, ' +
-                'ck_certificado=true se validou certificado digital ou acesso ao sistema, ' +
-                'ck_proximo_passo=true se agendou proxima reuniao ou proximo passo, ' +
-                'ck_dor_vendas=true se conectou com a dor identificada em vendas, ' +
-                'ck_suporte=true se explicou o canal de suporte ao cliente.',
+                'Exemplo: "Reuniao em 25 de mar. de 2026 as 14:24 GMT-03:00" retorne "2026-03-25 14:24:00". ' +
+                'OBRIGATORIO: formato "YYYY-MM-DD HH:MM:00". NUNCA retorne a data de hoje. ' +
+                'Se nao encontrar data no cabecalho, retorne null. ' +
+                'ck_prazo=true se definiu prazo de implementacao. ' +
+                'ck_dever_casa=true se alinhou dever de casa com o cliente. ' +
+                'ck_certificado=true se validou certificado digital ou acesso. ' +
+                'ck_proximo_passo=true se agendou proxima reuniao. ' +
+                'ck_dor_vendas=true se conectou com a dor de vendas. ' +
+                'ck_suporte=true se explicou o canal de suporte.',
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -224,7 +205,6 @@ async function getNumbers(transcript) {
     });
     parsed.tempo_fala_cs      = (parsed.tempo_fala_cs_pct      || 50) + '%';
     parsed.tempo_fala_cliente = (parsed.tempo_fala_cliente_pct || 50) + '%';
-    // CORRIGIDO: usa o novo parseDataReuniao que preserva a hora
     parsed.data_reuniao = parseDataReuniao(parsed.data_reuniao) || null;
     parsed.checklist_cs = {
         definiu_prazo_implementacao: parsed.ck_prazo         || false,
@@ -237,7 +217,7 @@ async function getNumbers(transcript) {
     return parsed;
 }
 
-// CORRIGIDO: instrução muito mais forte para identificar o cliente
+// ─── Gemini: CHAMADA 2 — meta (nome cliente, resumo, saúde, churn) ────────────
 async function getMeta(transcript, numbers) {
     const notasStr = ALL_PILLARS
         .filter(function(p) { return numbers['nota_' + p[0]] !== null; })
@@ -248,18 +228,12 @@ async function getMeta(transcript, numbers) {
         contents: transcript,
         config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 2048,
+            maxOutputTokens: 1024,
             systemInstruction:
                 'Auditor de CS do Nibo. Notas: ' + notasStr + '. ' +
-                'Retorne os campos solicitados em JSON. ' +
-                'nome_cliente: OBRIGATORIO — identifique o nome da empresa, escritorio contabil ou cliente sendo atendido na reuniao. ' +
-                'Procure em toda a transcricao por: (1) nome do escritorio ou empresa do cliente, ' +
-                '(2) nome de quem esta sendo atendido pelo CS, ' +
-                '(3) qualquer mencao a "escritorio", "empresa", "cliente", "razao social", "CNPJ", ' +
-                '(4) como o CS se dirige a pessoa — "Fulano da Empresa X". ' +
-                'Leia o inicio E o final da transcricao com atencao especial. ' +
-                'Prefira o nome da empresa/escritorio ao nome pessoal. ' +
-                'So retorne "Nao identificado" se absolutamente nao houver NENHUMA pista na transcricao. ' +
+                'nome_cliente: OBRIGATORIO — empresa, escritorio contabil ou cliente atendido. ' +
+                'Procure em toda a transcricao. Prefira nome da empresa ao nome pessoal. ' +
+                'So retorne "Nao identificado" se absolutamente nao houver pista. ' +
                 'pontos_fortes e pontos_atencao: max 4 itens cada, frases curtas. ' +
                 'sistemas_citados: ferramentas/sistemas mencionados pelo cliente. ' +
                 'resumo_executivo: 1 frase. saude_cliente: 1 frase. risco_churn: 1 frase.',
@@ -274,7 +248,7 @@ async function getMeta(transcript, numbers) {
                     pontos_fortes:    { type: Type.ARRAY, items: { type: Type.STRING } },
                     pontos_atencao:   { type: Type.ARRAY, items: { type: Type.STRING } },
                 },
-                required: ['nome_cliente', 'resumo_executivo','saude_cliente','risco_churn',
+                required: ['nome_cliente','resumo_executivo','saude_cliente','risco_churn',
                            'sistemas_citados','pontos_fortes','pontos_atencao'],
             },
         },
@@ -282,94 +256,39 @@ async function getMeta(transcript, numbers) {
     return safeParse(res.text, 'getMeta');
 }
 
-async function getTextsA(transcript, numbers) {
-    const group = ALL_PILLARS.slice(0, 9);
-    const notasStr = group
+// ─── Gemini: CHAMADA 3 — justificativas de TODOS os 17 pilares (unificada) ────
+//     Era getTextsA + getTextsB (2 chamadas). Agora é 1 só com maxOutputTokens maior.
+async function getTextsAll(transcript, numbers) {
+    const notasStr = ALL_PILLARS
         .filter(function(p) { return numbers['nota_' + p[0]] !== null; })
         .map(function(p)    { return p[1] + ': ' + numbers['nota_' + p[0]] + '/5'; })
         .join(', ');
+
+    // Monta schema dinamicamente para todos os 17 pilares
+    const props = {}, req = [];
+    ALL_PILLARS.forEach(function(p) {
+        const k = p[0];
+        props['porque_'   + k] = { type: Type.STRING };
+        props['melhoria_' + k] = { type: Type.STRING };
+        req.push('porque_' + k, 'melhoria_' + k);
+    });
+
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
         config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 3000,
+            maxOutputTokens: 6000,
             systemInstruction:
                 'Auditor de CS do Nibo. Notas dos pilares: ' + notasStr + '. ' +
                 'Para pilares SEM evidencia retorne "Sem evidencia na transcricao." no porque e "" no melhoria. ' +
                 'Para os demais: porque = 1 frase curta do que aconteceu; ' +
-                'melhoria = 1 frase do que faltou para nota 5 (se nota=5 escreva "Excelencia atingida.").',
-            responseSchema: makeTextSchema(group),
+                'melhoria = 1 frase do que faltou para nota 5 (se nota=5 escreva "Excelencia atingida."). ' +
+                'Responda TODOS os 17 pilares de uma vez.',
+            responseSchema: { type: Type.OBJECT, properties: props, required: req },
         },
     });
-    return safeParse(res.text, 'getTextsA');
-}
-
-async function getTextsB(transcript, numbers) {
-    const group = ALL_PILLARS.slice(9);
-    const notasStr = group
-        .filter(function(p) { return numbers['nota_' + p[0]] !== null; })
-        .map(function(p)    { return p[1] + ': ' + numbers['nota_' + p[0]] + '/5'; })
-        .join(', ');
-    const res = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: transcript,
-        config: {
-            responseMimeType: 'application/json',
-            maxOutputTokens: 3000,
-            systemInstruction:
-                'Auditor de CS do Nibo. Notas dos pilares: ' + notasStr + '. ' +
-                'Para pilares SEM evidencia retorne "Sem evidencia na transcricao." no porque e "" no melhoria. ' +
-                'Para os demais: porque = 1 frase curta do que aconteceu; ' +
-                'melhoria = 1 frase do que faltou para nota 5 (se nota=5 escreva "Excelencia atingida.").',
-            responseSchema: makeTextSchema(group),
-        },
-    });
-    return safeParse(res.text, 'getTextsB');
-}
-
-async function getRelatorio(numbers, meta, texts, analistaNome) {
-    const linhas = ALL_PILLARS.map(function(p) {
-        const k    = p[0];
-        const nota = numbers['nota_' + k];
-        if (nota === null) return null;
-        const pq  = texts['porque_'   + k] || '';
-        const ml  = texts['melhoria_' + k] || '';
-        const suf = (ml && ml !== 'Excelencia atingida.') ? ' | Melhoria: ' + ml : '';
-        return '- **' + p[1] + '**: ' + nota + '/5 — ' + pq + suf;
-    }).filter(Boolean).join('\n');
-
-    const clienteLine = meta.nome_cliente && meta.nome_cliente !== 'Nao identificado'
-        ? `Cliente: **${meta.nome_cliente}**\n\n`
-        : '';
-
-    const prompt =
-        'Coordenador de CS do Nibo — feedback sobre a analista **' + analistaNome + '**.\n\n' +
-        clienteLine +
-        'NOTAS:\n' + linhas + '\n\n' +
-        'Media: ' + (numbers.media_final || '?') + '/5' +
-        ' | Saude: ' + (meta.saude_cliente || '') +
-        ' | Churn: '  + (meta.risco_churn  || '') + '\n' +
-        'Fortes: '  + (meta.pontos_fortes  || []).join('; ') + '\n' +
-        'Atencao: ' + (meta.pontos_atencao || []).join('; ') + '\n\n' +
-        '## O que o analista fez bem\n' +
-        '## O que precisa melhorar\n' +
-        '## O que falar no 1:1\n' +
-        '## Plano de acao individual';
-
-    const res = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-            maxOutputTokens: 4096,
-            systemInstruction:
-                'Coordenador senior de CS do Nibo. Markdown puro, linguagem direta e humana. ' +
-                '"O que falar no 1:1": frases prontas para usar literalmente. ' +
-                '"Plano de acao": max 3 prioridades com acao + prazo + metrica. ' +
-                'So mencione pilares com nota numerica.',
-        },
-    });
-    return res.text || '';
+    return safeParse(res.text, 'getTextsAll');
 }
 
 // ─── Supabase helpers ─────────────────────────────────────────────────────────
@@ -417,7 +336,6 @@ async function salvarResultado(id, analise, coordenador) {
     const update = {
         status:                  'concluido',
         coordenador:             coordenador                      || null,
-        // CORRIGIDO: salva nome_cliente e data_reuniao com hora
         nome_cliente:            analise.nome_cliente             || 'Não identificado',
         data_reuniao:            analise.data_reuniao             || null,
         media_final:             analise.media_final              || null,
@@ -452,7 +370,8 @@ async function salvarResultado(id, analise, coordenador) {
         sistemas_citados:        analise.sistemas_citados         || [],
         pontos_fortes:           analise.pontos_fortes            || [],
         pontos_atencao:          analise.pontos_atencao           || [],
-        justificativa_detalhada: analise.justificativa_detalhada  || null,
+        // justificativa_detalhada: null no cron — gerada sob demanda no frontend
+        justificativa_detalhada: null,
         analise_json:            analise,
     };
     const r = await fetch(SUPABASE_URL + '/rest/v1/cs_reunioes?id=eq.' + id, {
@@ -499,18 +418,17 @@ export default async function handler(req, res) {
         console.log('Processando ID ' + id + ' | Analista: ' + analistaNome);
 
         try {
+            // ⚡ PASSO 1: getNumbers (necessário antes dos demais)
             const numbers = await withRetry(function() { return getNumbers(transcript); }, 'getNumbers');
 
-            const results = await Promise.all([
-                withRetry(function() { return getMeta(transcript, numbers);   }, 'getMeta'),
-                withRetry(function() { return getTextsA(transcript, numbers); }, 'getTextsA'),
-                withRetry(function() { return getTextsB(transcript, numbers); }, 'getTextsB'),
+            // ⚡ PASSO 2: getMeta + getTextsAll em PARALELO (economiza ~8-12s)
+            const [meta, texts, coordenador] = await Promise.all([
+                withRetry(function() { return getMeta(transcript, numbers);    }, 'getMeta'),
+                withRetry(function() { return getTextsAll(transcript, numbers); }, 'getTextsAll'),
                 buscarCoordenador(analistaNome),
             ]);
-            const meta        = results[0];
-            const texts       = Object.assign({}, results[1], results[2]);
-            const coordenador = results[3];
 
+            // Preenche campos ausentes
             ALL_PILLARS.forEach(function(p) {
                 const k = p[0];
                 if (numbers['nota_' + k] === null) {
@@ -521,6 +439,7 @@ export default async function handler(req, res) {
                     texts['melhoria_' + k] = texts['melhoria_' + k] || 'Excelencia atingida.';
                 }
             });
+
             meta.nome_cliente     = meta.nome_cliente     || 'Não identificado';
             meta.resumo_executivo = meta.resumo_executivo || 'Reuniao de onboarding realizada.';
             meta.saude_cliente    = meta.saude_cliente    || 'Nao avaliado.';
@@ -529,19 +448,22 @@ export default async function handler(req, res) {
             meta.pontos_fortes    = meta.pontos_fortes    || [];
             meta.pontos_atencao   = meta.pontos_atencao   || [];
 
-            const justificativa_detalhada = await withRetry(
-                function() { return getRelatorio(numbers, meta, texts, analistaNome); }, 'getRelatorio'
-            );
-
             const analise = Object.assign({}, numbers, meta, texts, {
-                analista_nome:           analistaNome,
-                justificativa_detalhada: justificativa_detalhada,
+                analista_nome: analistaNome,
+                // justificativa_detalhada gerada sob demanda — não no cron
+                justificativa_detalhada: null,
             });
 
             await salvarResultado(id, analise, coordenador);
 
-            console.log('Concluido ID ' + id + ' | Media: ' + numbers.media_final);
-            return res.status(200).json({ ok: true, id: id, analista: analistaNome, media_final: numbers.media_final });
+            console.log('Concluido ID ' + id + ' | Media: ' + numbers.media_final + ' | Cliente: ' + meta.nome_cliente);
+            return res.status(200).json({
+                ok:          true,
+                id:          id,
+                analista:    analistaNome,
+                media_final: numbers.media_final,
+                nome_cliente: meta.nome_cliente,
+            });
 
         } catch (err) {
             console.error('Erro ao processar ID ' + id + ':', err.message);
@@ -584,8 +506,6 @@ export default async function handler(req, res) {
             analista_nome: analistaNome,
             drive_file_id: drive_file_id || null,
             file_url:      file_url      || null,
-            // data_reuniao vinda do Apps Script (data de criação do arquivo)
-            // será sobrescrita pelo Gemini ao processar com a data real da transcrição
             data_reuniao:  data_reuniao  || null,
             status:        'pendente',
             analise_json:  { transcript: transcript, file_name: file_name || null },
