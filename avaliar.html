@@ -329,9 +329,32 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 document.getElementById('pdf-upload').addEventListener('change',async function(e){
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
-    reader.onload=async function(event){openPdfViewer(new Uint8Array(event.target.result),file.name);};
+    reader.onload=async function(event){
+        const pdfData=new Uint8Array(event.target.result);
+        openPdfViewer(pdfData,file.name);
+        await extractPdfText(pdfData);
+    };
     reader.readAsArrayBuffer(file);
 });
+
+async function extractPdfText(pdfData){
+    try{
+        const pdf=await pdfjsLib.getDocument({data:pdfData}).promise;
+        let fullText='';
+        for(let i=1;i<=pdf.numPages;i++){
+            const page=await pdf.getPage(i);
+            const content=await page.getTextContent();
+            const pageText=content.items.map(item=>item.str).join(' ');
+            fullText+=pageText+'\n';
+        }
+        const textarea=document.getElementById('transcript-input');
+        textarea.value=fullText.trim();
+        document.getElementById('char-count').textContent=textarea.value.length.toLocaleString('pt-BR');
+        showToast('✅ Texto extraído do PDF com sucesso!','bg-emerald-600');
+    }catch(e){
+        showToast('⚠️ Não foi possível extrair texto do PDF.','bg-amber-500');
+    }
+}
 
 async function openPdfViewer(pdfData,filename){
     document.getElementById('pdf-title').textContent=filename;
