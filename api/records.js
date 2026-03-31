@@ -50,27 +50,31 @@ export default async function handler(req, res) {
 
             if (action === 'delete') {
                 const r = await fetch(url, { method: 'DELETE', headers: H() });
-                if (!r.ok) throw new Error('Supabase: ' + await r.text());
-                result = await r.json();
+                const txt = await r.text();
+                if (!r.ok) throw new Error('Supabase: ' + txt);
+                result = txt ? JSON.parse(txt) : [];
 
             } else if (action === 'reassign_analista') {
                 if (!payload?.analista_nome?.trim())
                     return res.status(400).json({ error: 'analista_nome obrigatório.' });
                 const r = await fetch(url, { method: 'PATCH', headers: H(), body: JSON.stringify({ analista_nome: payload.analista_nome.trim() }) });
-                if (!r.ok) throw new Error('Supabase: ' + await r.text());
-                result = await r.json();
+                const txt = await r.text();
+                if (!r.ok) throw new Error('Supabase: ' + txt);
+                result = txt ? JSON.parse(txt) : [];
 
             } else if (action === 'reassign_coordenador') {
                 const r = await fetch(url, { method: 'PATCH', headers: H(), body: JSON.stringify({ coordenador: payload?.coordenador || null }) });
-                if (!r.ok) throw new Error('Supabase: ' + await r.text());
-                result = await r.json();
+                const txt = await r.text();
+                if (!r.ok) throw new Error('Supabase: ' + txt);
+                result = txt ? JSON.parse(txt) : [];
 
             } else if (action === 'edit_data') {
                 if (!payload?.data_reuniao)
                     return res.status(400).json({ error: 'data_reuniao obrigatória.' });
                 const r = await fetch(url, { method: 'PATCH', headers: H(), body: JSON.stringify({ data_reuniao: payload.data_reuniao }) });
-                if (!r.ok) throw new Error('Supabase: ' + await r.text());
-                result = await r.json();
+                const txt = await r.text();
+                if (!r.ok) throw new Error('Supabase: ' + txt);
+                result = txt ? JSON.parse(txt) : [];
 
             } else {
                 return res.status(400).json({ error: 'action inválida.' });

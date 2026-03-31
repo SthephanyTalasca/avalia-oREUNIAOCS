@@ -5,6 +5,8 @@
 // ⚡ Gemini foi movido para o Apps Script — sem timeout no Vercel
 // ⚡ Usa SUPABASE_SERVICE_KEY para bypassar RLS no INSERT
 
+import { getConfig } from './config.js';
+
 export const maxDuration = 30;
 export const config = { api: { bodyParser: { sizeLimit: '20mb' } } };
 
@@ -29,16 +31,33 @@ async function jaExisteNoBanco(driveFileId) {
     return Array.isArray(rows) && rows.length > 0;
 }
 
-async function buscarCoordenador(analistaNome) {
-    if (!analistaNome) return null;
+// Resolve coordenador e nome canônico a partir do cs_membros via getConfig()
+async function resolverAnalista(rawNome) {
+    if (!rawNome) return { nome: rawNome, coordenador: null };
     try {
-        const r = await fetch(
-            `${SUPABASE_URL}/rest/v1/cs_analistas?nome=ilike.${encodeURIComponent(analistaNome)}&select=coordenador&limit=1`,
-            { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-        );
-        const rows = await r.json();
-        return (Array.isArray(rows) && rows[0]?.coordenador) || null;
-    } catch { return null; }
+        const { CS_TO_COORDINATOR, CS_NOME_LOOKUP } = await getConfig();
+        const lower = rawNome.toLowerCase().trim();
+        // Tenta match exato primeiro
+        if (CS_TO_COORDINATOR[lower]) {
+            return {
+                nome: CS_NOME_LOOKUP[lower] || rawNome,
+                coordenador: CS_TO_COORDINATOR[lower],
+            };
+        }
+        // Tenta match parcial (nome dentro do rawNome ou vice-versa)
+        const sorted = Object.keys(CS_TO_COORDINATOR).sort((a, b) => b.length - a.length);
+        for (const key of sorted) {
+            if (lower.includes(key) || key.includes(lower)) {
+                return {
+                    nome: CS_NOME_LOOKUP[key] || rawNome,
+                    coordenador: CS_TO_COORDINATOR[key],
+                };
+            }
+        }
+    } catch (e) {
+        console.error('resolverAnalista falhou:', e.message);
+    }
+    return { nome: rawNome, coordenador: null };
 }
 
 export default async function handler(req, res) {
@@ -71,8 +90,8 @@ export default async function handler(req, res) {
             console.error('Erro ao checar duplicata:', e.message);
         }
 
-        const analistaNome = analise?.analista_nome || (folder_name || 'Nao identificado').trim();
-        const coordenador  = await buscarCoordenador(analistaNome);
+        const rawNome = analise?.analista_nome || (folder_name || 'Nao identificado').trim();
+        const { nome: analistaNome, coordenador } = await resolverAnalista(rawNome);
 
         const notasCols = {};
         ALL_PILLARS.forEach(p => {
@@ -82,7 +101,7 @@ export default async function handler(req, res) {
         const row = {
             status:                  'concluido',
             analista_nome:           analistaNome,
-            coordenador:             coordenador || null,
+            coordenador:             coordenador ?? null,
             drive_file_id:           drive_file_id || null,
             file_url:                file_url      || null,
             nome_cliente:            analise?.nome_cliente       || 'Nao identificado',

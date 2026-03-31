@@ -49,16 +49,23 @@ export async function getConfig() {
     return `- ${p.label}${p.descricao ? ': ' + p.descricao : ''}${notas ? '\n  Escala → ' + notas : ''}`;
   }).join('\n');
 
-  // Monta CS_TO_COORDINATOR { 'alias': 'Coordenador', ... }
+  // Monta CS_TO_COORDINATOR { 'alias_lower': 'Coordenador', ... }
+  // Monta CS_NOME_LOOKUP     { 'alias_lower': 'Nome Completo Canônico', ... }
   const CS_TO_COORDINATOR = {};
+  const CS_NOME_LOOKUP    = {};
   for (const m of membros) {
+    const nomeCanon = m.nome_completo.trim();
     for (const alias of (m.alias || [])) {
-      CS_TO_COORDINATOR[alias.toLowerCase()] = m.coordenador;
+      const key = alias.toLowerCase().trim();
+      CS_TO_COORDINATOR[key] = m.coordenador;
+      CS_NOME_LOOKUP[key]    = nomeCanon;
     }
-    CS_TO_COORDINATOR[m.nome_completo.toLowerCase()] = m.coordenador;
+    const fullKey = nomeCanon.toLowerCase();
+    CS_TO_COORDINATOR[fullKey] = m.coordenador;
+    CS_NOME_LOOKUP[fullKey]    = nomeCanon;
   }
 
-  _cache = { pilares, membros, ALL_PILLARS, CS_TO_COORDINATOR, PILLARS_PROMPT, PROMPTS };
+  _cache = { pilares, membros, ALL_PILLARS, CS_TO_COORDINATOR, CS_NOME_LOOKUP, PILLARS_PROMPT, PROMPTS };
   _cacheAt = Date.now();
   return _cache;
 }
