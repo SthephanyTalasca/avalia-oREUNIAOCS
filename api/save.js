@@ -1,6 +1,6 @@
 // api/save.js
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 
 function getSession(req) {
     const m = (req.headers.cookie || '').match(/nibo_cs_session=([^;]+)/);
@@ -22,27 +22,35 @@ export default async function handler(req, res) {
 
     try {
         const row = {
-            status:                 'concluido',
-            coordenador:            coordenador || null,
-            nome_cliente:           analise.nome_cliente           || 'Não identificado',
-            analista_nome:          analise.analista_nome          || 'Não identificado',
-            data_reuniao:           analise.data_reuniao           || null,
-            media_final:            analise.media_final            || null,
-            saude_cliente:          analise.saude_cliente          || null,
-            risco_churn:            analise.risco_churn            || null,
-            tempo_fala_cs:          analise.tempo_fala_cs          || null,
-            tempo_fala_cliente:     analise.tempo_fala_cliente     || null,
-            resumo_executivo:       analise.resumo_executivo       || null,
-            sistemas_citados:       analise.sistemas_citados       || [],
-            pontos_fortes:          analise.pontos_fortes          || [],
-            pontos_atencao:         analise.pontos_atencao         || [],
+            // ── identificação ──────────────────────────────────────────
+            analista_nome:    analise.analista_nome || 'Não identificado',
+            coordenador:      coordenador           || null,
+            drive_file_id:    analise.drive_file_id || null,
+            file_url:         analise.file_url      || null,
+            data_reuniao:     analise.data_reuniao  || null,
+            nome_cliente:     analise.nome_cliente  || null,
+
+            // ── resumo e meta ──────────────────────────────────────────
+            media_final:             analise.media_final         ?? null,
+            saude_cliente:           analise.saude_cliente       || null,
+            risco_churn:             analise.risco_churn         || null,
+            tempo_fala_cs:           analise.tempo_fala_cs       || null,
+            tempo_fala_cliente:      analise.tempo_fala_cliente  || null,
+            resumo_executivo:        analise.resumo_executivo    || null,
+            sistemas_citados:        analise.sistemas_citados    || null,
+            pontos_fortes:           analise.pontos_fortes       || null,
+            pontos_atencao:          analise.pontos_atencao      || null,
             justificativa_detalhada: analise.justificativa_detalhada || null,
-            ck_prazo:               analise.ck_prazo               || false,
-            ck_dever_casa:          analise.ck_dever_casa          || false,
-            ck_certificado:         analise.ck_certificado         || false,
-            ck_proximo_passo:       analise.ck_proximo_passo       || false,
-            ck_dor_vendas:          analise.ck_dor_vendas          || false,
-            ck_suporte:             analise.ck_suporte             || false,
+
+            // ── checklist ─────────────────────────────────────────────
+            ck_prazo:         analise.checklist_cs?.definiu_prazo_implementacao || false,
+            ck_dever_casa:    analise.checklist_cs?.alinhou_dever_de_casa       || false,
+            ck_certificado:   analise.checklist_cs?.validou_certificado_digital  || false,
+            ck_proximo_passo: analise.checklist_cs?.agendou_proximo_passo        || false,
+            ck_dor_vendas:    analise.checklist_cs?.conectou_com_dor_vendas      || false,
+            ck_suporte:       analise.checklist_cs?.explicou_canal_suporte        || false,
+
+            // ── notas dos 17 pilares ───────────────────────────────────
             nota_consultividade:    analise.nota_consultividade    ?? null,
             nota_escuta_ativa:      analise.nota_escuta_ativa      ?? null,
             nota_jornada_cliente:   analise.nota_jornada_cliente   ?? null,
@@ -60,6 +68,8 @@ export default async function handler(req, res) {
             nota_dominio_negocio:   analise.nota_dominio_negocio   ?? null,
             nota_ecossistema_nibo:  analise.nota_ecossistema_nibo  ?? null,
             nota_universo_contabil: analise.nota_universo_contabil ?? null,
+
+            // ── JSON completo (backup) ─────────────────────────────────
             analise_json: analise,
         };
 
@@ -69,14 +79,14 @@ export default async function handler(req, res) {
                 'Content-Type': 'application/json',
                 apikey: SUPABASE_KEY,
                 Authorization: `Bearer ${SUPABASE_KEY}`,
-                Prefer: 'return=representation'
+                Prefer: 'return=representation',
             },
-            body: JSON.stringify(row)
+            body: JSON.stringify(row),
         });
 
         if (!r.ok) {
             const err = await r.text();
-            console.error('Supabase:', err);
+            console.error('Supabase error:', err);
             return res.status(500).json({ error: err });
         }
 
