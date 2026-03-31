@@ -30,13 +30,13 @@ const ALL_PILLARS = [
 async function detectAnalista(transcript) {
     if (!transcript) return null;
     try {
-        const { CS_TO_COORDINATOR } = await getConfig();
+        const { CS_TO_COORDINATOR, CS_NOME_LOOKUP } = await getConfig();
         const lower = transcript.toLowerCase();
         const sorted = Object.keys(CS_TO_COORDINATOR).sort((a, b) => b.length - a.length);
         for (const key of sorted) {
             if (lower.includes(key)) {
                 return {
-                    nome: key,
+                    nome: CS_NOME_LOOKUP[key] || key,
                     coordinator: CS_TO_COORDINATOR[key],
                 };
             }

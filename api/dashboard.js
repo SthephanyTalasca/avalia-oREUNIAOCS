@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido' });
     if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
 
-    const { coordenador, analista, periodo, data_inicio, data_fim } = req.query;
+    const { coordenador, analista, periodo, data_inicio, data_fim, origem } = req.query;
 
     try {
         let filter = '';
@@ -35,6 +35,10 @@ export default async function handler(req, res) {
             const fim = new Date(data_fim); fim.setHours(23, 59, 59, 999);
             filter += `&created_at=lte.${fim.toISOString()}`;
         }
+        if (origem === 'auto')
+            filter += `&analise_json->>origem=eq.drive_automatico`;
+        else if (origem === 'manual')
+            filter += `&or=(analise_json->>origem.is.null,analise_json->>origem.neq.drive_automatico)`;
 
         const url = `${SUPABASE_URL}/rest/v1/cs_reunioes?select=*&order=created_at.desc${filter}`;
         const response = await fetch(url, {

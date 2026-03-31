@@ -414,6 +414,9 @@
             <a href="/avaliar.html" class="flex items-center gap-2 px-4 py-2 bg-white text-[#002d72] rounded-xl text-sm font-bold hover:bg-blue-50 transition-all shadow">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>Avaliação Manual
             </a>
+            <button id="btn-migrate" class="hidden items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-bold transition-all shadow" onclick="reprocessarDados()">
+                <i data-lucide="refresh-ccw" class="w-4 h-4"></i>Reprocessar dados
+            </button>
             <button id="btn-clear-all" class="hidden items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow" onclick="clearAllData()">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>Limpar tudo
             </button>
@@ -772,10 +775,12 @@ async function loadData() {
         const p=document.getElementById('f-periodo').value;
         const coord=document.getElementById('f-coordenador').value;
         const anal=document.getElementById('f-analista').value;
+        const origem=document.getElementById('f-origem').value;
         const params = new URLSearchParams();
         if(p&&p!=='0') params.append('periodo',p);
         if(coord) params.append('coordenador',coord);
         if(anal) params.append('analista',anal);
+        if(origem) params.append('origem',origem);
         const [res, resTodas] = await Promise.all([
             fetch('/api/dashboard?'+params.toString()),
             fetch('/api/dashboard?periodo=0').catch(()=>null)
@@ -790,9 +795,6 @@ async function loadData() {
         } else {
             todasReunioes = [...allReunioes];
         }
-        const origem=document.getElementById('f-origem').value;
-        if(origem==='auto') allReunioes=allReunioes.filter(r=>r.analise_json?.origem==='drive_automatico');
-        if(origem==='manual') allReunioes=allReunioes.filter(r=>r.analise_json?.origem!=='drive_automatico');
         // Preserva seleção após reload
         calcDestaques();
         populateFilters();
@@ -1268,6 +1270,8 @@ async function checkAuthAndLoad(){
         if(user.email?.toLowerCase()===ADMIN_EMAIL_CLIENT){
             const btn=document.getElementById('btn-clear-all');
             btn.classList.remove('hidden');btn.classList.add('flex');
+            const btnMig=document.getElementById('btn-migrate');
+            btnMig.classList.remove('hidden');btnMig.classList.add('flex');
         }
         // Inicializa edição em lote para usuários autorizados
         initBatchForUser(user.email);
@@ -1283,6 +1287,20 @@ async function clearAllData(){
         const data=await res.json();if(!res.ok) throw new Error(data.error);
         alert(`✅ ${data.count} avaliações deletadas.`);loadData();
     }catch(err){alert('Erro: '+err.message);}
+}
+
+async function reprocessarDados(){
+    if(!confirm('Isso vai normalizar os nomes de CS e corrigir os coordenadores em todos os registros existentes.\n\nContinuar?')) return;
+    const btn=document.getElementById('btn-migrate');
+    btn.disabled=true; btn.textContent='Processando...';
+    try{
+        const res=await fetch('/api/migrate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'normalize_names'})});
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.error);
+        alert(`✅ ${data.message}`);
+        loadData();
+    }catch(err){alert('Erro: '+err.message);}
+    finally{btn.disabled=false;btn.innerHTML='<i data-lucide="refresh-ccw" class="w-4 h-4"></i>Reprocessar dados';lucide.createIcons();}
 }
 
 checkAuthAndLoad();
