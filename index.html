@@ -40,10 +40,8 @@
         .section-tab { display:flex;align-items:center;gap:.5rem;padding:.75rem .25rem;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;border-bottom:3px solid transparent;color:#94a3b8;transition:all .2s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none; }
         .section-tab.active { color:#2563eb;border-bottom-color:#2563eb; }
         .section-tab:hover:not(.active) { color:#475569; }
-        /* Badge de role do usuário */
         .role-badge-admin  { background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd; }
         .role-badge-viewer { background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db; }
-        /* Banner de acesso somente leitura */
         .viewer-banner { background: linear-gradient(135deg,#f8fafc,#f1f5f9); border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; }
     </style>
 </head>
@@ -82,12 +80,10 @@
             <div id="user-info" class="text-right hidden">
                 <div class="flex items-center gap-2 justify-end">
                     <p id="user-name" class="text-sm font-bold leading-none"></p>
-                    <!-- Badge de role: admin = azul, viewer = cinza -->
                     <span id="user-role-badge" class="hidden px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest"></span>
                 </div>
                 <p id="user-email" class="text-[10px] text-blue-300 font-medium mt-0.5"></p>
             </div>
-            <!-- Botão Dashboard: visível para todos -->
             <button onclick="showDashboard()" class="ml-2 flex items-center gap-1.5 bg-blue-800/40 hover:bg-blue-600 border border-blue-400/30 text-blue-200 hover:text-white px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all">
                 <i data-lucide="layout-dashboard" class="w-3 h-3"></i> Dashboard
             </button>
@@ -100,7 +96,6 @@
 
 <main class="max-w-7xl mx-auto px-4 mt-8">
 
-    <!-- ── BANNER VIEWER (aparece apenas para não-admins) ── -->
     <div id="viewer-banner" class="hidden viewer-banner rounded-[2rem] p-5 mb-6 flex items-center gap-4">
         <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
             <i data-lucide="eye" class="w-5 h-5 text-slate-500"></i>
@@ -111,7 +106,6 @@
         </div>
     </div>
 
-    <!-- ── SEÇÃO DE TRANSCRIÇÃO (apenas admin vê) ── -->
     <section id="transcricao-section" class="mb-10 hidden">
         <div class="glass-card p-8 md:p-10">
             <div class="flex items-center gap-3 mb-6">
@@ -152,14 +146,12 @@
             <p class="text-slate-400 font-bold text-xs uppercase tracking-widest animate-pulse">Auditando reunião e qualificação do lead...</p>
         </div>
         <div id="analysis-content" class="hidden space-y-8">
-            <!-- Vendedor banner -->
             <div id="vendedor-banner" class="hidden bg-white border border-slate-200 rounded-[2rem] p-5 flex items-center gap-4 shadow-sm">
                 <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-600 text-lg flex-shrink-0" id="vendedor-avatar">?</div>
                 <div class="flex-1 min-w-0">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Consultor identificado pela IA</p>
                     <p id="vendedor-nome-display" class="font-black text-slate-800 text-base truncate"></p>
                 </div>
-                <!-- Controles de reatribuição: apenas admin vê -->
                 <div id="vendedor-admin-controls" class="hidden flex items-center gap-2 flex-shrink-0">
                     <select id="vendedor-corrigir-sel" class="text-xs font-bold border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 ring-blue-300 max-w-[180px]">
                         <option value="">— Corrigir vendedor —</option>
@@ -173,7 +165,6 @@
                     </span>
                 </div>
             </div>
-            <!-- Score hero -->
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center border-b-[10px] border-blue-600">
                     <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Média Global (Máx 5)</span>
@@ -196,7 +187,6 @@
                     </div>
                 </div>
             </div>
-            <!-- TABS -->
             <div class="flex items-end border-b border-slate-200 px-2 gap-0">
                 <button onclick="showSection('vendas')" id="tab-vendas" class="section-tab active"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Auditoria de Vendas</button>
                 <button onclick="showSection('qualif')" id="tab-qualif" class="section-tab"><i data-lucide="user-check" class="w-4 h-4"></i> Qualificação do Lead (SDR)</button>
@@ -206,7 +196,6 @@
                     </button>
                 </div>
             </div>
-            <!-- SEÇÃO VENDAS -->
             <div id="section-vendas" class="space-y-8">
                 <p class="text-[11px] text-slate-400 font-semibold flex items-center gap-2 px-1">
                     <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-blue-400"></i> Clique em qualquer etapa para ver a justificativa e sub-critérios completos
@@ -243,7 +232,6 @@
                     <div id="coaching-body" class="markdown-content"></div>
                 </div>
             </div>
-            <!-- SEÇÃO SDR -->
             <div id="section-qualif" class="hidden space-y-8">
                 <div id="qual-content"></div>
             </div>
@@ -294,7 +282,6 @@
                 <div class="flex gap-2 mb-4">
                     <button onclick="setDashMode('gestor')" id="dash-mode-gestor" class="flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-[#002d72] text-white shadow-md"><i data-lucide="layout-dashboard" class="w-3 h-3 inline mr-1"></i> Gestor</button>
                     <button onclick="setDashMode('vendedor')" id="dash-mode-vendedor" class="flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-slate-200 text-slate-500"><i data-lucide="user" class="w-3 h-3 inline mr-1"></i> Meu Desempenho</button>
-                    <!-- Gestão: apenas admin vê -->
                     <button onclick="setDashMode('gestao')" id="dash-mode-gestao" class="admin-only hidden flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-slate-200 text-slate-500"><i data-lucide="settings" class="w-3 h-3 inline mr-1"></i> Gestão</button>
                     <button onclick="setDashMode('sdr')" id="dash-mode-sdr" class="flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-slate-200 text-slate-500"><i data-lucide="user-check" class="w-3 h-3 inline mr-1"></i> SDRs</button>
                     <button onclick="setDashMode('historico')" id="dash-mode-historico" class="flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-slate-200 text-slate-500"><i data-lucide="clock" class="w-3 h-3 inline mr-1"></i> Histórico</button>
@@ -365,8 +352,6 @@
                         </select>
                     </div>
                 </div>
-
-                <!-- Filtros SDR -->
                 <div id="dash-filters-sdr" class="hidden flex flex-wrap gap-3 items-center">
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Time:</span>
@@ -385,8 +370,21 @@
                             <option value="todos">Todo o período</option>
                         </select>
                     </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vendedor:</span>
+                        <select id="sdr-filter-vend" onchange="loadSdrDash()" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 ring-violet-300">
+                            <option value="todos">Todos</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">De:</span>
+                        <input type="date" id="sdr-filter-inicio" onchange="loadSdrDash()" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none" />
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Até:</span>
+                        <input type="date" id="sdr-filter-fim" onchange="loadSdrDash()" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none" />
+                    </div>
                 </div>
-
             </div>
             <div id="dash-content" class="p-8 space-y-8">
                 <div class="flex flex-col items-center py-20 text-slate-300">
@@ -403,34 +401,24 @@
 lucide.createIcons();
 
 // ── ROLE GLOBAL ───────────────────────────────────────────────────────────────
-// Guardamos o role do usuário logado para controlar a UI
-window._userRole = 'viewer'; // padrão seguro
-
+window._userRole = 'viewer';
 function isAdmin() { return window._userRole === 'admin'; }
 
-// Aplica visibilidade baseada em role: esconde elementos .admin-only para viewers
 function applyRoleUI() {
-    const adminEls = document.querySelectorAll('.admin-only');
-    adminEls.forEach(el => {
+    document.querySelectorAll('.admin-only').forEach(el => {
         if (isAdmin()) el.classList.remove('hidden');
         else el.classList.add('hidden');
     });
-
-    // Seção de transcrição: só admin vê
     const transcricaoSection = document.getElementById('transcricao-section');
     if (transcricaoSection) {
         if (isAdmin()) transcricaoSection.classList.remove('hidden');
         else transcricaoSection.classList.add('hidden');
     }
-
-    // Banner de viewer: só viewer vê
     const viewerBanner = document.getElementById('viewer-banner');
     if (viewerBanner) {
         if (isAdmin()) viewerBanner.classList.add('hidden');
         else viewerBanner.classList.remove('hidden');
     }
-
-    // Badge de role na navbar
     const badge = document.getElementById('user-role-badge');
     if (badge) {
         badge.classList.remove('hidden');
@@ -442,8 +430,6 @@ function applyRoleUI() {
             badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest role-badge-viewer';
         }
     }
-
-    // Controles admin no banner de vendedor: apenas admin vê
     const adminControls = document.getElementById('vendedor-admin-controls');
     if (adminControls) {
         if (isAdmin()) adminControls.classList.remove('hidden');
@@ -451,7 +437,6 @@ function applyRoleUI() {
     }
 }
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
 async function initAuth() {
     const params = new URLSearchParams(window.location.search);
     const authError = params.get('auth_error');
@@ -469,17 +454,12 @@ async function initAuth() {
         const res = await fetch('/api/me');
         if (!res.ok) throw new Error('not authenticated');
         const user = await res.json();
-
-        // ← Guardar role globalmente
         window._userRole = user.role || 'viewer';
-
         document.getElementById('app-screen').classList.remove('hidden');
         document.getElementById('user-info').classList.remove('hidden');
         document.getElementById('user-name').textContent = user.name;
         document.getElementById('user-email').textContent = user.email;
         if (user.picture) { const av = document.getElementById('user-avatar'); av.src = user.picture; av.classList.remove('hidden'); }
-
-        // Aplicar UI baseada em role
         applyRoleUI();
         lucide.createIcons();
     } catch {
@@ -505,7 +485,6 @@ let prodConfig = {};
 window._currentReuniaoId = null;
 window._savePending = false;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function getScoreColor(n) {
     if (n >= 4) return { text: 'text-emerald-500', border: '#10b981', bg: '#ecfdf5' };
     if (n >= 3) return { text: 'text-blue-600', border: '#2563eb', bg: '#eff6ff' };
@@ -531,7 +510,6 @@ function _showSavePending(on) {
     else el.classList.add('hidden');
 }
 
-// ── PDF SDR ───────────────────────────────────────────────────────────────────
 async function exportarPDFSdr() {
     const btn = document.getElementById('btn-pdf-sdr');
     const orig = btn.innerHTML;
@@ -563,36 +541,18 @@ async function exportarPDFSdr() {
     finally { btn.innerHTML = orig; btn.disabled = false; lucide.createIcons(); }
 }
 
-// ── handleAnalysis — protegido no frontend também ────────────────────────────
 async function handleAnalysis() {
-    // Guarda dupla: backend também bloqueia, mas melhor UX assim
-    if (!isAdmin()) {
-        alert('Você não tem permissão para submeter transcrições. Fale com um coordenador.');
-        return;
-    }
-
+    if (!isAdmin()) { alert('Você não tem permissão para submeter transcrições. Fale com um coordenador.'); return; }
     const prompt = transcriptInput.value.trim();
     if (!prompt) return;
-
     const emailEl = document.getElementById('user-email');
     const nomeEl  = document.getElementById('user-name');
     const emailLogado = (emailEl ? emailEl.textContent.trim() : '').toLowerCase();
     const nomeLogado  = nomeEl  ? nomeEl.textContent.trim() : '';
-
-    const COORD_MAP = {
-        'simone.rangel@nibo.com.br':    'Simone Rangel',
-        'jonathan.dornelas@nibo.com.br': 'Jonathan Dornelas',
-    };
-
+    const COORD_MAP = { 'simone.rangel@nibo.com.br': 'Simone Rangel', 'jonathan.dornelas@nibo.com.br': 'Jonathan Dornelas' };
     let coordenador = COORD_MAP[emailLogado] || '';
-    if (!coordenador) {
-        const r = document.querySelector('input[name="coordenador"]:checked');
-        coordenador = r ? r.value : '';
-    }
-    if (!coordenador) {
-        coordenador = nomeLogado || emailLogado;
-    }
-
+    if (!coordenador) { const r = document.querySelector('input[name="coordenador"]:checked'); coordenador = r ? r.value : ''; }
+    if (!coordenador) { coordenador = nomeLogado || emailLogado; }
     resultsSection.classList.remove('hidden');
     loadingSpinner.classList.remove('hidden');
     analysisContent.classList.add('hidden');
@@ -600,23 +560,16 @@ async function handleAnalysis() {
     window._currentReuniaoId = null; window._savePending = false;
     document.getElementById('vendedor-banner').classList.add('hidden');
     document.getElementById('vendedor-salvo-tag').classList.add('hidden');
-
     try {
-        const response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt })
-        });
+        const response = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
         const text = await response.text();
         let data;
         try { data = JSON.parse(text); } catch { throw new Error('Erro de comunicação com o servidor.'); }
         if (data.error) throw new Error(data.error);
-
         renderDashboard(data);
         window._currentCoordenador = coordenador;
         window._savePending = true;
         _showSavePending(true);
-
         saveAnalysis(coordenador, data).then(id => {
             window._currentReuniaoId = id;
             window._savePending = false;
@@ -626,7 +579,6 @@ async function handleAnalysis() {
             window._savePending = false;
             _showSavePending(false);
         });
-
     } catch(err) {
         alert('Erro na análise: ' + err.message);
         resultsSection.classList.add('hidden');
@@ -635,7 +587,6 @@ async function handleAnalysis() {
     }
 }
 
-// ── saveAnalysis ──────────────────────────────────────────────────────────────
 async function saveAnalysis(coordenador, analise) {
     try {
         const res = await fetch('/api/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({coordenador, analise}) });
@@ -657,7 +608,6 @@ async function saveAnalysis(coordenador, analise) {
     }
 }
 
-// ── renderVendedorBanner ──────────────────────────────────────────────────────
 async function renderVendedorBanner(data) {
     const banner = document.getElementById('vendedor-banner');
     const display = document.getElementById('vendedor-nome-display');
@@ -672,14 +622,10 @@ async function renderVendedorBanner(data) {
     avatar.className = 'w-10 h-10 rounded-full flex items-center justify-center font-black text-lg flex-shrink-0 ' +
         (media >= 4 ? 'bg-emerald-100 text-emerald-700' : media >= 3 ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700');
     banner.classList.remove('hidden'); lucide.createIcons();
-
-    // Controles de reatribuição — só carrega e exibe para admin
     if (!isAdmin()) return;
-
     if (btn) btn.classList.add('hidden');
     if (salvoTag) salvoTag.classList.add('hidden');
     if (sel) { sel.disabled = true; sel.innerHTML = '<option value="">— Carregando... —</option>'; }
-
     try {
         if (!VENDORS_CACHE.length) await loadVendorsCache();
         if (sel) {
@@ -688,7 +634,6 @@ async function renderVendedorBanner(data) {
         }
     } catch { if (sel) sel.innerHTML = '<option value="">— Erro ao carregar —</option>'; }
     if (sel) sel.disabled = false;
-
     if (sel) sel.onchange = () => { const changed = sel.value && sel.value !== display.textContent; if (btn) btn.classList.toggle('hidden', !changed); if (salvoTag) salvoTag.classList.add('hidden'); };
     if (btn) btn.onclick = async () => {
         const novoNome = sel.value; if (!novoNome) return;
@@ -709,7 +654,6 @@ async function renderVendedorBanner(data) {
     };
 }
 
-// ── renderDashboard ───────────────────────────────────────────────────────────
 function renderDashboard(data) {
     loadingSpinner.classList.add('hidden');
     analysisContent.classList.remove('hidden');
@@ -747,7 +691,6 @@ function renderDashboard(data) {
     lucide.createIcons();
 }
 
-// ── renderAuditoriaObjecoes ───────────────────────────────────────────────────
 function renderAuditoriaObjecoes(objecoes) {
     const container = document.getElementById('objecoes-container');
     if (!container) return;
@@ -760,7 +703,6 @@ function renderAuditoriaObjecoes(objecoes) {
     lucide.createIcons();
 }
 
-// ── renderRadar ───────────────────────────────────────────────────────────────
 function renderRadar(data) {
     const ctx = document.getElementById('radarChart').getContext('2d');
     if (radarChartInstance) radarChartInstance.destroy();
@@ -770,7 +712,6 @@ function renderRadar(data) {
     radarChartInstance=new Chart(ctx,{type:'radar',data:{labels,datasets:[{label:'Desempenho',data:values,backgroundColor:'rgba(37,99,235,0.12)',borderColor:'#2563eb',borderWidth:2,pointRadius:4,pointBackgroundColor:'#1e3a8a',pointBorderColor:'#fff',pointBorderWidth:1.5}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:9,weight:'800'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});
 }
 
-// ── Modal etapa ───────────────────────────────────────────────────────────────
 function openModal(idx) {
     const p=pilarData[idx], col=getScoreColor(p.score);
     document.getElementById('modal-title').textContent=`Etapa ${idx+1} — ${p.label}`;
@@ -797,7 +738,6 @@ function closeModal() {
 document.getElementById('justification-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
-// ── _buildQualSection ─────────────────────────────────────────────────────────
 function _buildQualSection(data, pCfg) {
     const foraPortfolio=!data.qual_produto_no_portfolio, verd=data.qual_veredicto||'';
     let vc='bg-slate-100 text-slate-600 border-slate-200';
@@ -817,7 +757,6 @@ function _buildQualSection(data, pCfg) {
     <div class="glass-card p-12 border-t-[10px] border-violet-600"><h3 class="text-xl font-extrabold text-violet-800 uppercase tracking-widest mb-10 border-b pb-6 flex items-center gap-4"><i data-lucide="file-search"></i> Análise Completa da Qualificação (SDR)</h3><div class="markdown-content">${marked.parse(data.qual_analise_completa||'')}</div></div>`;
 }
 
-// ── Botão principal (só existe para admin, mas proteção dupla) ────────────────
 if (analyzeBtn) analyzeBtn.addEventListener('click', handleAnalysis);
 
 // ══════════════════════════════════════════════════════════════════
@@ -851,22 +790,75 @@ function renderDashboardData({reunioes,stats}) {
     const scBg=n=>n>=4?'bg-emerald-50 border-emerald-200':n>=3?'bg-blue-50 border-blue-200':'bg-red-50 border-red-200';
     const kpiMalQual=(stats.total_mal_qualif||0)>0?`<div class="glass-card p-6 border-t-4 border-orange-400"><p class="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1">Leads Mal Qualif.</p><p class="text-4xl font-black text-orange-500">${stats.total_mal_qualif}</p><p class="text-[10px] text-slate-400 font-bold mt-1">NÃO contam na média</p><button onclick="scrollToRelatorioMalQual()" class="mt-2 text-[9px] font-black text-orange-500 underline">ver relatório →</button></div>`:'';
     const kpis=`<div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div class="glass-card p-6 border-t-4 border-blue-600"><p class="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">Reuniões Válidas</p><p class="text-4xl font-black text-blue-600">${stats.total_validas||stats.total}</p></div><div class="glass-card p-6 border-t-4 border-emerald-500"><p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Média Geral</p><p class="text-4xl font-black ${sc(stats.media_geral)}">${stats.media_geral}</p></div>${kpiMalQual}<div class="glass-card p-6 border-t-4 border-violet-500"><p class="text-[9px] font-black text-violet-500 uppercase tracking-widest mb-1">Total Analisado</p><p class="text-4xl font-black text-slate-700">${stats.total}</p></div></div>`;
-    const coordCards=Object.entries(stats.porCoordenador).map(([nome,coData])=>{const isS=nome.includes('Simone');return`<div class="glass-card p-8 border-t-4 ${isS?'border-blue-500':'border-violet-500'}"><div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 rounded-full ${isS?'bg-blue-100':'bg-violet-100'} flex items-center justify-center"><i data-lucide="user-circle" class="w-5 h-5 ${isS?'text-blue-600':'text-violet-600'}"></i></div><div><p class="font-black text-sm text-slate-800">${nome}</p><button onclick="abrirAnalysesCoord('${nome.replace(/'/g,"\\'")}'')" class="text-[10px] text-blue-500 hover:text-blue-700 font-black underline">${coData.total} reuniões →</button></div></div><div class="grid grid-cols-3 gap-3"><div class="text-center p-3 bg-slate-50 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase mb-1">Média Vendas</p><p class="text-2xl font-black ${sc(coData.media_vendas)}">${coData.media_vendas||'—'}</p></div><div class="text-center p-3 bg-slate-50 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase mb-1">Nota SDR</p><p class="text-2xl font-black ${sc(coData.media_sdr/2)}">${coData.media_sdr||'—'}</p></div><div class="text-center p-3 bg-red-50 rounded-2xl"><p class="text-[8px] font-black text-red-400 uppercase mb-1">Mal Qualif.</p><p class="text-2xl font-black text-red-500">${coData.mal_qualificados}</p></div></div></div>`;}).join('');
-    const ranking=stats.ranking.map((v,i)=>{const temE=v.avg_etapa1>0||v.avg_etapa2>0||v.avg_etapa3>0;const pL=temE?['Consult.','Apres.','Negoc.']:['Rapport','Produto','Apres.','Pré-F.','Fecha.'];const pV=temE?[v.avg_etapa1,v.avg_etapa2,v.avg_etapa3]:[v.avg_rapport,v.avg_produto,v.avg_apresentacao,v.avg_pre_fechamento,v.avg_fechamento];const pC=pL.map((l,idx)=>{const val=pV[idx];return`<div class="text-center"><p class="text-[8px] text-slate-400 font-bold">${l}</p><p class="font-black text-xs ${sc(val)}">${val||'—'}</p></div>`;}).join('');const mC=v.media>=4?'border-emerald-300':v.media>=3?'border-blue-300':'border-red-300';const mB=v.total_mal_qualif>0?`<span class="text-[8px] font-black text-orange-500 bg-orange-50 border border-orange-200 rounded-lg px-2 py-0.5 ml-1">${v.total_mal_qualif} excl.</span>`:'';return`<div class="flex items-center gap-4 p-4 rounded-2xl border ${scBg(v.media)} hover:shadow-sm transition-all"><div class="w-8 h-8 rounded-full bg-white border-2 ${mC} flex items-center justify-center font-black text-sm text-slate-600">${i+1}</div><div class="flex-1"><p class="font-black text-sm text-slate-800">${v.nome}${mB}</p><p class="text-[10px] text-slate-400 font-bold">${v.coordenador} · ${v.total_validas||v.total} válidas</p></div><div class="grid gap-2 text-center hidden md:grid" style="grid-template-columns:repeat(${pL.length},minmax(0,1fr))">${pC}</div><div class="text-3xl font-black ${sc(v.media)} min-w-[50px] text-right">${v.media}</div></div>`;}).join('');
+    const coordCards=Object.entries(stats.porCoordenador).map(([nome,coData])=>{const isS=nome.includes('Simone');return`<div class="glass-card p-8 border-t-4 ${isS?'border-blue-500':'border-violet-500'}"><div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 rounded-full ${isS?'bg-blue-100':'bg-violet-100'} flex items-center justify-center"><i data-lucide="user-circle" class="w-5 h-5 ${isS?'text-blue-600':'text-violet-600'}"></i></div><div><p class="font-black text-sm text-slate-800">${nome}</p><button onclick="abrirAnalysesCoord('${nome.replace(/'/g,"\\'")}'" class="text-[10px] text-blue-500 hover:text-blue-700 font-black underline">${coData.total} reuniões →</button></div></div><div class="grid grid-cols-3 gap-3"><div class="text-center p-3 bg-slate-50 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase mb-1">Média Vendas</p><p class="text-2xl font-black ${sc(coData.media_vendas)}">${coData.media_vendas||'—'}</p></div><div class="text-center p-3 bg-slate-50 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase mb-1">Nota SDR</p><p class="text-2xl font-black ${sc(coData.media_sdr/2)}">${coData.media_sdr||'—'}</p></div><div class="text-center p-3 bg-red-50 rounded-2xl"><p class="text-[8px] font-black text-red-400 uppercase mb-1">Mal Qualif.</p><p class="text-2xl font-black text-red-500">${coData.mal_qualificados}</p></div></div></div>`;}).join('');
+
+    // ── RANKING PATCH: sempre 5 colunas individuais + SPIN ───────────────────
+    const ranking=stats.ranking.map((v,i)=>{
+        const cols = [
+            { l: 'Rapport', val: v.avg_rapport     || v.avg_etapa1 || 0 },
+            { l: 'SPIN',    val: v.avg_etapa_spin  || 0 },
+            { l: 'Produto', val: v.avg_produto      || v.avg_etapa2 || 0 },
+            { l: 'Apres.',  val: v.avg_apresentacao || v.avg_etapa3 || 0 },
+            { l: 'Negoc.',  val: v.avg_fechamento   || 0 },
+        ];
+        const pC = cols.map(c => {
+            const display = c.val > 0 ? c.val.toFixed(1) : '—';
+            return `<div class="text-center"><p class="text-[8px] text-slate-400 font-bold">${c.l}</p><p class="font-black text-xs ${sc(c.val)}">${display}</p></div>`;
+        }).join('');
+        const mC=v.media>=4?'border-emerald-300':v.media>=3?'border-blue-300':'border-red-300';
+        const mB=v.total_mal_qualif>0?`<span class="text-[8px] font-black text-orange-500 bg-orange-50 border border-orange-200 rounded-lg px-2 py-0.5 ml-1">${v.total_mal_qualif} excl.</span>`:'';
+        return `<div class="flex items-center gap-4 p-4 rounded-2xl border ${scBg(v.media)} hover:shadow-sm transition-all"><div class="w-8 h-8 rounded-full bg-white border-2 ${mC} flex items-center justify-center font-black text-sm text-slate-600">${i+1}</div><div class="flex-1"><p class="font-black text-sm text-slate-800">${v.nome}${mB}</p><p class="text-[10px] text-slate-400 font-bold">${v.coordenador} · ${v.total_validas||v.total} válidas</p></div><div class="grid gap-2 text-center hidden md:grid" style="grid-template-columns:repeat(5,minmax(0,1fr))">${pC}</div><div class="text-3xl font-black ${sc(v.media)} min-w-[50px] text-right">${v.media}</div></div>`;
+    }).join('');
+
     const vColors={QUALIFICADO:'bg-emerald-500',PARCIALMENTE:'bg-yellow-400',MAL:'bg-red-500',FORA:'bg-purple-500',SEM:'bg-slate-300'};
     const vLabels={QUALIFICADO:'Qualificado',PARCIALMENTE:'Parcial',MAL:'Mal Qualif.',FORA:'Fora Portf.',SEM:'Sem dados'};
     const vBars=Object.entries(stats.veredictos).map(([k,v])=>{const pct=Math.round(v/stats.total*100);return`<div class="flex items-center gap-3"><span class="text-[9px] font-black text-slate-500 uppercase w-24 flex-shrink-0">${vLabels[k]||k}</span><div class="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden"><div class="h-full ${vColors[k]||'bg-slate-300'} rounded-full" style="width:${pct}%"></div></div><span class="text-xs font-black text-slate-600 w-12 text-right">${v} (${pct}%)</span></div>`;}).join('');
     const evolChart=stats.evolucao.length>1?'<div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="trending-up" class="w-4 h-4 text-blue-400"></i> Evolução Temporal</h4><canvas id="dashEvolucaoChart" height="80"></canvas></div>':'';
     const malList=stats.reunioes_mal_qualificadas||[];
     const relatorioMalQual=malList.length>0?`<div id="relatorio-mal-qualificado" class="glass-card p-8 border-t-4 border-orange-500"><h4 class="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-2 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Leads Mal Qualificados / Fora de Portfólio</h4><p class="text-[10px] text-slate-400 font-medium mb-6">Estas reuniões <strong class="text-orange-600">não contabilizam</strong> na média.</p><div class="overflow-x-auto"><table class="w-full text-[10px]"><thead><tr class="border-b border-orange-100"><th class="text-left py-2 px-3 font-black text-slate-500 uppercase">Vendedor</th><th class="text-left py-2 px-3 font-black text-slate-500 uppercase">Gestor</th><th class="text-left py-2 px-3 font-black text-slate-500 uppercase">Produto</th><th class="text-left py-2 px-3 font-black text-slate-500 uppercase">Veredicto</th><th class="text-center py-2 px-3 font-black text-slate-500 uppercase">SDR</th><th class="text-left py-2 px-3 font-black text-slate-500 uppercase">Data</th><th class="text-center py-2 px-3 font-black text-slate-500 uppercase">Ver</th></tr></thead><tbody>${malList.map(r=>{const isMAL=(r.qual_veredicto||'').toUpperCase().includes('MAL');const badge=isMAL?'bg-red-100 text-red-700 border-red-200':'bg-purple-100 text-purple-700 border-purple-200';const dF=new Date(r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});const sC=(r.qual_nota_sdr||0)>=7?'text-emerald-600':(r.qual_nota_sdr||0)>=5?'text-amber-500':'text-red-500';return`<tr class="border-b border-slate-50 hover:bg-orange-50/40 transition-colors"><td class="py-3 px-3 font-black text-slate-700">${r.vendedor_nome||'—'}</td><td class="py-3 px-3 text-slate-500">${r.coordenador||'—'}</td><td class="py-3 px-3 text-slate-500">${r.produto||'—'}</td><td class="py-3 px-3"><span class="px-2 py-1 rounded-lg border text-[9px] font-black ${badge} uppercase">${r.qual_veredicto||'—'}</span></td><td class="py-3 px-3 text-center font-black ${sC}">${r.qual_nota_sdr||'—'}</td><td class="py-3 px-3 text-slate-400">${dF}</td><td class="py-3 px-3 text-center"><button onclick="abrirAnaliseCompleta('${r.id}')" class="text-blue-500 hover:text-blue-700 font-black text-[9px] underline">ver →</button></td></tr>`;}).join('')}</tbody></table></div></div>`:`<div class="glass-card p-6 border border-emerald-100 bg-emerald-50/40 text-center"><i data-lucide="check-circle" class="w-8 h-8 text-emerald-500 mx-auto mb-2"></i><p class="text-[11px] font-black text-emerald-700">Nenhum lead mal qualificado 🎉</p></div>`;
-    content.innerHTML=kpis+'<div class="grid grid-cols-1 md:grid-cols-2 gap-6">'+coordCards+'</div>'+evolChart+'<div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i> Ranking de Vendedores</h4><div class="space-y-3">'+ranking+'</div></div><div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="user-check" class="w-4 h-4 text-violet-400"></i> Qualificação de Leads (SDR)</h4><div class="space-y-4">'+vBars+'</div></div>'+relatorioMalQual;
+
+    const malPorVend = {};
+    reunioes.forEach(r => {
+        if (!r.mal_qualificado) return;
+        const nome = r.vendedor_nome || '—';
+        if (!malPorVend[nome]) malPorVend[nome] = { total: 0, coord: r.coordenador || '—', reunioes: [] };
+        malPorVend[nome].total++;
+        malPorVend[nome].reunioes.push(r);
+    });
+    const totalReunioesPorVend = {};
+    reunioes.forEach(r => { const nome = r.vendedor_nome || '—'; totalReunioesPorVend[nome] = (totalReunioesPorVend[nome] || 0) + 1; });
+    let prejudicadosHTML = '';
+    const prejudicadosSorted = Object.entries(malPorVend).sort((a,b) => b[1].total - a[1].total).slice(0, 8);
+    if (prejudicadosSorted.length === 0) {
+        prejudicadosHTML = '<div class="flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-700"><i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i><p class="text-[11px] font-bold">Nenhum vendedor prejudicado por leads mal qualificados 🎉</p></div>';
+    } else {
+        const maxMal = prejudicadosSorted[0][1].total;
+        prejudicadosSorted.forEach(([nome, dados]) => {
+            const total = totalReunioesPorVend[nome] || 1;
+            const pct   = Math.round((dados.total / total) * 100);
+            const barW  = Math.round((dados.total / maxMal) * 100);
+            const cor   = pct >= 50 ? 'bg-red-500' : pct >= 25 ? 'bg-orange-400' : 'bg-amber-400';
+            const tcor  = pct >= 50 ? 'text-red-700' : pct >= 25 ? 'text-orange-700' : 'text-amber-700';
+            const initials = nome.split(' ').slice(0,2).map(p=>p[0]||'').join('').toUpperCase();
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-4 p-4 rounded-2xl border border-slate-100 bg-white hover:bg-red-50/30 transition-colors cursor-pointer';
+            div.setAttribute('onclick', 'abrirAnalysesCoord("' + dados.coord.replace(/"/g, '') + '")');
+            div.innerHTML = '<div class="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center font-black text-red-600 text-xs flex-shrink-0">' + initials + '</div><div class="flex-1 min-w-0"><div class="flex items-center justify-between mb-1"><p class="font-black text-sm text-slate-700">' + nome + '</p><span class="text-[10px] font-black ' + tcor + '">' + dados.total + ' lead' + (dados.total>1?'s':'') + ' mal qualif.</span></div><div class="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden"><div class="' + cor + ' h-full rounded-full" style="width:' + barW + '%"></div></div><p class="text-[9px] text-slate-400 mt-1">' + pct + '% das ' + total + ' reuniões · Gestor: ' + dados.coord + '</p></div>';
+            prejudicadosHTML += div.outerHTML;
+        });
+    }
+    const prejudicadosSection = '<div class="glass-card p-8 border-t-4 border-red-400"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4 text-red-400"></i> Vendedores Mais Prejudicados por Leads Mal Qualificados</h4><p class="text-[10px] text-slate-400 mb-6">Vendedores que receberam mais reuniões fora do portfólio ou mal qualificadas pelo SDR.</p><div class="space-y-3">' + prejudicadosHTML + '</div></div>';
+
+    content.innerHTML=kpis+'<div class="grid grid-cols-1 md:grid-cols-2 gap-6">'+coordCards+'</div>'+evolChart+'<div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i> Ranking de Vendedores</h4><div class="space-y-3">'+ranking+'</div></div><div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="user-check" class="w-4 h-4 text-violet-400"></i> Qualificação de Leads (SDR)</h4><div class="space-y-4">'+vBars+'</div></div>'+prejudicadosSection+relatorioMalQual;
     lucide.createIcons();
     if(stats.evolucao.length>1){if(window.dashChartEvolucao)window.dashChartEvolucao.destroy();const ctx=document.getElementById('dashEvolucaoChart').getContext('2d');window.dashChartEvolucao=new Chart(ctx,{type:'line',data:{labels:stats.evolucao.map(e=>e.semana),datasets:[{label:'Média',data:stats.evolucao.map(e=>e.media),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#1e3a8a',tension:.3,fill:true}]},options:{scales:{y:{min:0,max:5,ticks:{stepSize:1}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});}
 }
+
 function scrollToRelatorioMalQual(){const el=document.getElementById('relatorio-mal-qualificado');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
 function onPeriodoChange(){const val=document.getElementById('dash-filter-periodo').value,cr=document.getElementById('dash-custom-range');if(val==='custom'){cr.classList.remove('hidden');}else{cr.classList.add('hidden');document.getElementById('dash-filter-inicio').value='';document.getElementById('dash-filter-fim').value='';loadDashboard();}}
 let calendarVisible=false;
 function toggleCalendarioInline(){calendarVisible=!calendarVisible;const btn=document.getElementById('btn-cal-toggle');if(calendarVisible){btn.className='flex items-center gap-1.5 px-3 py-2 bg-sky-600 border border-sky-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all';loadCalendario();}else{btn.className='flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:border-sky-400 text-slate-500 hover:text-sky-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all';loadDashboard();}}
+
 let dashMode='gestor';
 function setDashMode(mode){
     dashMode=mode;
@@ -880,27 +872,23 @@ function setDashMode(mode){
     if(mode==='gestor')loadDashboard();
     if(mode==='gestao')isAdmin()?loadGestaoPanel():null;
     if(mode==='vendedor')populateEuSelect();
-    if(mode==='sdr')loadSdrDash();
-    if(mode==='historico') { loadHistorico(true); }
+    if(mode==='sdr'){if(!VENDORS_CACHE.length)loadVendorsCache().then(()=>{const sel=document.getElementById('sdr-filter-vend');if(sel&&sel.options.length<=1){VENDORS_CACHE.forEach(v=>{const o=document.createElement('option');o.value=v.nome;o.textContent=v.nome;sel.appendChild(o);});}});loadSdrDash();}
+    if(mode==='historico'){loadHistorico(true);}
     if(mode==='calendario')loadCalendario();
 }
+
 function onHistCoordChange() {
     const coord = document.getElementById('hist-filter-coord')?.value || 'todos';
     const sel   = document.getElementById('hist-filter-vend');
     if (!sel) return;
     sel.innerHTML = '<option value="todos">Todos</option>';
     const filtrados = coord === 'todos' ? VENDORS_CACHE : VENDORS_CACHE.filter(v => v.coordenador === coord);
-    filtrados.forEach(v => {
-        const o = document.createElement('option');
-        o.value = v.nome; o.textContent = v.nome;
-        sel.appendChild(o);
-    });
+    filtrados.forEach(v => { const o = document.createElement('option'); o.value = v.nome; o.textContent = v.nome; sel.appendChild(o); });
     loadHistorico(true);
 }
 
 async function onCoordChange(){const coord=document.getElementById('dash-filter-coord').value,sel=document.getElementById('dash-filter-vendedor');sel.innerHTML='<option value="todos">Todos</option>';if(!VENDORS_CACHE.length)await loadVendorsCache();const filtrados=coord==='todos'?VENDORS_CACHE:VENDORS_CACHE.filter(v=>v.coordenador===coord);filtrados.forEach(v=>{const o=document.createElement('option');o.value=v.nome;o.textContent=v.nome;sel.appendChild(o);});loadDashboard();}
 
-// ── Meu Desempenho ────────────────────────────────────────────────────────────
 async function populateEuSelect(){const sel=document.getElementById('dash-filter-eu');if(!sel)return;sel.innerHTML='<option value="">— selecione seu nome —</option>';if(!VENDORS_CACHE.length)await loadVendorsCache();const byCoord={};VENDORS_CACHE.forEach(v=>{if(!byCoord[v.coordenador])byCoord[v.coordenador]=[];byCoord[v.coordenador].push(v);});Object.entries(byCoord).forEach(([coord,vends])=>{const g=document.createElement('optgroup');g.label='Time '+coord;vends.forEach(v=>{const o=document.createElement('option');o.value=v.nome;o.textContent=v.nome;g.appendChild(o);});sel.appendChild(g);});}
 async function loadVendedorDash(){const nome=document.getElementById('dash-filter-eu').value,periodo=document.getElementById('dash-filter-periodo-vend').value,content=document.getElementById('dash-content');if(!nome)return;content.innerHTML='<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando seu desempenho...</p></div>';try{const res=await fetch(`/api/dashboard?vendedor=${encodeURIComponent(nome)}&periodo=${periodo}&coordenador=todos`),data=await res.json();if(data.error)throw new Error(data.error);renderVendedorDash(nome,data);}catch(err){content.innerHTML=`<div class="text-center py-20 text-red-400 font-bold">${err.message}</div>`;}}
 function renderVendedorDash(nome,obj){
@@ -934,18 +922,13 @@ function renderVendedorDash(nome,obj){
     if(rCtx)new Chart(rCtx,{type:'radar',data:{labels:radarLabels,datasets:[{label:nome,data:radarVals,backgroundColor:'rgba(37,99,235,0.12)',borderColor:'#2563eb',borderWidth:2,pointRadius:4,pointBackgroundColor:'#1e3a8a',pointBorderColor:'#fff',pointBorderWidth:1.5}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:9,weight:'800'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});
 }
 
-// ── Gestão (apenas admin) ─────────────────────────────────────────────────────
 async function loadGestaoPanel(){
-    if (!isAdmin()) {
-        document.getElementById('dash-content').innerHTML = '<div class="text-center py-20 text-slate-300 font-bold">Acesso restrito a coordenadores.</div>';
-        return;
-    }
+    if (!isAdmin()) { document.getElementById('dash-content').innerHTML = '<div class="text-center py-20 text-slate-300 font-bold">Acesso restrito a coordenadores.</div>'; return; }
     const content=document.getElementById('dash-content');
     content.innerHTML='<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando gestão...</p></div>';
     try{
         const [vRes,rRes]=await Promise.all([fetch('/api/vendors'),fetch('/api/dashboard?coordenador=todos&periodo=todos')]);
         const vendors=await vRes.json(),dashData=await rRes.json(),stats=dashData.stats||{},porVendedor={};
-        // Constrói porVendedor a partir do ranking
         (stats.ranking||[]).forEach(v=>{ porVendedor[v.nome]=v; });
         const vendByCoord={};vendors.forEach(v=>{if(!vendByCoord[v.coordenador])vendByCoord[v.coordenador]=[];vendByCoord[v.coordenador].push(v);});
         const cards=['Simone Rangel','Jonathan Dornelas'].map(coord=>{
@@ -953,7 +936,7 @@ async function loadGestaoPanel(){
             const sc=m=>m>=4?'text-emerald-600':m>=3?'text-blue-600':'text-red-500';
             const vendRows=vends.map(v=>{const vS=porVendedor[v.nome]||{total:0,total_validas:0,total_mal_qualif:0,media:0};return`<div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors border border-slate-100"><div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-black text-sm flex items-center justify-center flex-shrink-0">${v.nome.charAt(0)}</div><div class="flex-1 min-w-0"><p class="font-black text-sm text-slate-700 truncate">${v.nome}</p><p class="text-[9px] text-slate-400">${vS.total_validas||0} válidas${(vS.total_mal_qualif||0)>0?' · <span class="text-orange-500">'+(vS.total_mal_qualif||0)+' excl.</span>':''}</p></div><span class="text-xl font-black ${sc(vS.media)}">${vS.media>0?vS.media.toFixed(1):'—'}</span></div>`;}).join('')||'<p class="text-[10px] text-slate-300 text-center py-4">Nenhum vendedor cadastrado.</p>';
             const bc=coord.includes('Simone')?'border-blue-500':'border-violet-500';
-            return`<div class="glass-card border-t-4 ${bc} overflow-hidden"><div class="p-6 border-b border-slate-100"><h4 class="font-black text-slate-700 text-sm flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-blue-500"></i> ${coord}</h4><p class="text-[10px] text-slate-400 mt-1">${vends.length} vendedor(es)</p><button onclick="abrirAnalysesCoord('${coord.replace(/'/g,"\\'")}'')" class="mt-3 text-[10px] font-black text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i data-lucide="history" class="w-3 h-3"></i> Ver histórico →</button></div><div class="p-6 space-y-2">${vendRows}</div><div class="px-6 pb-6"><button onclick="abrirModalAddVendedor('${coord.replace(/'/g,"\\'")}'')" class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 hover:border-blue-400 text-slate-400 hover:text-blue-600 rounded-2xl py-3 text-[10px] font-black uppercase tracking-widest transition-all"><i data-lucide="user-plus" class="w-3 h-3"></i> Adicionar vendedor</button></div></div>`;
+            return`<div class="glass-card border-t-4 ${bc} overflow-hidden"><div class="p-6 border-b border-slate-100"><h4 class="font-black text-slate-700 text-sm flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-blue-500"></i> ${coord}</h4><p class="text-[10px] text-slate-400 mt-1">${vends.length} vendedor(es)</p><button onclick="abrirAnalysesCoord('${coord.replace(/'/g,"\\'")}'" class="mt-3 text-[10px] font-black text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i data-lucide="history" class="w-3 h-3"></i> Ver histórico →</button></div><div class="p-6 space-y-2">${vendRows}</div><div class="px-6 pb-6"><button onclick="abrirModalAddVendedor('${coord.replace(/'/g,"\\'")}'" class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 hover:border-blue-400 text-slate-400 hover:text-blue-600 rounded-2xl py-3 text-[10px] font-black uppercase tracking-widest transition-all"><i data-lucide="user-plus" class="w-3 h-3"></i> Adicionar vendedor</button></div></div>`;
         }).join('');
         content.innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-6">${cards}</div>`;
         lucide.createIcons();
@@ -971,52 +954,78 @@ let histPage=0;const HIST_PER_PAGE=20;
 function normalizarVeredicto(v) {
     if (!v) return { label: 'Indefinido', css: 'bg-slate-100 text-slate-500 border-slate-200' };
     const u = v.toUpperCase();
-    if (u.includes('PARC'))
-        return { label: 'Parcialmente Qualificado', css: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
-    if (u.includes('NAO') || u.includes('NÃO') || u.includes('MAL') || u.includes('FORA') || u.includes('DESQ'))
-        return { label: 'Não Qualificado', css: 'bg-red-100 text-red-700 border-red-200' };
-    if (u.includes('QUAL'))
-        return { label: 'Qualificado', css: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
+    if (u.includes('PARC')) return { label: 'Parcialmente Qualificado', css: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
+    if (u.includes('NAO') || u.includes('NÃO') || u.includes('MAL') || u.includes('FORA') || u.includes('DESQ')) return { label: 'Não Qualificado', css: 'bg-red-100 text-red-700 border-red-200' };
+    if (u.includes('QUAL')) return { label: 'Qualificado', css: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
     return { label: v, css: 'bg-slate-100 text-slate-500 border-slate-200' };
 }
 
 async function loadHistorico(reset){
     if (!VENDORS_CACHE.length) await loadVendorsCache();
-    if(reset)histPage=0;
-    const content=document.getElementById('dash-content');
-    // Botão de limpar não-identificados: só admin vê
-    const limparBtn = isAdmin()
-        ? `<button onclick="deletarNaoIdentificados()" class="flex items-center gap-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-black px-4 py-2 rounded-xl text-[10px] uppercase tracking-widest transition-all"><i data-lucide="trash-2" class="w-3 h-3"></i> Limpar não identificados</button>`
-        : '';
-    // Monta opções de vendedor dinamicamente
-    const coordsHist = ['Todos os times', 'Simone Rangel', 'Jonathan Dornelas'];
-    const coordOptsHist = coordsHist.map((c,i) => '<option value="' + (i===0?'todos':c) + '">' + c + '</option>').join('');
-    const vendOptsHist = '<option value="todos">Todos</option>' + VENDORS_CACHE.map(v =>
-        '<option value="' + v.nome + '">' + v.nome + '</option>'
-    ).join('');
-    const periodoOptsHist = '<option value="todos">Todo o período</option><option value="30">Últimos 30 dias</option><option value="7">Últimos 7 dias</option><option value="90">Últimos 90 dias</option>';
-
-    content.innerHTML = '<div class="glass-card p-6">' +
-        '<div class="flex flex-wrap gap-3 mb-6 items-end">' +
-            '<div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Time</label>' +
-            '<select id="hist-filter-coord" onchange="onHistCoordChange()" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none">' + coordOptsHist + '</select></div>' +
-            '<div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Vendedor</label>' +
-            '<select id="hist-filter-vend" onchange="loadHistorico(true)" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none">' + vendOptsHist + '</select></div>' +
-            '<div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Busca</label>' +
-            '<input type="text" id="hist-search" oninput="loadHistorico(true)" placeholder="buscar..." class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none w-52" /></div>' +
-            '<div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Período</label>' +
-            '<select id="hist-filter-periodo" onchange="loadHistorico(true)" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none">' + periodoOptsHist + '</select></div>' +
-            '<div class="ml-auto">' + limparBtn + '</div>' +
-        '</div>' +
-        '<div id="hist-table-container" class="overflow-x-auto"><div class="flex items-center py-12 justify-center text-slate-300"><div class="loader"></div></div></div>' +
-        '<div id="hist-pagination" class="flex items-center justify-center gap-4 mt-6"></div>' +
-    '</div>';
-    lucide.createIcons();
-    if(!VENDORS_CACHE.length)await loadVendorsCache();
-    const sel=document.getElementById('hist-filter-vend');
-    if(sel){sel.innerHTML='<option value="todos">Todos</option>';VENDORS_CACHE.forEach(v=>{const o=document.createElement('option');o.value=v.nome;o.textContent=v.nome;sel.appendChild(o);});}
+    if (reset) histPage = 0;
+    const content = document.getElementById('dash-content');
+    const jaExiste = document.getElementById('hist-table-container');
+    if (!jaExiste) {
+        const limparBtn = isAdmin() ? '<button onclick="deletarNaoIdentificados()" class="flex items-center gap-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-black px-4 py-2 rounded-xl text-[10px] uppercase tracking-widest transition-all"><i data-lucide="trash-2" class="w-3 h-3"></i> Limpar não identificados</button>' : '';
+        const coordsHist = [['todos','Todos os times'],['Simone Rangel','Simone Rangel'],['Jonathan Dornelas','Jonathan Dornelas']];
+        const coordOptsHist = coordsHist.map(([v,l]) => '<option value="' + v + '">' + l + '</option>').join('');
+        const vendOptsHist  = '<option value="todos">Todos</option>' + VENDORS_CACHE.map(v => '<option value="' + v.nome + '">' + v.nome + '</option>').join('');
+        const periodoOpts   = '<option value="todos">Todo o período</option><option value="30">Últimos 30 dias</option><option value="7">Últimos 7 dias</option><option value="90">Últimos 90 dias</option>';
+        content.innerHTML =
+            '<div class="glass-card p-6">' +
+                '<div class="flex flex-wrap gap-3 mb-6 items-end">' +
+                    '<div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Time</label>' +
+                    '<select id="hist-filter-coord" onchange="onHistCoordChange()" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none">' + coordOptsHist + '</select></div>' +
+                    '<div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Vendedor</label>' +
+                    '<select id="hist-filter-vend" onchange="_fetchHistorico()" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none">' + vendOptsHist + '</select></div>' +
+                    '<div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Busca</label>' +
+                    '<input type="text" id="hist-search" oninput="histPage=0;_fetchHistorico()" placeholder="buscar..." class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none w-52" /></div>' +
+                    '<div><label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Período</label>' +
+                    '<select id="hist-filter-periodo" onchange="histPage=0;_fetchHistorico()" class="text-sm font-bold border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none">' + periodoOpts + '</select></div>' +
+                    '<div class="ml-auto">' + limparBtn + '</div>' +
+                '</div>' +
+                '<div id="hist-table-container" class="overflow-x-auto"><div class="flex items-center py-12 justify-center text-slate-300"><div class="loader"></div></div></div>' +
+                '<div id="hist-pagination" class="flex items-center justify-center gap-4 mt-6"></div>' +
+            '</div>';
+        lucide.createIcons();
+    }
     await _fetchHistorico();
 }
+
+// ── PATCH 2: abrirAnalysesCoord → vai para Histórico filtrado ─────────────────
+async function abrirAnalysesCoord(coord) {
+    if (!VENDORS_CACHE.length) await loadVendorsCache();
+
+    // 1. Muda para aba Histórico
+    setDashMode('historico');
+
+    // 2. Aguarda o DOM do histórico estar montado
+    let tentativas = 0;
+    while (!document.getElementById('hist-filter-coord') && tentativas < 20) {
+        await new Promise(r => setTimeout(r, 100));
+        tentativas++;
+    }
+
+    // 3. Aplica filtro de coordenador
+    const selCoord = document.getElementById('hist-filter-coord');
+    if (selCoord) selCoord.value = coord;
+
+    // 4. Popula vendedores filtrados pelo time
+    const selVend = document.getElementById('hist-filter-vend');
+    if (selVend) {
+        selVend.innerHTML = '<option value="todos">Todos</option>';
+        VENDORS_CACHE.filter(v => v.coordenador === coord).forEach(v => {
+            const o = document.createElement('option');
+            o.value = v.nome; o.textContent = v.nome;
+            selVend.appendChild(o);
+        });
+    }
+
+    // 5. Recarrega tabela com filtro aplicado
+    histPage = 0;
+    await _fetchHistorico();
+}
+
 async function _fetchHistorico() {
     const tc      = document.getElementById('hist-table-container');
     const coord   = document.getElementById('hist-filter-coord')?.value   || 'todos';
@@ -1024,21 +1033,16 @@ async function _fetchHistorico() {
     const search  = document.getElementById('hist-search')?.value         || '';
     const periodo = document.getElementById('hist-filter-periodo')?.value || 'todos';
     const offset  = histPage * HIST_PER_PAGE;
-
     try {
         const qs  = `coordenador=${encodeURIComponent(coord)}&vendedor=${encodeURIComponent(vend)}&search=${encodeURIComponent(search)}&periodo=${periodo}&limit=${HIST_PER_PAGE}&offset=${offset}`;
         const res = await fetch('/api/records?' + qs);
         const d   = await res.json();
         if (d.error) throw new Error(d.error);
-
         const sc = n => (n||0) >= 4 ? 'text-emerald-600' : (n||0) >= 3 ? 'text-blue-600' : 'text-red-500';
-
         const rows = d.records.map(r => {
             const dt   = new Date(r.created_at).toLocaleDateString('pt-BR', {day:'2-digit', month:'short', year:'numeric'});
             const vn   = normalizarVeredicto(r.qual_veredicto);
             const sdrNome = r.nome_sdr || 'Indefinido';
-
-            // Coluna de ações: admin pode reatribuir vendedor, editar SDR e excluir
             const acoesAdmin = isAdmin() ? `
                 <select id="hsel-${r.id}" style="font-size:10px;font-weight:700;border:1px solid #e2e8f0;border-radius:10px;padding:4px 8px;background:white;max-width:130px;cursor:pointer;">
                     <option value="">— vendedor —</option>
@@ -1046,7 +1050,6 @@ async function _fetchHistorico() {
                 <button id="hbtn-${r.id}" style="display:none;font-size:10px;font-weight:900;color:white;background:#2563eb;border:none;border-radius:8px;padding:4px 10px;cursor:pointer;">✓</button>
                 <button id="hdel-${r.id}" style="font-size:10px;font-weight:900;color:#f87171;background:none;border:none;cursor:pointer;text-decoration:underline;">excluir</button>
             ` : '';
-
             return `<tr class="border-b border-slate-50 hover:bg-blue-50/30 transition-colors" id="hist-row-${r.id}">
                 <td class="py-3 px-3 font-black text-slate-700 text-sm hist-nome-cell">${r.vendedor_nome || '—'}</td>
                 <td class="py-3 px-3 text-[10px] text-slate-500">${r.coordenador || '—'}</td>
@@ -1064,7 +1067,6 @@ async function _fetchHistorico() {
                 </td>
             </tr>`;
         }).join('');
-
         tc.innerHTML = rows.length
             ? `<table class="w-full text-[10px]">
                 <thead><tr class="border-b border-slate-200">
@@ -1080,38 +1082,22 @@ async function _fetchHistorico() {
                 <tbody>${rows}</tbody>
                </table>`
             : '<p class="text-center py-12 text-slate-300 font-bold">Nenhum registro encontrado.</p>';
-
         d.records.forEach(r => {
             const sel = document.getElementById('hsel-' + r.id);
             const btn = document.getElementById('hbtn-' + r.id);
             const ver = document.getElementById('hver-' + r.id);
             const del = document.getElementById('hdel-' + r.id);
-
-            // Popula select de reatribuição (só existe para admin)
             if (sel && isAdmin()) {
-                VENDORS_CACHE.forEach(v => {
-                    const o = document.createElement('option');
-                    o.value       = v.nome;
-                    o.textContent = v.nome;
-                    if (v.nome === r.vendedor_nome) o.selected = true;
-                    sel.appendChild(o);
-                });
-                sel.addEventListener('change', () => {
-                    if (btn) btn.style.display = sel.value ? 'inline-block' : 'none';
-                });
+                VENDORS_CACHE.forEach(v => { const o = document.createElement('option'); o.value = v.nome; o.textContent = v.nome; if (v.nome === r.vendedor_nome) o.selected = true; sel.appendChild(o); });
+                sel.addEventListener('change', () => { if (btn) btn.style.display = sel.value ? 'inline-block' : 'none'; });
             }
-
             if (btn && isAdmin()) {
                 btn.addEventListener('click', async () => {
-                    const novoNome  = sel?.value;
-                    const reuniaoId = r.id;
+                    const novoNome = sel?.value; const reuniaoId = r.id;
                     if (!novoNome) { alert('Selecione um vendedor.'); return; }
-                    btn.disabled = true; btn.textContent = '...'; btn.style.opacity = '0.6';
+                    btn.disabled = true; btn.innerHTML = '...'; btn.style.opacity = '0.6';
                     try {
-                        const res2 = await fetch('/api/reassign', {
-                            method: 'PATCH', headers: {'Content-Type':'application/json'},
-                            body: JSON.stringify({ reuniao_id: reuniaoId, vendedor_nome: novoNome })
-                        });
+                        const res2 = await fetch('/api/reassign', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ reuniao_id: reuniaoId, vendedor_nome: novoNome }) });
                         const data = await res2.json();
                         if (!data.ok) throw new Error(data.error || 'Erro desconhecido');
                         const row = document.getElementById('hist-row-' + reuniaoId);
@@ -1122,132 +1108,68 @@ async function _fetchHistorico() {
                     } catch (err) { alert('Erro ao reatribuir: ' + err.message); btn.disabled = false; btn.textContent = '✓ Salvar'; btn.style.opacity = '1'; }
                 });
             }
-
             if (ver) ver.addEventListener('click', () => abrirAnaliseCompleta(r.id));
-
-            // Botão editar SDR — qualquer usuário logado pode corrigir
             const sdrBtn  = document.getElementById('hsdr-' + r.id);
             const sdrCell = document.getElementById('hist-sdr-' + r.id);
             if (sdrBtn && sdrCell) {
                 sdrBtn.addEventListener('click', () => {
                     const atual = r.nome_sdr || '';
-                    // Inline edit: transforma a célula em input
                     const input = document.createElement('input');
-                    input.type        = 'text';
-                    input.value       = atual;
-                    input.placeholder = 'Nome do SDR (ou vazio)';
+                    input.type = 'text'; input.value = atual; input.placeholder = 'Nome do SDR (ou vazio)';
                     input.style.cssText = 'font-size:11px;font-weight:700;border:1px solid #7c3aed;border-radius:8px;padding:3px 8px;width:130px;outline:none;color:#4c1d95;';
-
                     const salvar = document.createElement('button');
                     salvar.textContent = '✓';
                     salvar.style.cssText = 'font-size:11px;font-weight:900;color:white;background:#7c3aed;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;margin-left:4px;';
-
                     const cancelar = document.createElement('button');
                     cancelar.textContent = '✕';
                     cancelar.style.cssText = 'font-size:11px;font-weight:900;color:#94a3b8;background:none;border:none;cursor:pointer;margin-left:2px;';
-
-                    sdrCell.innerHTML = '';
-                    sdrCell.appendChild(input);
-                    sdrCell.appendChild(salvar);
-                    sdrCell.appendChild(cancelar);
+                    sdrCell.innerHTML = ''; sdrCell.appendChild(input); sdrCell.appendChild(salvar); sdrCell.appendChild(cancelar);
                     input.focus();
-
-                    cancelar.addEventListener('click', () => {
-                        sdrCell.textContent = r.nome_sdr || 'Indefinido';
-                    });
-
+                    cancelar.addEventListener('click', () => { sdrCell.textContent = r.nome_sdr || 'Indefinido'; });
                     const doSave = async () => {
                         const novoSdr = input.value.trim();
                         salvar.disabled = true; salvar.textContent = '...';
                         try {
-                            const res2 = await fetch('/api/reassign', {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ reuniao_id: r.id, nome_sdr: novoSdr || null })
-                            });
+                            const res2 = await fetch('/api/reassign', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reuniao_id: r.id, nome_sdr: novoSdr || null }) });
                             const data = await res2.json();
                             if (!data.ok) throw new Error(data.error || 'Erro');
                             r.nome_sdr = novoSdr || null;
                             sdrCell.textContent = novoSdr || 'Indefinido';
                             sdrCell.style.color = '#10b981';
                             setTimeout(() => { sdrCell.style.color = ''; }, 2000);
-                        } catch (err) {
-                            alert('Erro ao salvar SDR: ' + err.message);
-                            sdrCell.textContent = r.nome_sdr || 'Indefinido';
-                        }
+                        } catch (err) { alert('Erro ao salvar SDR: ' + err.message); sdrCell.textContent = r.nome_sdr || 'Indefinido'; }
                     };
-
                     salvar.addEventListener('click', doSave);
                     input.addEventListener('keydown', e => { if (e.key === 'Enter') doSave(); if (e.key === 'Escape') cancelar.click(); });
                 });
             }
-
-            // Botão excluir: só admin
             if (del && isAdmin()) del.addEventListener('click', () => deletarRegistro(r.id));
         });
-
         const pg = document.getElementById('hist-pagination');
-        pg.innerHTML = histPage > 0
-            ? '<button onclick="histPage--;_fetchHistorico()" class="px-5 py-2 bg-slate-100 hover:bg-blue-100 text-slate-600 font-black rounded-xl text-xs uppercase transition-all">← Anterior</button>'
-            : '';
-        if (d.records.length === HIST_PER_PAGE)
-            pg.innerHTML += '<button onclick="histPage++;_fetchHistorico()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase transition-all">Próxima →</button>';
-
+        pg.innerHTML = histPage > 0 ? '<button onclick="histPage--;_fetchHistorico()" class="px-5 py-2 bg-slate-100 hover:bg-blue-100 text-slate-600 font-black rounded-xl text-xs uppercase transition-all">← Anterior</button>' : '';
+        if (d.records.length === HIST_PER_PAGE) pg.innerHTML += '<button onclick="histPage++;_fetchHistorico()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase transition-all">Próxima →</button>';
         lucide.createIcons();
-
-    } catch(err) {
-        tc.innerHTML = `<p class="text-center py-12 text-red-400 font-bold">Erro: ${err.message}</p>`;
-    }
+    } catch(err) { tc.innerHTML = `<p class="text-center py-12 text-red-400 font-bold">Erro: ${err.message}</p>`; }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PATCH — Nibo AI Auditor — abrirAnaliseCompleta v2
-//
-// INSTRUÇÃO: No index.html, substitua TODO o conteúdo da função
-// `abrirAnaliseCompleta` (da linha `async function abrirAnaliseCompleta(id){`
-// até o `}` antes de `async function exportarPDFModal`) por esta versão.
-//
-// O que muda:
-//   ✅ Radar chart idêntico ao visual ao vivo (todos os 15 critérios)
-//   ✅ Auditoria de Objeções com % de contorno + cards visuais
-//   ✅ Tempo de fala com barras coloridas
-//   ✅ Etapas expandidas com sub-critérios e justificativas
-//   ✅ Pontos Fortes + Melhoria Imediata com layout igual ao vivo
-//   ✅ Plano de Coaching com markdown renderizado
-//   ✅ SDR: Veredicto + Nota + Contexto + Critérios + SLA + Análise Completa
-//   ✅ Header com info do vendedor, gestor, produto, data e concorrentes
-// ═══════════════════════════════════════════════════════════════════════════════
-
 async function abrirAnaliseCompleta(id){
-    // Remove modal anterior se existir
     const anterior = document.getElementById('analise-modal-'+id);
     if (anterior) anterior.remove();
-
     const modal = document.createElement('div');
     modal.id = 'analise-modal-'+id;
     modal.className = 'fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm overflow-y-auto p-4';
     modal.innerHTML = `
     <div class="max-w-6xl mx-auto mt-6 mb-16 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
       <div class="bg-[#002d72] p-6 flex items-center justify-between">
-        <h3 class="font-black text-white text-lg uppercase flex items-center gap-3">
-          <i data-lucide="file-search" class="w-5 h-5"></i> Análise Completa
-        </h3>
+        <h3 class="font-black text-white text-lg uppercase flex items-center gap-3"><i data-lucide="file-search" class="w-5 h-5"></i> Análise Completa</h3>
         <div class="flex items-center gap-2">
-          <button onclick="exportarPDFModal('${id}')" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-all">
-            <i data-lucide="download" class="w-3 h-3"></i> PDF Completo
-          </button>
-          <button onclick="document.getElementById('analise-modal-${id}').remove()" class="bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-2xl transition-all">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
+          <button onclick="exportarPDFModal('${id}')" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-all"><i data-lucide="download" class="w-3 h-3"></i> PDF Completo</button>
+          <button onclick="document.getElementById('analise-modal-${id}').remove()" class="bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-2xl transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
       </div>
       <div class="border-b border-slate-200 flex gap-4 px-8 bg-slate-50">
-        <button class="section-tab active" id="modal-tab-auditoria-${id}" onclick="trocarAbaModal('${id}','auditoria')">
-          <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Auditoria de Vendas
-        </button>
-        <button class="section-tab" id="modal-tab-sdr-${id}" onclick="trocarAbaModal('${id}','sdr')">
-          <i data-lucide="user-check" class="w-4 h-4"></i> Qualificação do Lead (SDR)
-        </button>
+        <button class="section-tab active" id="modal-tab-auditoria-${id}" onclick="trocarAbaModal('${id}','auditoria')"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Auditoria de Vendas</button>
+        <button class="section-tab" id="modal-tab-sdr-${id}" onclick="trocarAbaModal('${id}','sdr')"><i data-lucide="user-check" class="w-4 h-4"></i> Qualificação do Lead (SDR)</button>
       </div>
       <div id="analise-modal-body-${id}" class="p-8">
         <div class="flex items-center justify-center py-20"><div class="loader"></div></div>
@@ -1255,534 +1177,141 @@ async function abrirAnaliseCompleta(id){
     </div>`;
     document.body.appendChild(modal);
     lucide.createIcons();
-
     try {
         const res = await fetch('/api/records?id=' + id);
         const d   = await res.json();
         if (!d.record) throw new Error('Registro não encontrado');
-
         const r = d.record;
         const j = r.analise_json || {};
-
-        // ── Helpers locais ────────────────────────────────────────────────
         const sc  = n => (n||0) >= 4 ? 'text-emerald-600' : (n||0) >= 3 ? 'text-blue-600' : 'text-red-500';
         const fmt = n => (n && n > 0) ? Number(n).toFixed(1) : '—';
-        const bldStars = (score, sm) => {
-            const cls = sm ? 'star-sm' : 'star';
-            return Array.from({length:5}, (_,i) =>
-                `<span class="${cls} ${i < score ? 'filled' : ''}">★</span>`
-            ).join('');
-        };
-
-        // ── ETAPAS ────────────────────────────────────────────────────────
+        const bldStars = (score, sm) => { const cls = sm ? 'star-sm' : 'star'; return Array.from({length:5}, (_,i) => `<span class="${cls} ${i < score ? 'filled' : ''}">★</span>`).join(''); };
         const etapas = [
-            {
-                titulo: 'Etapa 1', label: 'Rapport & Comunicação',
-                cor: 'border-blue-500', bg: 'bg-blue-50', text: 'text-blue-700', icon: 'heart-handshake',
-                nota: j.nota_etapa1 || r.nota_rapport || 0,
-                porque: j.porque_etapa1, melhoria: j.melhoria_etapa1,
-                criterios: [
-                    { l: 'Rapport',            k: 'rapport',     desc: 'Criou conexão genuína e estabeleceu confiança com o lead?' },
-                    { l: 'Comunicação Eficaz', k: 'comunicacao', desc: 'Demonstrou capacidade de ouvir as dores e o cenário do cliente?' }
-                ]
-            },
-            {
-                titulo: 'Etapa 2', label: 'SPIN Selling',
-                cor: 'border-indigo-500', bg: 'bg-indigo-50', text: 'text-indigo-700', icon: 'search',
-                nota: j.nota_etapa_spin || 0,
-                porque: j.porque_etapa_spin, melhoria: j.melhoria_etapa_spin,
-                criterios: [
-                    { l: 'Situação',    k: 'spin_s', desc: 'Fez perguntas de contexto sem interrogar — entendeu o cenário atual do lead?' },
-                    { l: 'Problema',    k: 'spin_p', desc: 'Investigou e fez o cliente confessar suas dores e insatisfações?' },
-                    { l: 'Implicação',  k: 'spin_i', desc: 'Aprofundou o problema mostrando os impactos de não resolver?' },
-                    { l: 'Necessidade', k: 'spin_n', desc: 'Fez o cliente declarar o valor da solução com suas próprias palavras?' }
-                ]
-            },
-            {
-                titulo: 'Etapa 3', label: 'Apresentação da Ferramenta',
-                cor: 'border-violet-500', bg: 'bg-violet-50', text: 'text-violet-700', icon: 'presentation',
-                nota: j.nota_etapa2 || r.nota_produto || 0,
-                porque: j.porque_etapa2, melhoria: j.melhoria_etapa2,
-                criterios: [
-                    { l: 'Produto',               k: 'produto',      desc: 'Apresentou o produto com clareza, domínio e adequação ao cenário?' },
-                    { l: 'Objeções',              k: 'objecoes',     desc: 'Conseguiu contornar objeções de maneira amistosa e convincente?' },
-                    { l: 'Solução da Dor',        k: 'solucao_dor',  desc: 'Utilizou a dor identificada no diagnóstico para mostrar a solução?' },
-                    { l: 'Encantamento e Emoção', k: 'encantamento', desc: 'Gerou emoção comercial, entusiasmo e encantou o lead com a ferramenta?' }
-                ]
-            },
-            {
-                titulo: 'Etapa 4', label: 'Negociação',
-                cor: 'border-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700', icon: 'handshake',
-                nota: j.nota_etapa3 || r.nota_apresentacao || 0,
-                porque: j.porque_etapa3, melhoria: j.melhoria_etapa3,
-                criterios: [
-                    { l: 'Pré-Fechamento',  k: 'pre_fechamento_sub', desc: 'Preparou o terreno para o fechamento com ancoragem e comprometimento do lead?' },
-                    { l: 'Escuta Ativa',    k: 'escuta_ativa',       desc: 'Exerceu escuta ativa com pausas necessárias para feedback do lead?' },
-                    { l: 'Resiliência',     k: 'resiliencia',        desc: 'Demonstrou firmeza com bons argumentos para fechamento ou próximo contato?' },
-                    { l: 'Gestão do Tempo', k: 'gestao_tempo',       desc: 'Conseguiu boa gestão do tempo garantindo call de qualidade em 60 min?' },
-                    { l: 'Regras de Fech.', k: 'regras_fechamento',  desc: 'Aplicou corretamente as regras e técnicas de fechamento Nibo?' }
-                ]
-            }
+            { titulo:'Etapa 1',label:'Rapport & Comunicação',cor:'border-blue-500',bg:'bg-blue-50',text:'text-blue-700',icon:'heart-handshake',nota:j.nota_etapa1||r.nota_rapport||0,porque:j.porque_etapa1,melhoria:j.melhoria_etapa1,criterios:[{l:'Rapport',k:'rapport',desc:'Criou conexão genuína e estabeleceu confiança com o lead?'},{l:'Comunicação Eficaz',k:'comunicacao',desc:'Demonstrou capacidade de ouvir as dores e o cenário do cliente?'}] },
+            { titulo:'Etapa 2',label:'SPIN Selling',cor:'border-indigo-500',bg:'bg-indigo-50',text:'text-indigo-700',icon:'search',nota:j.nota_etapa_spin||0,porque:j.porque_etapa_spin,melhoria:j.melhoria_etapa_spin,criterios:[{l:'Situação',k:'spin_s',desc:'Fez perguntas de contexto sem interrogar — entendeu o cenário atual do lead?'},{l:'Problema',k:'spin_p',desc:'Investigou e fez o cliente confessar suas dores e insatisfações?'},{l:'Implicação',k:'spin_i',desc:'Aprofundou o problema mostrando os impactos de não resolver?'},{l:'Necessidade',k:'spin_n',desc:'Fez o cliente declarar o valor da solução com suas próprias palavras?'}] },
+            { titulo:'Etapa 3',label:'Apresentação da Ferramenta',cor:'border-violet-500',bg:'bg-violet-50',text:'text-violet-700',icon:'presentation',nota:j.nota_etapa2||r.nota_produto||0,porque:j.porque_etapa2,melhoria:j.melhoria_etapa2,criterios:[{l:'Produto',k:'produto',desc:'Apresentou o produto com clareza, domínio e adequação ao cenário?'},{l:'Objeções',k:'objecoes',desc:'Conseguiu contornar objeções de maneira amistosa e convincente?'},{l:'Solução da Dor',k:'solucao_dor',desc:'Utilizou a dor identificada no diagnóstico para mostrar a solução?'},{l:'Encantamento e Emoção',k:'encantamento',desc:'Gerou emoção comercial, entusiasmo e encantou o lead com a ferramenta?'}] },
+            { titulo:'Etapa 4',label:'Negociação',cor:'border-emerald-500',bg:'bg-emerald-50',text:'text-emerald-700',icon:'handshake',nota:j.nota_etapa3||r.nota_apresentacao||0,porque:j.porque_etapa3,melhoria:j.melhoria_etapa3,criterios:[{l:'Pré-Fechamento',k:'pre_fechamento_sub',desc:'Preparou o terreno para o fechamento com ancoragem e comprometimento do lead?'},{l:'Escuta Ativa',k:'escuta_ativa',desc:'Exerceu escuta ativa com pausas necessárias para feedback do lead?'},{l:'Resiliência',k:'resiliencia',desc:'Demonstrou firmeza com bons argumentos para fechamento ou próximo contato?'},{l:'Gestão do Tempo',k:'gestao_tempo',desc:'Conseguiu boa gestão do tempo garantindo call de qualidade em 60 min?'},{l:'Regras de Fech.',k:'regras_fechamento',desc:'Aplicou corretamente as regras e técnicas de fechamento Nibo?'}] }
         ];
-
         const etapasHTML = etapas.map(e => {
             const nE = e.nota || 0;
             const cE = nE >= 4 ? 'text-emerald-500' : nE >= 3 ? 'text-blue-600' : 'text-red-500';
             const subCrits = e.criterios.map(c => {
-                const n   = j[`nota_${c.k}`] || 0;
+                const n = j[`nota_${c.k}`] || 0;
                 const col = n >= 4 ? 'text-emerald-600' : n >= 3 ? 'text-blue-600' : 'text-red-500';
                 const bg2 = n >= 4 ? 'bg-emerald-50 border-emerald-100' : n >= 3 ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100';
-                return `
-                <div class="p-4 rounded-2xl border ${bg2}">
-                  <div class="flex items-start justify-between gap-3 mb-1">
-                    <div class="flex-1">
-                      <p class="text-[10px] font-black ${col} uppercase tracking-wide">${c.l}</p>
-                      <p class="text-[9px] text-slate-400 italic mt-0.5">${c.desc}</p>
-                    </div>
-                    <div class="text-center flex-shrink-0">
-                      <div class="text-2xl font-black ${col}">${n}</div>
-                      <div class="flex gap-px">${bldStars(n, true)}</div>
-                    </div>
-                  </div>
-                  ${j[`porque_${c.k}`] ? `<p class="text-[11px] text-slate-600 font-medium leading-relaxed mt-2">${j[`porque_${c.k}`]}</p>` : ''}
-                  ${j[`melhoria_${c.k}`] && n < 5 ? `<div class="flex items-start gap-1.5 mt-2 p-2 bg-amber-50 rounded-xl border border-amber-100"><i data-lucide="lightbulb" class="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5"></i><p class="text-[10px] text-amber-800 font-bold leading-relaxed">${j[`melhoria_${c.k}`]}</p></div>` : ''}
-                </div>`;
+                return `<div class="p-4 rounded-2xl border ${bg2}"><div class="flex items-start justify-between gap-3 mb-1"><div class="flex-1"><p class="text-[10px] font-black ${col} uppercase tracking-wide">${c.l}</p><p class="text-[9px] text-slate-400 italic mt-0.5">${c.desc}</p></div><div class="text-center flex-shrink-0"><div class="text-2xl font-black ${col}">${n}</div><div class="flex gap-px">${bldStars(n,true)}</div></div></div>${j[`porque_${c.k}`]?`<p class="text-[11px] text-slate-600 font-medium leading-relaxed mt-2">${j[`porque_${c.k}`]}</p>`:''} ${j[`melhoria_${c.k}`]&&n<5?`<div class="flex items-start gap-1.5 mt-2 p-2 bg-amber-50 rounded-xl border border-amber-100"><i data-lucide="lightbulb" class="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5"></i><p class="text-[10px] text-amber-800 font-bold leading-relaxed">${j[`melhoria_${c.k}`]}</p></div>`:''}</div>`;
             }).join('');
-
-            return `
-            <div class="rounded-[2rem] border-t-4 ${e.cor} bg-white shadow-sm overflow-hidden">
-              <div class="p-6 ${e.bg} border-b border-slate-100">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 rounded-xl bg-white/70 border border-white flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="${e.icon}" class="w-5 h-5 ${e.text}"></i>
-                  </div>
-                  <div class="flex-1">
-                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">${e.titulo}</span>
-                    <p class="text-[13px] font-black ${e.text}">${e.label}</p>
-                  </div>
-                  <div class="text-center flex-shrink-0">
-                    <div class="text-4xl font-black ${cE}">${nE}</div>
-                    <div class="flex gap-px mt-1">${bldStars(nE, true)}</div>
-                  </div>
-                </div>
-                ${e.porque ? `<p class="text-[12px] text-slate-600 font-medium mt-3 leading-relaxed">${e.porque}</p>` : ''}
-                ${e.melhoria && nE < 5 ? `<p class="text-[11px] text-amber-700 font-semibold mt-2 flex items-start gap-1"><i data-lucide="target" class="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500"></i>${e.melhoria}</p>` : ''}
-              </div>
-              <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-3">${subCrits}</div>
-            </div>`;
+            return `<div class="rounded-[2rem] border-t-4 ${e.cor} bg-white shadow-sm overflow-hidden"><div class="p-6 ${e.bg} border-b border-slate-100"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-xl bg-white/70 border border-white flex items-center justify-center flex-shrink-0"><i data-lucide="${e.icon}" class="w-5 h-5 ${e.text}"></i></div><div class="flex-1"><span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">${e.titulo}</span><p class="text-[13px] font-black ${e.text}">${e.label}</p></div><div class="text-center flex-shrink-0"><div class="text-4xl font-black ${cE}">${nE}</div><div class="flex gap-px mt-1">${bldStars(nE,true)}</div></div></div>${e.porque?`<p class="text-[12px] text-slate-600 font-medium mt-3 leading-relaxed">${e.porque}</p>`:''} ${e.melhoria&&nE<5?`<p class="text-[11px] text-amber-700 font-semibold mt-2 flex items-start gap-1"><i data-lucide="target" class="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500"></i>${e.melhoria}</p>`:''}</div><div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-3">${subCrits}</div></div>`;
         }).join('');
-
-        // ── Auditoria de Objeções ─────────────────────────────────────────
         const objs = j.auditoria_objecoes || [];
         let objecoesHTML = '';
-        if (objs.length === 0) {
-            objecoesHTML = `<div class="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
-                <i data-lucide="info" class="w-4 h-4 flex-shrink-0"></i>
-                <p class="text-[11px] font-semibold">Nenhuma objeção identificada.</p>
-            </div>`;
-        } else {
-            const totalBem = objs.filter(o => o.contornada).length;
-            const totalMal = objs.length - totalBem;
-            const pct = Math.round((totalBem / objs.length) * 100);
-            const scoreColor = pct >= 70 ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
-                             : pct >= 40 ? 'text-amber-600 bg-amber-50 border-amber-200'
-                             : 'text-red-600 bg-red-50 border-red-200';
-            const objRows = objs.map((o, i) => {
-                const bem = o.contornada;
-                return `
-                <div class="rounded-2xl border ${bem ? 'border-emerald-100 bg-emerald-50/60' : 'border-red-100 bg-red-50/60'} p-4 flex flex-col gap-2">
-                  <div class="flex items-start gap-3">
-                    <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5 ${bem ? 'bg-emerald-500' : 'bg-red-400'}">
-                      <i data-lucide="${bem ? 'check' : 'x'}" class="text-white w-3 h-3"></i>
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex items-center gap-2 mb-1">
-                        <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Objeção ${i+1}</span>
-                        <span class="text-[8px] font-black uppercase tracking-widest ${bem ? 'text-emerald-600' : 'text-red-600'}">${bem ? 'Contornada' : 'Não contornada'}</span>
-                      </div>
-                      <p class="text-[12px] font-bold text-slate-700 leading-relaxed">${o.objecao}</p>
-                    </div>
-                  </div>
-                  ${!bem && o.abordagem_sugerida ? `
-                  <div class="ml-9 flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl">
-                    <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5"></i>
-                    <p class="text-[11px] text-amber-800 font-medium leading-relaxed">${o.abordagem_sugerida}</p>
-                  </div>` : ''}
-                </div>`;
-            }).join('');
-            objecoesHTML = `
-            <div class="flex items-center gap-4 mb-4 p-4 rounded-2xl border ${scoreColor}">
-              <div class="text-3xl font-black">${pct}%</div>
-              <div class="flex-1">
-                <p class="font-black text-sm">Taxa de contorno</p>
-                <p class="text-[10px] font-bold opacity-70">${totalBem} de ${objs.length} objeções contornadas</p>
-              </div>
-              <div class="flex gap-2 flex-shrink-0">
-                <div class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl text-center">
-                  <p class="text-xs font-black">✅ ${totalBem}</p><p class="text-[8px] font-bold uppercase">Contornadas</p>
-                </div>
-                <div class="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl text-center">
-                  <p class="text-xs font-black">❌ ${totalMal}</p><p class="text-[8px] font-bold uppercase">Perdidas</p>
-                </div>
-              </div>
-            </div>
-            <div class="space-y-3">${objRows}</div>`;
+        if (objs.length === 0) { objecoesHTML = `<div class="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400"><i data-lucide="info" class="w-4 h-4 flex-shrink-0"></i><p class="text-[11px] font-semibold">Nenhuma objeção identificada.</p></div>`; }
+        else {
+            const totalBem = objs.filter(o=>o.contornada).length, totalMal = objs.length-totalBem, pct = Math.round((totalBem/objs.length)*100);
+            const scoreColor = pct>=70?'text-emerald-600 bg-emerald-50 border-emerald-200':pct>=40?'text-amber-600 bg-amber-50 border-amber-200':'text-red-600 bg-red-50 border-red-200';
+            const objRows = objs.map((o,i)=>{const bem=o.contornada;return`<div class="rounded-2xl border ${bem?'border-emerald-100 bg-emerald-50/60':'border-red-100 bg-red-50/60'} p-4 flex flex-col gap-2"><div class="flex items-start gap-3"><div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5 ${bem?'bg-emerald-500':'bg-red-400'}"><i data-lucide="${bem?'check':'x'}" class="text-white w-3 h-3"></i></div><div class="flex-1"><div class="flex items-center gap-2 mb-1"><span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Objeção ${i+1}</span><span class="text-[8px] font-black uppercase tracking-widest ${bem?'text-emerald-600':'text-red-600'}">${bem?'Contornada':'Não contornada'}</span></div><p class="text-[12px] font-bold text-slate-700 leading-relaxed">${o.objecao}</p></div></div>${!bem&&o.abordagem_sugerida?`<div class="ml-9 flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl"><i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5"></i><p class="text-[11px] text-amber-800 font-medium leading-relaxed">${o.abordagem_sugerida}</p></div>`:''}</div>`;}).join('');
+            objecoesHTML = `<div class="flex items-center gap-4 mb-4 p-4 rounded-2xl border ${scoreColor}"><div class="text-3xl font-black">${pct}%</div><div class="flex-1"><p class="font-black text-sm">Taxa de contorno</p><p class="text-[10px] font-bold opacity-70">${totalBem} de ${objs.length} objeções contornadas</p></div><div class="flex gap-2 flex-shrink-0"><div class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl text-center"><p class="text-xs font-black">✅ ${totalBem}</p><p class="text-[8px] font-bold uppercase">Contornadas</p></div><div class="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl text-center"><p class="text-xs font-black">❌ ${totalMal}</p><p class="text-[8px] font-bold uppercase">Perdidas</p></div></div></div><div class="space-y-3">${objRows}</div>`;
         }
-
-        // ── Tempo de fala ─────────────────────────────────────────────────
-        const tc = parseFloat(j.tempo_fala_consultor || 0);
-        const tl = parseFloat(j.tempo_fala_cliente   || 0);
-        const tempoFalaHTML = `
-        <div class="space-y-4">
-          <div>
-            <div class="flex justify-between text-[11px] font-bold mb-2"><span>Consultor</span><span class="text-blue-600">${j.tempo_fala_consultor || '0%'}</span></div>
-            <div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-600 rounded-full" style="width:${tc}%"></div></div>
-          </div>
-          <div>
-            <div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente</span><span class="text-emerald-500">${j.tempo_fala_cliente || '0%'}</span></div>
-            <div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:${tl}%"></div></div>
-          </div>
-        </div>`;
-
-        // ── SDR ───────────────────────────────────────────────────────────
-        const _vn  = normalizarVeredicto(r.qual_veredicto);
+        const tc2 = parseFloat(j.tempo_fala_consultor||0), tl = parseFloat(j.tempo_fala_cliente||0);
+        const tempoFalaHTML = `<div class="space-y-4"><div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Consultor</span><span class="text-blue-600">${j.tempo_fala_consultor||'0%'}</span></div><div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-600 rounded-full" style="width:${tc2}%"></div></div></div><div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente</span><span class="text-emerald-500">${j.tempo_fala_cliente||'0%'}</span></div><div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:${tl}%"></div></div></div></div>`;
+        const _vn = normalizarVeredicto(r.qual_veredicto);
         const verd = _vn.label;
-        const vc   = _vn.css.replace('text-', 'border-2 text-').replace('bg-', 'bg-');
-
-        const sdColor = n => n >= 7 ? 'text-emerald-600' : n >= 5 ? 'text-amber-500' : 'text-red-500';
-
-        const ctxRows = (j.qual_contexto || []).map(c => `
-            <div class="flex items-start gap-4 py-3 border-b border-slate-50 last:border-0">
-              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-40 flex-shrink-0 mt-0.5">${c.label}</span>
-              <span class="text-[12px] font-bold text-slate-700 flex-1">${c.valor || '—'}</span>
-            </div>`).join('');
-
-        const critRows = [
-            { l: 'Lead sabia o que veria na demo', ok: j.qual_sabia_o_que_veria,    ev: j.qual_sabia_evidencia     },
-            { l: 'Produto correto para o cenário', ok: j.qual_produto_correto,       ev: j.qual_produto_evidencia   },
-            { l: 'Interesse real identificado',    ok: j.qual_interesse_real,        ev: j.qual_interesse_evidencia },
-            { l: 'Cenário diagnosticado pelo SDR', ok: j.qual_cenario_diagnosticado, ev: j.qual_cenario_evidencia   }
-        ].map(c => `
-            <div class="rounded-2xl p-5 border flex flex-col gap-2 ${c.ok ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}">
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-black uppercase tracking-widest ${c.ok ? 'text-emerald-700' : 'text-red-700'}">${c.l}</span>
-                <div class="w-6 h-6 rounded-full flex items-center justify-center ${c.ok ? 'bg-emerald-500' : 'bg-red-400'}">
-                  <i data-lucide="${c.ok ? 'check' : 'x'}" class="text-white w-3 h-3"></i>
-                </div>
-              </div>
-              <p class="text-[11px] italic leading-relaxed ${c.ok ? 'text-emerald-700' : 'text-red-600'}">${c.ev || 'Sem evidência.'}</p>
-            </div>`).join('');
-
-        const slaRows = [
-            { l: j.qual_sla_1_label || 'SLA 1', ok: j.qual_sla_1_ok, ev: j.qual_sla_1_ev },
-            { l: j.qual_sla_2_label || 'SLA 2', ok: j.qual_sla_2_ok, ev: j.qual_sla_2_ev },
-            { l: j.qual_sla_3_label || 'SLA 3', ok: j.qual_sla_3_ok, ev: j.qual_sla_3_ev }
-        ].map(s => `
-            <div class="rounded-2xl p-5 border flex flex-col gap-3 ${s.ok ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}">
-              <div class="flex items-center justify-between">
-                <span class="text-[9px] font-black uppercase tracking-widest ${s.ok ? 'text-emerald-700' : 'text-red-700'}">${s.l}</span>
-                <div class="w-6 h-6 rounded-full flex items-center justify-center ${s.ok ? 'bg-emerald-500' : 'bg-red-400'}">
-                  <i data-lucide="${s.ok ? 'check' : 'x'}" class="text-white w-3 h-3"></i>
-                </div>
-              </div>
-              <p class="text-[11px] italic leading-relaxed ${s.ok ? 'text-emerald-700' : 'text-red-600'}">${s.ev || 'Sem evidência.'}</p>
-            </div>`).join('');
-
-        const prodConfigs = {
-            'RADAR-ECAC':       { color: 'bg-sky-100 text-sky-800 border-sky-300',             icon: 'radar'          },
-            'NIBO OBRIGAÇÕES':  { color: 'bg-violet-100 text-violet-800 border-violet-300',    icon: 'file-text'      },
-            'CONCILIADOR':      { color: 'bg-blue-100 text-blue-800 border-blue-300',          icon: 'git-merge'      },
-            'WHATSAPP WEB':     { color: 'bg-emerald-100 text-emerald-800 border-emerald-300', icon: 'message-circle' },
-            'EMISSOR DE NOTAS': { color: 'bg-orange-100 text-orange-800 border-orange-300',    icon: 'file-plus'      },
-        };
-        const pCfg = prodConfigs[j.qual_produto_identificado] || { color: 'bg-red-100 text-red-800 border-red-300', icon: 'alert-triangle' };
+        const vc = _vn.css.replace('text-','border-2 text-').replace('bg-','bg-');
+        const sdColor = n => n>=7?'text-emerald-600':n>=5?'text-amber-500':'text-red-500';
+        const ctxRows = (j.qual_contexto||[]).map(c=>`<div class="flex items-start gap-4 py-3 border-b border-slate-50 last:border-0"><span class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-40 flex-shrink-0 mt-0.5">${c.label}</span><span class="text-[12px] font-bold text-slate-700 flex-1">${c.valor||'—'}</span></div>`).join('');
+        const critRows = [{l:'Lead sabia o que veria na demo',ok:j.qual_sabia_o_que_veria,ev:j.qual_sabia_evidencia},{l:'Produto correto para o cenário',ok:j.qual_produto_correto,ev:j.qual_produto_evidencia},{l:'Interesse real identificado',ok:j.qual_interesse_real,ev:j.qual_interesse_evidencia},{l:'Cenário diagnosticado pelo SDR',ok:j.qual_cenario_diagnosticado,ev:j.qual_cenario_evidencia}].map(c=>`<div class="rounded-2xl p-5 border flex flex-col gap-2 ${c.ok?'bg-emerald-50 border-emerald-100':'bg-red-50 border-red-100'}"><div class="flex items-center justify-between"><span class="text-[10px] font-black uppercase tracking-widest ${c.ok?'text-emerald-700':'text-red-700'}">${c.l}</span><div class="w-6 h-6 rounded-full flex items-center justify-center ${c.ok?'bg-emerald-500':'bg-red-400'}"><i data-lucide="${c.ok?'check':'x'}" class="text-white w-3 h-3"></i></div></div><p class="text-[11px] italic leading-relaxed ${c.ok?'text-emerald-700':'text-red-600'}">${c.ev||'Sem evidência.'}</p></div>`).join('');
+        const slaRows = [{l:j.qual_sla_1_label||'SLA 1',ok:j.qual_sla_1_ok,ev:j.qual_sla_1_ev},{l:j.qual_sla_2_label||'SLA 2',ok:j.qual_sla_2_ok,ev:j.qual_sla_2_ev},{l:j.qual_sla_3_label||'SLA 3',ok:j.qual_sla_3_ok,ev:j.qual_sla_3_ev}].map(s=>`<div class="rounded-2xl p-5 border flex flex-col gap-3 ${s.ok?'bg-emerald-50 border-emerald-100':'bg-red-50 border-red-100'}"><div class="flex items-center justify-between"><span class="text-[9px] font-black uppercase tracking-widest ${s.ok?'text-emerald-700':'text-red-700'}">${s.l}</span><div class="w-6 h-6 rounded-full flex items-center justify-center ${s.ok?'bg-emerald-500':'bg-red-400'}"><i data-lucide="${s.ok?'check':'x'}" class="text-white w-3 h-3"></i></div></div><p class="text-[11px] italic leading-relaxed ${s.ok?'text-emerald-700':'text-red-600'}">${s.ev||'Sem evidência.'}</p></div>`).join('');
+        const prodConfigs={'RADAR-ECAC':{color:'bg-sky-100 text-sky-800 border-sky-300',icon:'radar'},'NIBO OBRIGAÇÕES':{color:'bg-violet-100 text-violet-800 border-violet-300',icon:'file-text'},'CONCILIADOR':{color:'bg-blue-100 text-blue-800 border-blue-300',icon:'git-merge'},'WHATSAPP WEB':{color:'bg-emerald-100 text-emerald-800 border-emerald-300',icon:'message-circle'},'EMISSOR DE NOTAS':{color:'bg-orange-100 text-orange-800 border-orange-300',icon:'file-plus'}};
+        const pCfg = prodConfigs[j.qual_produto_identificado]||{color:'bg-red-100 text-red-800 border-red-300',icon:'alert-triangle'};
         const foraPortfolio = !j.qual_produto_no_portfolio;
-
-        // ── Monta HTML final ──────────────────────────────────────────────
-        document.getElementById('analise-modal-body-' + id).innerHTML = `
-
-        <!-- ═══ ABA AUDITORIA ═══ -->
+        document.getElementById('analise-modal-body-'+id).innerHTML = `
         <div id="aba-auditoria-${id}">
-
-          <!-- Info header -->
           <div class="flex flex-wrap gap-2 mb-6">
-            <div class="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 rounded-2xl">
-              <span class="text-[9px] font-black text-blue-400 uppercase">Vendedor</span>
-              <span class="font-black text-blue-800 text-sm">${r.vendedor_nome || '—'}</span>
-            </div>
-            <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl">
-              <span class="text-[9px] font-black text-slate-400 uppercase">Gestor</span>
-              <span class="font-black text-slate-700 text-sm">${r.coordenador || '—'}</span>
-            </div>
-            <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl">
-              <span class="text-[9px] font-black text-slate-400 uppercase">Produto</span>
-              <span class="font-black text-slate-700 text-sm">${r.produto || '—'}</span>
-            </div>
-            <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl">
-              <span class="text-[9px] font-black text-slate-400 uppercase">Data</span>
-              <span class="font-black text-slate-700 text-sm">${new Date(r.created_at).toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'})}</span>
-            </div>
-            ${(j.concorrentes_detectados || []).map(c =>
-                `<span class="px-3 py-2 bg-red-600 text-white text-[9px] font-black rounded-xl shadow uppercase tracking-widest flex items-center gap-1.5">
-                  <i data-lucide="alert-circle" class="w-3 h-3"></i> ${c}
-                </span>`
-            ).join('')}
+            <div class="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 rounded-2xl"><span class="text-[9px] font-black text-blue-400 uppercase">Vendedor</span><span class="font-black text-blue-800 text-sm">${r.vendedor_nome||'—'}</span></div>
+            <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl"><span class="text-[9px] font-black text-slate-400 uppercase">Gestor</span><span class="font-black text-slate-700 text-sm">${r.coordenador||'—'}</span></div>
+            <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl"><span class="text-[9px] font-black text-slate-400 uppercase">Produto</span><span class="font-black text-slate-700 text-sm">${r.produto||'—'}</span></div>
+            <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl"><span class="text-[9px] font-black text-slate-400 uppercase">Data</span><span class="font-black text-slate-700 text-sm">${new Date(r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</span></div>
+            ${(j.concorrentes_detectados||[]).map(c=>`<span class="px-3 py-2 bg-red-600 text-white text-[9px] font-black rounded-xl shadow uppercase tracking-widest flex items-center gap-1.5"><i data-lucide="alert-circle" class="w-3 h-3"></i> ${c}</span>`).join('')}
           </div>
-
-          <!-- Score + Diagnóstico -->
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
             <div class="glass-card p-8 flex flex-col items-center justify-center text-center border-b-[8px] border-blue-600">
               <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Média Global (Máx 5)</span>
-              <div class="text-7xl font-black text-[#002d72] mb-3">${(r.media_final || 0).toFixed(1)}</div>
-              <div class="${(r.media_final||0) >= 4.5 ? 'bg-emerald-500 text-white' : (r.media_final||0) >= 3.5 ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'} px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">
-                ${(r.media_final||0) >= 4.5 ? 'Elite Sales' : (r.media_final||0) >= 3.5 ? 'Alta Performance' : 'Acompanhamento'}
-              </div>
+              <div class="text-7xl font-black text-[#002d72] mb-3">${(r.media_final||0).toFixed(1)}</div>
+              <div class="${(r.media_final||0)>=4.5?'bg-emerald-500 text-white':(r.media_final||0)>=3.5?'bg-blue-100 text-blue-700':'bg-amber-100 text-amber-700'} px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">${(r.media_final||0)>=4.5?'Elite Sales':(r.media_final||0)>=3.5?'Alta Performance':'Acompanhamento'}</div>
             </div>
             <div class="lg:col-span-3 rounded-[2rem] bg-gradient-to-br from-blue-700 to-blue-900 p-10 text-white flex flex-col justify-center">
               <h3 class="font-bold text-blue-200 text-[10px] uppercase tracking-widest mb-4">Diagnóstico Geral</h3>
-              <p class="text-xl md:text-2xl font-bold leading-tight mb-8">${j.resumo_executivo || '—'}</p>
+              <p class="text-xl md:text-2xl font-bold leading-tight mb-8">${j.resumo_executivo||'—'}</p>
               <div class="flex gap-4">
-                <div class="p-4 bg-white/10 rounded-2xl border border-white/20 flex-1">
-                  <span class="text-[9px] font-black text-blue-300 uppercase block mb-1 tracking-widest">Probabilidade de Fechamento:</span>
-                  <p class="text-base font-bold text-white">${j.chance_fechamento || 'N/A'}</p>
-                </div>
-                <div class="p-4 bg-red-500/20 rounded-2xl border border-red-400/30 flex-1">
-                  <span class="text-[9px] font-black text-red-300 uppercase block mb-1 tracking-widest">Alerta de Risco:</span>
-                  <p class="text-base font-bold text-white">${j.alerta_cancelamento || 'Sem alertas críticos.'}</p>
-                </div>
+                <div class="p-4 bg-white/10 rounded-2xl border border-white/20 flex-1"><span class="text-[9px] font-black text-blue-300 uppercase block mb-1 tracking-widest">Probabilidade de Fechamento:</span><p class="text-base font-bold text-white">${j.chance_fechamento||'N/A'}</p></div>
+                <div class="p-4 bg-red-500/20 rounded-2xl border border-red-400/30 flex-1"><span class="text-[9px] font-black text-red-300 uppercase block mb-1 tracking-widest">Alerta de Risco:</span><p class="text-base font-bold text-white">${j.alerta_cancelamento||'Sem alertas críticos.'}</p></div>
               </div>
             </div>
           </div>
-
-          <!-- Dica -->
-          <p class="text-[11px] text-slate-400 font-semibold flex items-center gap-2 px-1 mb-5">
-            <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-blue-400"></i>
-            Clique em qualquer etapa para ver a justificativa e sub-critérios completos
-          </p>
-
-          <!-- Etapas -->
           <div class="space-y-5 mb-8">${etapasHTML}</div>
-
-          <!-- Radar + Tempo + Objeções -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="glass-card p-8 flex items-center justify-center min-h-[380px]">
-              <canvas id="radarModal-${id}"></canvas>
-            </div>
+            <div class="glass-card p-8 flex items-center justify-center min-h-[380px]"><canvas id="radarModal-${id}"></canvas></div>
             <div class="space-y-6">
-              <div class="glass-card p-8">
-                <h4 class="text-[10px] font-black uppercase text-slate-400 mb-6 tracking-widest">Tempo de Fala</h4>
-                ${tempoFalaHTML}
-              </div>
-              <div class="glass-card p-8">
-                <h3 class="font-bold text-slate-800 text-sm mb-5 flex items-center gap-3">
-                  <i data-lucide="shield-alert" class="text-rose-500 w-5 h-5"></i> Auditoria de Objeções
-                </h3>
-                ${objecoesHTML}
-              </div>
+              <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 mb-6 tracking-widest">Tempo de Fala</h4>${tempoFalaHTML}</div>
+              <div class="glass-card p-8"><h3 class="font-bold text-slate-800 text-sm mb-5 flex items-center gap-3"><i data-lucide="shield-alert" class="text-rose-500 w-5 h-5"></i> Auditoria de Objeções</h3>${objecoesHTML}</div>
             </div>
           </div>
-
-          <!-- Pontos Fortes + Melhoria Imediata -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-emerald-50/60 p-8 rounded-[2rem] border border-emerald-100">
-              <h4 class="text-[10px] font-black text-emerald-700 mb-6 uppercase tracking-widest flex items-center gap-2">
-                <i data-lucide="trending-up" class="w-4 h-4"></i> Pontos Fortes
-              </h4>
-              <ul class="space-y-3">
-                ${(j.pontos_fortes || []).map(i => `<li class="flex items-start gap-2 text-[12px] font-bold text-emerald-900"><span>▶</span>${i}</li>`).join('') || '<li class="text-slate-400 text-xs italic">Sem pontos registrados.</li>'}
-              </ul>
-            </div>
-            <div class="bg-amber-50/60 p-8 rounded-[2rem] border border-amber-100">
-              <h4 class="text-[10px] font-black text-amber-700 mb-6 uppercase tracking-widest flex items-center gap-2">
-                <i data-lucide="target" class="w-4 h-4"></i> Melhoria Imediata
-              </h4>
-              <ul class="space-y-3">
-                ${(j.pontos_atencao || []).map(i => `<li class="flex items-start gap-2 text-[12px] font-bold text-amber-900"><span>▶</span>${i}</li>`).join('') || '<li class="text-slate-400 text-xs italic">Sem pontos registrados.</li>'}
-              </ul>
-            </div>
+            <div class="bg-emerald-50/60 p-8 rounded-[2rem] border border-emerald-100"><h4 class="text-[10px] font-black text-emerald-700 mb-6 uppercase tracking-widest flex items-center gap-2"><i data-lucide="trending-up" class="w-4 h-4"></i> Pontos Fortes</h4><ul class="space-y-3">${(j.pontos_fortes||[]).map(i=>`<li class="flex items-start gap-2 text-[12px] font-bold text-emerald-900"><span>▶</span>${i}</li>`).join('')||'<li class="text-slate-400 text-xs italic">Sem pontos registrados.</li>'}</ul></div>
+            <div class="bg-amber-50/60 p-8 rounded-[2rem] border border-amber-100"><h4 class="text-[10px] font-black text-amber-700 mb-6 uppercase tracking-widest flex items-center gap-2"><i data-lucide="target" class="w-4 h-4"></i> Melhoria Imediata</h4><ul class="space-y-3">${(j.pontos_atencao||[]).map(i=>`<li class="flex items-start gap-2 text-[12px] font-bold text-amber-900"><span>▶</span>${i}</li>`).join('')||'<li class="text-slate-400 text-xs italic">Sem pontos registrados.</li>'}</ul></div>
           </div>
-
-          <!-- Plano de Coaching -->
-          ${j.justificativa_detalhada ? `
-          <div class="glass-card p-12 shadow-2xl border-t-[10px] border-[#002d72]">
-            <h3 class="text-xl font-extrabold text-[#002d72] uppercase tracking-widest mb-2 flex items-center gap-4">
-              <i data-lucide="graduation-cap"></i> Plano de Coaching
-            </h3>
-            <p class="text-[11px] text-slate-400 font-semibold mb-10 ml-10">O que fazer diferente na próxima reunião</p>
-            <div class="markdown-content">${marked.parse(j.justificativa_detalhada)}</div>
-          </div>` : ''}
+          ${j.justificativa_detalhada?`<div class="glass-card p-12 shadow-2xl border-t-[10px] border-[#002d72]"><h3 class="text-xl font-extrabold text-[#002d72] uppercase tracking-widest mb-2 flex items-center gap-4"><i data-lucide="graduation-cap"></i> Plano de Coaching</h3><p class="text-[11px] text-slate-400 font-semibold mb-10 ml-10">O que fazer diferente na próxima reunião</p><div class="markdown-content">${marked.parse(j.justificativa_detalhada)}</div></div>`:''}
         </div>
-
-        <!-- ═══ ABA SDR ═══ -->
         <div id="aba-sdr-${id}" class="hidden space-y-6">
-
-          ${foraPortfolio ? `
-          <div class="bg-red-600 text-white p-6 rounded-[2rem] flex items-start gap-4">
-            <i data-lucide="alert-triangle" class="w-8 h-8 flex-shrink-0"></i>
-            <div>
-              <p class="font-black text-lg uppercase mb-1">⚠️ Produto fora do portfólio Nibo!</p>
-              <p class="text-sm font-medium text-red-100">${j.qual_produto_alerta || ''}</p>
-            </div>
-          </div>` : ''}
-
-          <!-- Produto + Veredicto + Nota SDR -->
+          ${foraPortfolio?`<div class="bg-red-600 text-white p-6 rounded-[2rem] flex items-start gap-4"><i data-lucide="alert-triangle" class="w-8 h-8 flex-shrink-0"></i><div><p class="font-black text-lg uppercase mb-1">⚠️ Produto fora do portfólio Nibo!</p><p class="text-sm font-medium text-red-100">${j.qual_produto_alerta||''}</p></div></div>`:''}
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="glass-card p-6 flex flex-col gap-3">
-              <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Produto</h4>
-              <span class="px-4 py-2 rounded-full text-sm font-black border inline-flex items-center gap-2 ${foraPortfolio ? 'bg-red-100 text-red-800 border-red-300' : pCfg.color}">
-                <i data-lucide="${pCfg.icon || 'box'}" class="w-4 h-4"></i> ${j.qual_produto_identificado || '—'}
-              </span>
-              ${j.qual_produto_alerta ? `<p class="text-[11px] text-slate-500 italic leading-relaxed">${j.qual_produto_alerta}</p>` : ''}
-            </div>
-            <div class="glass-card p-6 flex flex-col gap-4">
-              <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Veredicto</h4>
-              <div class="px-5 py-3 rounded-2xl border-2 text-sm font-black text-center tracking-wide ${vc}">${verd}</div>
-            </div>
-            <div class="glass-card p-6 flex flex-col items-center justify-center text-center border-b-[8px] border-violet-500">
-              <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">SDR Responsável</span>
-              <p class="text-sm font-black text-violet-700 mb-4">${r.nome_sdr || j.nome_sdr || 'Não identificado'}</p>
-              <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Nota</span>
-              <div class="text-6xl font-black ${sdColor(j.qual_nota_sdr || 0)} mb-1">${j.qual_nota_sdr !== null && j.qual_nota_sdr !== undefined ? j.qual_nota_sdr : '—'}</div>
-              <span class="text-[9px] text-slate-400 font-bold">/ 10</span>
-              <p class="text-[10px] text-slate-500 mt-3 leading-relaxed font-medium text-center">${j.qual_nota_sdr_justificativa || ''}</p>
-            </div>
+            <div class="glass-card p-6 flex flex-col gap-3"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Produto</h4><span class="px-4 py-2 rounded-full text-sm font-black border inline-flex items-center gap-2 ${foraPortfolio?'bg-red-100 text-red-800 border-red-300':pCfg.color}"><i data-lucide="${pCfg.icon||'box'}" class="w-4 h-4"></i> ${j.qual_produto_identificado||'—'}</span>${j.qual_produto_alerta?`<p class="text-[11px] text-slate-500 italic leading-relaxed">${j.qual_produto_alerta}</p>`:''}</div>
+            <div class="glass-card p-6 flex flex-col gap-4"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Veredicto</h4><div class="px-5 py-3 rounded-2xl border-2 text-sm font-black text-center tracking-wide ${vc}">${verd}</div></div>
+            <div class="glass-card p-6 flex flex-col items-center justify-center text-center border-b-[8px] border-violet-500"><span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">SDR Responsável</span><p class="text-sm font-black text-violet-700 mb-4">${r.nome_sdr||j.nome_sdr||'Não identificado'}</p><span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Nota</span><div class="text-6xl font-black ${sdColor(j.qual_nota_sdr||0)} mb-1">${j.qual_nota_sdr!==null&&j.qual_nota_sdr!==undefined?j.qual_nota_sdr:'—'}</div><span class="text-[9px] text-slate-400 font-bold">/ 10</span><p class="text-[10px] text-slate-500 mt-3 leading-relaxed font-medium text-center">${j.qual_nota_sdr_justificativa||''}</p></div>
           </div>
-
-          <!-- Contexto Extraído -->
-          ${(j.qual_contexto || []).length > 0 ? `
-          <div class="glass-card p-8">
-            <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2">
-              <i data-lucide="info" class="w-4 h-4 text-blue-400"></i> Contexto Extraído
-            </h4>
-            <div>${ctxRows}</div>
-          </div>` : ''}
-
-          <!-- Critérios de Qualificação -->
-          <div class="glass-card p-8">
-            <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2">
-              <i data-lucide="search" class="w-4 h-4 text-blue-400"></i> Critérios de Qualificação
-            </h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${critRows}</div>
-          </div>
-
-          <!-- SLA de Qualificação -->
-          <div class="glass-card p-8">
-            <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2">
-              <i data-lucide="check-square" class="w-4 h-4 text-blue-400"></i> SLA de Qualificação
-            </h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">${slaRows}</div>
-          </div>
-
-          <!-- Análise Completa SDR -->
-          ${j.qual_analise_completa ? `
-          <div class="glass-card p-12 border-t-[10px] border-violet-600">
-            <h3 class="text-xl font-extrabold text-violet-800 uppercase tracking-widest mb-2 flex items-center gap-4">
-              <i data-lucide="file-search"></i> Análise Completa da Qualificação (SDR)
-            </h3>
-            <p class="text-[11px] text-slate-400 font-semibold mb-10 ml-10">Avaliação detalhada da atuação do SDR nesta reunião</p>
-            <div class="markdown-content">${marked.parse(j.qual_analise_completa)}</div>
-          </div>` : ''}
+          ${(j.qual_contexto||[]).length>0?`<div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4 text-blue-400"></i> Contexto Extraído</h4><div>${ctxRows}</div></div>`:''}
+          <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="search" class="w-4 h-4 text-blue-400"></i> Critérios de Qualificação</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${critRows}</div></div>
+          <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="check-square" class="w-4 h-4 text-blue-400"></i> SLA de Qualificação</h4><div class="grid grid-cols-1 md:grid-cols-3 gap-4">${slaRows}</div></div>
+          ${j.qual_analise_completa?`<div class="glass-card p-12 border-t-[10px] border-violet-600"><h3 class="text-xl font-extrabold text-violet-800 uppercase tracking-widest mb-2 flex items-center gap-4"><i data-lucide="file-search"></i> Análise Completa da Qualificação (SDR)</h3><p class="text-[11px] text-slate-400 font-semibold mb-10 ml-10">Avaliação detalhada da atuação do SDR nesta reunião</p><div class="markdown-content">${marked.parse(j.qual_analise_completa)}</div></div>`:''}
         </div>`;
-
-        // ── Radar chart ───────────────────────────────────────────────────
         lucide.createIcons();
-        const radarCtx = document.getElementById('radarModal-' + id)?.getContext('2d');
+        const radarCtx = document.getElementById('radarModal-'+id)?.getContext('2d');
         if (radarCtx) {
-            const radarLabels = ['Rapport','Comunicação Eficaz','Situação','Problema','Implicação','Necessidade','Produto','Objeções','Solução da Dor','Encantamento e Emoção','Pré-Fechamento','Escuta Ativa','Resiliência','Gestão do Tempo','Regras de Fech.'];
-            const radarKeys   = ['nota_rapport','nota_comunicacao','nota_spin_s','nota_spin_p','nota_spin_i','nota_spin_n','nota_produto','nota_objecoes','nota_solucao_dor','nota_encantamento','nota_pre_fechamento_sub','nota_escuta_ativa','nota_resiliencia','nota_gestao_tempo','nota_regras_fechamento'];
-            const radarVals   = radarKeys.map(k => j[k] || 0);
-            new Chart(radarCtx, {
-                type: 'radar',
-                data: {
-                    labels: radarLabels,
-                    datasets: [{ label: 'Desempenho', data: radarVals, backgroundColor: 'rgba(37,99,235,0.12)', borderColor: '#2563eb', borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#1e3a8a', pointBorderColor: '#fff', pointBorderWidth: 1.5 }]
-                },
-                options: {
-                    scales: { r: { min: 0, max: 5, ticks: { stepSize: 1, display: false }, grid: { color: '#e2e8f0' }, angleLines: { color: '#e2e8f0' }, pointLabels: { font: { size: 9, weight: '800' }, color: '#475569' } } },
-                    plugins: { legend: { display: false } },
-                    maintainAspectRatio: true
-                }
-            });
+            const radarLabels=['Rapport','Comunicação Eficaz','Situação','Problema','Implicação','Necessidade','Produto','Objeções','Solução da Dor','Encantamento e Emoção','Pré-Fechamento','Escuta Ativa','Resiliência','Gestão do Tempo','Regras de Fech.'];
+            const radarKeys=['nota_rapport','nota_comunicacao','nota_spin_s','nota_spin_p','nota_spin_i','nota_spin_n','nota_produto','nota_objecoes','nota_solucao_dor','nota_encantamento','nota_pre_fechamento_sub','nota_escuta_ativa','nota_resiliencia','nota_gestao_tempo','nota_regras_fechamento'];
+            new Chart(radarCtx,{type:'radar',data:{labels:radarLabels,datasets:[{label:'Desempenho',data:radarKeys.map(k=>j[k]||0),backgroundColor:'rgba(37,99,235,0.12)',borderColor:'#2563eb',borderWidth:2,pointRadius:4,pointBackgroundColor:'#1e3a8a',pointBorderColor:'#fff',pointBorderWidth:1.5}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:9,weight:'800'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});
         }
-
-    } catch(err) {
-        document.getElementById('analise-modal-body-' + id).innerHTML =
-            `<p class="text-center py-20 text-red-400 font-bold">Erro ao carregar análise: ${err.message}</p>`;
-    }
-
-    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
-}
-function trocarAbaModal(id, aba) {
-    // Abas do conteúdo
-    const abaAuditoria = document.getElementById('aba-auditoria-' + id);
-    const abaSdr       = document.getElementById('aba-sdr-' + id);
-    // Botões da tab bar
-    const tabAuditoria = document.getElementById('modal-tab-auditoria-' + id);
-    const tabSdr       = document.getElementById('modal-tab-sdr-' + id);
-
-    if (!abaAuditoria || !abaSdr) return;
-
-    if (aba === 'auditoria') {
-        abaAuditoria.classList.remove('hidden');
-        abaSdr.classList.add('hidden');
-        tabAuditoria.classList.add('active');
-        tabSdr.classList.remove('active');
-    } else {
-        abaAuditoria.classList.add('hidden');
-        abaSdr.classList.remove('hidden');
-        tabAuditoria.classList.remove('active');
-        tabSdr.classList.add('active');
-    }
+    } catch(err) { document.getElementById('analise-modal-body-'+id).innerHTML=`<p class="text-center py-20 text-red-400 font-bold">Erro ao carregar análise: ${err.message}</p>`; }
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
 }
 
-async function exportarPDFModal(id) {
-    const body = document.getElementById('analise-modal-body-' + id);
-    if (!body) return;
-
-    // Esconde botões e controles
-    const btns = body.querySelectorAll('button, select, input');
-    btns.forEach(el => el.style.display = 'none');
-
-    // Nome do vendedor para o arquivo
-    const nomeEl   = body.querySelector('.font-black.text-slate-700');
-    const nomeVend = nomeEl ? nomeEl.textContent.trim() : id;
-    const fileName = 'auditoria-completa-' + nomeVend.replace(/[^a-zA-Z0-9À-ſ]/g, '-') + '.pdf';
-
-    // Mostra AMBAS as abas para o PDF
-    const abaAuditoria = document.getElementById('aba-auditoria-' + id);
-    const abaSdr       = document.getElementById('aba-sdr-' + id);
-    const eraSdrVisible = abaSdr && !abaSdr.classList.contains('hidden');
-
-    if (abaAuditoria) abaAuditoria.classList.remove('hidden');
-    if (abaSdr)       abaSdr.classList.remove('hidden');
-
-    // Adiciona separador visual entre as seções
-    let separador = null;
-    if (abaAuditoria && abaSdr) {
-        separador = document.createElement('div');
-        separador.style.cssText = 'page-break-before:always;height:2px;background:#002d72;margin:40px 0;';
-        abaAuditoria.insertAdjacentElement('afterend', separador);
-    }
-
-    try {
-        await html2pdf().set({
-            margin: [8, 8, 8, 8],
-            filename: fileName,
-            image: { type: 'jpeg', quality: 0.97 },
-            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        }).from(body).save();
-    } finally {
-        // Restaura estado original
-        btns.forEach(el => el.style.display = '');
-        if (separador) separador.remove();
-        if (!eraSdrVisible && abaSdr) abaSdr.classList.add('hidden');
-        if (eraSdrVisible && abaAuditoria) abaAuditoria.classList.add('hidden');
-    }
+function trocarAbaModal(id,aba){
+    const abaAuditoria=document.getElementById('aba-auditoria-'+id);
+    const abaSdr=document.getElementById('aba-sdr-'+id);
+    const tabAuditoria=document.getElementById('modal-tab-auditoria-'+id);
+    const tabSdr=document.getElementById('modal-tab-sdr-'+id);
+    if(!abaAuditoria||!abaSdr)return;
+    if(aba==='auditoria'){abaAuditoria.classList.remove('hidden');abaSdr.classList.add('hidden');tabAuditoria.classList.add('active');tabSdr.classList.remove('active');}
+    else{abaAuditoria.classList.add('hidden');abaSdr.classList.remove('hidden');tabAuditoria.classList.remove('active');tabSdr.classList.add('active');}
 }
 
-// ── Calendário ────────────────────────────────────────────────────────────────
+async function exportarPDFModal(id){
+    const body=document.getElementById('analise-modal-body-'+id);if(!body)return;
+    const btns=body.querySelectorAll('button,select,input');btns.forEach(el=>el.style.display='none');
+    const nomeEl=body.querySelector('.font-black.text-slate-700');
+    const nomeVend=nomeEl?nomeEl.textContent.trim():id;
+    const fileName='auditoria-completa-'+nomeVend.replace(/[^a-zA-Z0-9À-ſ]/g,'-')+'.pdf';
+    const abaAuditoria=document.getElementById('aba-auditoria-'+id);
+    const abaSdr=document.getElementById('aba-sdr-'+id);
+    const eraSdrVisible=abaSdr&&!abaSdr.classList.contains('hidden');
+    if(abaAuditoria)abaAuditoria.classList.remove('hidden');
+    if(abaSdr)abaSdr.classList.remove('hidden');
+    let separador=null;
+    if(abaAuditoria&&abaSdr){separador=document.createElement('div');separador.style.cssText='page-break-before:always;height:2px;background:#002d72;margin:40px 0;';abaAuditoria.insertAdjacentElement('afterend',separador);}
+    try{await html2pdf().set({margin:[8,8,8,8],filename:fileName,image:{type:'jpeg',quality:0.97},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['avoid-all','css','legacy']}}).from(body).save();}
+    finally{btns.forEach(el=>el.style.display='');if(separador)separador.remove();if(!eraSdrVisible&&abaSdr)abaSdr.classList.add('hidden');if(eraSdrVisible&&abaAuditoria)abaAuditoria.classList.add('hidden');}
+}
+
 async function loadCalendario(){
     const content=document.getElementById('dash-content');
     content.innerHTML='<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando calendário...</p></div>';
@@ -1808,265 +1337,63 @@ async function loadCalendario(){
 }
 window.mostrarDiaCal=async function(dia){const el=document.getElementById('cal-dia-detalhe');el.classList.remove('hidden');el.innerHTML='<div class="flex items-center py-8 justify-center text-slate-300"><div class="loader"></div></div>';try{const res=await fetch('/api/records?data_inicio='+dia+'&data_fim='+dia+'&limit=50&offset=0'),d=await res.json();const sc=n=>n>=4?'text-emerald-600':n>=3?'text-blue-600':'text-red-500';const rows=(d.records||[]).map(r=>`<div class="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors" onclick="abrirAnaliseCompleta('${r.id}')"><div class="flex-1"><p class="font-black text-sm text-slate-700">${r.vendedor_nome||'—'}</p><p class="text-[10px] text-slate-400">${r.produto||'—'}</p></div><span class="text-2xl font-black ${sc(r.media_final)}">${(r.media_final||0).toFixed(1)}</span></div>`).join('');el.innerHTML='<h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">'+dia+'</h5>'+(rows||'<p class="text-slate-300 text-center py-4 text-sm">Nenhuma análise.</p>');lucide.createIcons();}catch{el.innerHTML='<p class="text-red-400 text-sm text-center py-4">Erro ao carregar.</p>';}};
 
-async function abrirAnalysesCoord(coord){
-    const content=document.getElementById('dash-content');
-    content.innerHTML=`<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando histórico de ${coord}...</p></div>`;
-    try{
-        const res=await fetch('/api/records?coordenador='+encodeURIComponent(coord)+'&limit=50&offset=0'),d=await res.json();
-        if(!d.records)throw new Error('Erro ao carregar');
-        const sc=n=>n>=4?'text-emerald-600':n>=3?'text-blue-600':'text-red-500';
-        const rows=d.records.map(r=>{const dt=new Date(r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});const cols=[{l:'E1',val:r.nota_rapport||0},{l:'E2',val:r.nota_produto||0},{l:'E3',val:r.nota_apresentacao||0}].map(c=>`<div class="text-center"><p class="text-[7px] font-black text-slate-400">${c.l}</p><p class="text-xs font-black ${sc(c.val)}">${c.val}</p></div>`).join('');return`<div class="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 bg-white hover:bg-blue-50/30 transition-colors cursor-pointer" onclick="abrirAnaliseCompleta('${r.id}')"><div class="flex-1 min-w-0"><p class="font-black text-sm text-slate-700">${r.vendedor_nome||'—'}</p><p class="text-[10px] text-slate-400">${r.produto||'—'} · ${dt}</p></div><div class="grid gap-2 hidden md:grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">${cols}</div><span class="text-2xl font-black ${sc(r.media_final)}">${(r.media_final||0).toFixed(1)}</span></div>`;}).join('')||'<p class="text-slate-300 text-center py-12">Nenhuma análise encontrada.</p>';
-        content.innerHTML=`<div class="glass-card p-8"><h4 class="font-black text-slate-700 mb-6 flex items-center gap-2"><i data-lucide="user-circle" class="w-5 h-5 text-blue-500"></i> ${coord}</h4><div class="space-y-3">${rows}</div></div>`;
-        lucide.createIcons();
-    }catch(err){content.innerHTML=`<p class="text-center py-20 text-red-400 font-bold">Erro: ${err.message}</p>`;}
-}
-
-// ── SDR Dashboard ─────────────────────────────────────────────────────────────
 async function loadSdrDash(){
-    const content = document.getElementById('dash-content');
-    content.innerHTML = '<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando painel SDR...</p></div>';
-
-    try {
-        const coord   = document.getElementById('sdr-filter-coord')?.value   || 'todos';
-        const periodo = document.getElementById('sdr-filter-periodo')?.value || 'todos';
-        const res     = await fetch('/api/dashboard?coordenador=' + encodeURIComponent(coord) + '&periodo=' + periodo);
-        const d       = await res.json();
-        const reunioes = (d.reunioes || []).filter(r => r.nome_sdr);
-
-        if (!reunioes.length) {
-            content.innerHTML = '<div class="glass-card p-12 text-center text-slate-300"><i data-lucide="user-x" class="w-12 h-12 mx-auto mb-4"></i><p class="font-black text-sm">Nenhuma reunião com SDR identificado.</p><p class="text-[10px] mt-2">Atribua SDRs pelo histórico ou aguarde o Apps Script processar.</p></div>';
-            lucide.createIcons(); return;
-        }
-
-        const sc  = n => (n||0) >= 4 ? 'text-emerald-600' : (n||0) >= 3 ? 'text-blue-600' : 'text-red-500';
-        const scS = n => n >= 7 ? 'text-emerald-600' : n >= 5 ? 'text-amber-500' : 'text-red-500';
-
-        // ── Agrega por SDR ────────────────────────────────────────────────────
-        const bySdr = {};
-        reunioes.forEach(r => {
-            const nome = r.nome_sdr;
-            if (!bySdr[nome]) bySdr[nome] = { total:0, somaNotas:0, qualif:0, parc:0, naoQual:0, reunioes:[] };
-            const s = bySdr[nome];
-            s.total++;
-            if (r.qual_nota_sdr) s.somaNotas += Number(r.qual_nota_sdr);
-            const v = (r.qual_veredicto||'').toUpperCase();
-            if (v.includes('PARC'))                                              s.parc++;
-            else if (v.includes('NÃO') || v.includes('NAO') || v.includes('MAL') || v.includes('FORA')) s.naoQual++;
-            else if (v.includes('QUAL'))                                         s.qualif++;
-            s.reunioes.push(r);
-        });
-
-        // ── KPIs globais ──────────────────────────────────────────────────────
-        const totalReunioes = reunioes.length;
-        const totalSdrs     = Object.keys(bySdr).length;
-        const mediaNotaGeral = reunioes.reduce((a,r) => a + (Number(r.qual_nota_sdr)||0), 0) / totalReunioes;
-        const totalQual     = reunioes.filter(r => { const v=(r.qual_veredicto||'').toUpperCase(); return v.includes('QUAL') && !v.includes('PARC') && !v.includes('NÃO') && !v.includes('NAO'); }).length;
-        const totalParc     = reunioes.filter(r => (r.qual_veredicto||'').toUpperCase().includes('PARC')).length;
-        const taxaDentro    = Math.round(((totalQual + totalParc) / totalReunioes) * 100);
-
-        const kpis = '<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">' + [
-            { label: 'SDRs Ativos',          val: totalSdrs,                     cor: 'border-violet-500',  icon: 'users' },
-            { label: 'Reuniões Auditadas',   val: totalReunioes,                 cor: 'border-blue-500',    icon: 'bar-chart-2' },
-            { label: 'Nota Média SDR',       val: mediaNotaGeral.toFixed(1)+'/10', cor: 'border-amber-400',   icon: 'star' },
-            { label: 'Taxa Qualificados',    val: taxaDentro+'%',                cor: 'border-emerald-500', icon: 'check-circle' },
-        ].map(k => '<div class="glass-card p-6 border-t-4 ' + k.cor + ' flex flex-col gap-2">' +
-            '<div class="flex items-center gap-2 text-slate-400"><i data-lucide="' + k.icon + '" class="w-4 h-4"></i><span class="text-[9px] font-black uppercase tracking-widest">' + k.label + '</span></div>' +
-            '<p class="text-3xl font-black text-slate-800">' + k.val + '</p></div>'
-        ).join('') + '</div>';
-
-        // ── Ranking de SDRs ───────────────────────────────────────────────────
-        const rankingSdrs = Object.entries(bySdr)
-            .map(([nome, s]) => ({
-                nome,
-                ...s,
-                mediaNota:  s.somaNotas > 0 ? s.somaNotas / s.total : 0,
-                taxaDentro: Math.round(((s.qualif + s.parc) / s.total) * 100),
-            }))
-            .sort((a, b) => b.mediaNota - a.mediaNota);
-
-        const rankingCards = rankingSdrs.map((s, i) => {
-            const medalha = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'º';
-            const notaFmt = s.mediaNota > 0 ? s.mediaNota.toFixed(1) : '—';
-            const notaCor = s.mediaNota >= 7 ? 'text-emerald-600 border-emerald-300 bg-emerald-50'
-                          : s.mediaNota >= 5 ? 'text-amber-600 border-amber-300 bg-amber-50'
-                          : 'text-red-600 border-red-300 bg-red-50';
-            const taxaCor = s.taxaDentro >= 70 ? 'text-emerald-600' : s.taxaDentro >= 40 ? 'text-amber-500' : 'text-red-500';
-
-            const barQual = Math.round((s.qualif / s.total) * 100);
-            const barParc = Math.round((s.parc   / s.total) * 100);
-            const barNao  = Math.round((s.naoQual/ s.total) * 100);
-
-            return '<div class="glass-card p-6 border-t-4 border-violet-400 hover:shadow-lg transition-all">' +
-              '<div class="flex items-start justify-between mb-5">' +
-                '<div class="flex items-center gap-3">' +
-                  '<div class="w-10 h-10 rounded-2xl bg-violet-100 flex items-center justify-center font-black text-violet-700 text-lg flex-shrink-0">' + medalha + '</div>' +
-                  '<div>' +
-                    '<p class="font-black text-slate-800 text-sm">' + s.nome + '</p>' +
-                    '<p class="text-[9px] text-slate-400 font-bold mt-0.5">' + s.total + ' reunião' + (s.total > 1 ? 'ões' : '') + ' auditada' + (s.total > 1 ? 's' : '') + '</p>' +
-                  '</div>' +
-                '</div>' +
-                '<div class="px-4 py-2 rounded-2xl border text-center ' + notaCor + '">' +
-                  '<p class="text-2xl font-black">' + notaFmt + '</p>' +
-                  '<p class="text-[8px] font-black uppercase">/ 10</p>' +
-                '</div>' +
-              '</div>' +
-
-              '<div class="mb-4">' +
-                '<div class="flex justify-between text-[9px] font-black text-slate-400 uppercase mb-2"><span>Taxa de qualificação</span><span class="' + taxaCor + '">' + s.taxaDentro + '%</span></div>' +
-                '<div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex">' +
-                  '<div class="bg-emerald-500 h-full" style="width:' + barQual + '%"></div>' +
-                  '<div class="bg-amber-400 h-full" style="width:' + barParc + '%"></div>' +
-                  '<div class="bg-red-400 h-full" style="width:' + barNao + '%"></div>' +
-                '</div>' +
-                '<div class="flex gap-3 mt-2">' +
-                  '<span class="flex items-center gap-1 text-[8px] font-bold text-emerald-600"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>' + s.qualif + ' Qualificados</span>' +
-                  '<span class="flex items-center gap-1 text-[8px] font-bold text-amber-600"><span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>' + s.parc + ' Parciais</span>' +
-                  '<span class="flex items-center gap-1 text-[8px] font-bold text-red-500"><span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span>' + s.naoQual + ' Fora</span>' +
-                '</div>' +
-              '</div>' +
-
-              '<button onclick="abrirDetalhesSdr(' + JSON.stringify(s.nome) + ')" ' +
-                'class="w-full text-[10px] font-black text-violet-600 hover:text-violet-800 border border-violet-200 hover:border-violet-400 rounded-2xl py-2.5 transition-all flex items-center justify-center gap-2">' +
-                '<i data-lucide="list" class="w-3 h-3"></i> Ver reuniões →' +
-              '</button>' +
-            '</div>';
-        }).join('');
-
-        // ── Distribuição geral de veredictos ─────────────────────────────────
-        const cats = [
-            { label: 'Qualificado',           count: totalQual,                       cor: 'bg-emerald-500', txt: 'text-emerald-700' },
-            { label: 'Parcialmente Qual.',     count: totalParc,                       cor: 'bg-amber-400',   txt: 'text-amber-700'   },
-            { label: 'Não Qualificado',        count: reunioes.filter(r => { const v=(r.qual_veredicto||'').toUpperCase(); return v.includes('NÃO')||v.includes('NAO')||v.includes('MAL')||v.includes('FORA'); }).length, cor: 'bg-red-400', txt: 'text-red-700' },
-        ];
-        const distBars = cats.map(c => {
-            const pct = Math.round((c.count / totalReunioes) * 100);
-            return '<div class="flex items-center gap-3">' +
-                '<span class="text-[9px] font-black uppercase w-32 flex-shrink-0 ' + c.txt + '">' + c.label + '</span>' +
-                '<div class="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">' +
-                  '<div class="' + c.cor + ' h-full rounded-full transition-all" style="width:' + pct + '%"></div>' +
-                '</div>' +
-                '<span class="text-[11px] font-black text-slate-700 w-5 text-right">' + c.count + '</span>' +
-                '<span class="text-[9px] text-slate-400 w-8 text-right">' + pct + '%</span>' +
-            '</div>';
-        }).join('');
-
-        content.innerHTML =
-            kpis +
-            '<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">' +
-                '<div class="lg:col-span-2 glass-card p-8">' +
-                    '<h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">' +
-                        '<i data-lucide="trophy" class="w-4 h-4 text-violet-400"></i> Ranking de SDRs' +
-                    '</h4>' +
-                    '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">' + rankingCards + '</div>' +
-                '</div>' +
-                '<div class="glass-card p-8">' +
-                    '<h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">' +
-                        '<i data-lucide="pie-chart" class="w-4 h-4 text-blue-400"></i> Distribuição de Veredictos' +
-                    '</h4>' +
-                    '<div class="space-y-4">' + distBars + '</div>' +
-                    '<div class="mt-6 p-5 rounded-2xl bg-gradient-to-br from-violet-50 to-blue-50 border border-violet-100 text-center">' +
-                        '<p class="text-4xl font-black text-violet-700">' + taxaDentro + '%</p>' +
-                        '<p class="text-[10px] font-black text-violet-500 uppercase tracking-widest mt-1">Taxa de qualificação</p>' +
-                        '<p class="text-[9px] text-slate-400 mt-1">Qualificados + Parciais</p>' +
-                    '</div>' +
-                '</div>' +
-            '</div>';
-
+    const content=document.getElementById('dash-content');
+    content.innerHTML='<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando painel SDR...</p></div>';
+    try{
+        const coord=document.getElementById('sdr-filter-coord')?.value||'todos',periodo=document.getElementById('sdr-filter-periodo')?.value||'todos',inicio=document.getElementById('sdr-filter-inicio')?.value||'',fim=document.getElementById('sdr-filter-fim')?.value||'',vend=document.getElementById('sdr-filter-vend')?.value||'todos';
+        const selVend=document.getElementById('sdr-filter-vend');
+        if(selVend&&selVend.options.length<=1){if(!VENDORS_CACHE.length)await loadVendorsCache();VENDORS_CACHE.forEach(v=>{const o=document.createElement('option');o.value=v.nome;o.textContent=v.nome;selVend.appendChild(o);});}
+        let sdrQuery='/api/dashboard?coordenador='+encodeURIComponent(coord)+'&periodo='+periodo;
+        if(vend!=='todos')sdrQuery+='&vendedor='+encodeURIComponent(vend);
+        if(inicio&&fim)sdrQuery+='&periodo=custom&inicio='+inicio+'&fim='+fim;
+        const res=await fetch(sdrQuery);const d=await res.json();
+        const reunioes=(d.reunioes||[]).filter(r=>r.nome_sdr);
+        if(!reunioes.length){content.innerHTML='<div class="glass-card p-12 text-center text-slate-300"><i data-lucide="user-x" class="w-12 h-12 mx-auto mb-4"></i><p class="font-black text-sm">Nenhuma reunião com SDR identificado.</p><p class="text-[10px] mt-2">Atribua SDRs pelo histórico ou aguarde o Apps Script processar.</p></div>';lucide.createIcons();return;}
+        const sc=n=>(n||0)>=4?'text-emerald-600':(n||0)>=3?'text-blue-600':'text-red-500';
+        const bySdr={};
+        reunioes.forEach(r=>{const nome=r.nome_sdr;if(!bySdr[nome])bySdr[nome]={total:0,somaNotas:0,qualif:0,parc:0,naoQual:0,reunioes:[]};const s=bySdr[nome];s.total++;if(r.qual_nota_sdr)s.somaNotas+=Number(r.qual_nota_sdr);const v=(r.qual_veredicto||'').toUpperCase();if(v.includes('PARC'))s.parc++;else if(v==='QUALIFICADO'||(v.includes('QUAL')&&!v.includes('NÃO')&&!v.includes('NAO')&&!v.includes('MAL')&&!v.includes('FORA')))s.qualif++;else s.naoQual++;s.reunioes.push(r);});
+        const totalReunioes=reunioes.length,totalSdrs=Object.keys(bySdr).length,mediaNotaGeral=reunioes.reduce((a,r)=>a+(Number(r.qual_nota_sdr)||0),0)/totalReunioes;
+        const totalQual=reunioes.filter(r=>{const v=(r.qual_veredicto||'').toUpperCase();return v==='QUALIFICADO'||(v.includes('QUAL')&&!v.includes('PARC')&&!v.includes('NÃO')&&!v.includes('NAO')&&!v.includes('MAL')&&!v.includes('FORA'));}).length;
+        const totalParc=reunioes.filter(r=>(r.qual_veredicto||'').toUpperCase().includes('PARC')).length;
+        const taxaDentro=Math.round(((totalQual+totalParc)/totalReunioes)*100);
+        const kpis='<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">'+[{label:'SDRs Ativos',val:totalSdrs,cor:'border-violet-500',icon:'users'},{label:'Reuniões Auditadas',val:totalReunioes,cor:'border-blue-500',icon:'bar-chart-2'},{label:'Nota Média SDR',val:mediaNotaGeral.toFixed(1)+'/10',cor:'border-amber-400',icon:'star'},{label:'Taxa Qualificados',val:taxaDentro+'%',cor:'border-emerald-500',icon:'check-circle'}].map(k=>'<div class="glass-card p-6 border-t-4 '+k.cor+' flex flex-col gap-2"><div class="flex items-center gap-2 text-slate-400"><i data-lucide="'+k.icon+'" class="w-4 h-4"></i><span class="text-[9px] font-black uppercase tracking-widest">'+k.label+'</span></div><p class="text-3xl font-black text-slate-800">'+k.val+'</p></div>').join('')+'</div>';
+        const rankingSdrs=Object.entries(bySdr).map(([nome,s])=>({nome,...s,mediaNota:s.somaNotas>0?s.somaNotas/s.total:0,taxaDentro:Math.round(((s.qualif+s.parc)/s.total)*100)})).sort((a,b)=>b.mediaNota-a.mediaNota);
+        const rankingCards=rankingSdrs.map((s,i)=>{const medalha=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º';const notaFmt=s.mediaNota>0?s.mediaNota.toFixed(1):'—';const notaCor=s.mediaNota>=7?'text-emerald-600 border-emerald-300 bg-emerald-50':s.mediaNota>=5?'text-amber-600 border-amber-300 bg-amber-50':'text-red-600 border-red-300 bg-red-50';const taxaCor=s.taxaDentro>=70?'text-emerald-600':s.taxaDentro>=40?'text-amber-500':'text-red-500';const barQual=Math.round((s.qualif/s.total)*100),barParc=Math.round((s.parc/s.total)*100),barNao=Math.round((s.naoQual/s.total)*100);return'<div class="glass-card p-6 border-t-4 border-violet-400 hover:shadow-lg transition-all"><div class="flex items-start justify-between mb-5"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-2xl bg-violet-100 flex items-center justify-center font-black text-violet-700 text-lg flex-shrink-0">'+medalha+'</div><div><p class="font-black text-slate-800 text-sm">'+s.nome+'</p><p class="text-[9px] text-slate-400 font-bold mt-0.5">'+s.total+' reunião'+(s.total>1?'ões':'')+'</p></div></div><div class="px-4 py-2 rounded-2xl border text-center '+notaCor+'"><p class="text-2xl font-black">'+notaFmt+'</p><p class="text-[8px] font-black uppercase">/ 10</p></div></div><div class="mb-4"><div class="flex justify-between text-[9px] font-black text-slate-400 uppercase mb-2"><span>Taxa de qualificação</span><span class="'+taxaCor+'">'+s.taxaDentro+'%</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex"><div class="bg-emerald-500 h-full" style="width:'+barQual+'%"></div><div class="bg-amber-400 h-full" style="width:'+barParc+'%"></div><div class="bg-red-400 h-full" style="width:'+barNao+'%"></div></div><div class="flex gap-3 mt-2"><span class="flex items-center gap-1 text-[8px] font-bold text-emerald-600"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>'+s.qualif+' Qualificados</span><span class="flex items-center gap-1 text-[8px] font-bold text-amber-600"><span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>'+s.parc+' Parciais</span><span class="flex items-center gap-1 text-[8px] font-bold text-red-500"><span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span>'+s.naoQual+' Fora</span></div></div><button onclick="abrirDetalhesSdr('+JSON.stringify(s.nome)+')" class="w-full text-[10px] font-black text-violet-600 hover:text-violet-800 border border-violet-200 hover:border-violet-400 rounded-2xl py-2.5 transition-all flex items-center justify-center gap-2"><i data-lucide="list" class="w-3 h-3"></i> Ver reuniões →</button></div>';}).join('');
+        const cats=[{label:'Qualificado',count:totalQual,cor:'bg-emerald-500',txt:'text-emerald-700'},{label:'Parcialmente Qual.',count:totalParc,cor:'bg-amber-400',txt:'text-amber-700'},{label:'Não Qualificado',count:reunioes.filter(r=>{const v=(r.qual_veredicto||'').toUpperCase();return v.includes('NÃO')||v.includes('NAO')||v.includes('MAL')||v.includes('FORA');}).length,cor:'bg-red-400',txt:'text-red-700'}];
+        const distBars=cats.map(c=>{const pct=Math.round((c.count/totalReunioes)*100);return'<div class="flex items-center gap-3"><span class="text-[9px] font-black uppercase w-32 flex-shrink-0 '+c.txt+'">'+c.label+'</span><div class="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden"><div class="'+c.cor+' h-full rounded-full transition-all" style="width:'+pct+'%"></div></div><span class="text-[11px] font-black text-slate-700 w-5 text-right">'+c.count+'</span><span class="text-[9px] text-slate-400 w-8 text-right">'+pct+'%</span></div>';}).join('');
+        content.innerHTML=kpis+'<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6"><div class="lg:col-span-2 glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-violet-400"></i> Ranking de SDRs</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4">'+rankingCards+'</div></div><div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="pie-chart" class="w-4 h-4 text-blue-400"></i> Distribuição de Veredictos</h4><div class="space-y-4">'+distBars+'</div><div class="mt-6 p-5 rounded-2xl bg-gradient-to-br from-violet-50 to-blue-50 border border-violet-100 text-center"><p class="text-4xl font-black text-violet-700">'+taxaDentro+'%</p><p class="text-[10px] font-black text-violet-500 uppercase tracking-widest mt-1">Taxa de qualificação</p><p class="text-[9px] text-slate-400 mt-1">Qualificados + Parciais</p></div></div></div>';
         lucide.createIcons();
-
-    } catch(err) {
-        content.innerHTML = '<div class="text-center py-20 text-red-400 font-bold">Erro SDR: ' + err.message + '</div>';
-    }
+    }catch(err){content.innerHTML='<div class="text-center py-20 text-red-400 font-bold">Erro SDR: '+err.message+'</div>';}
 }
 
-async function abrirDetalhesSdr(nomeSdr) {
-    const content = document.getElementById('dash-content');
-    content.innerHTML = '<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando histórico de ' + nomeSdr + '...</p></div>';
-
-    try {
-        const res  = await fetch('/api/records?search=' + encodeURIComponent(nomeSdr) + '&limit=50&offset=0');
-        const d    = await res.json();
-        const recs = (d.records || []).filter(r => r.nome_sdr === nomeSdr);
-        const sc   = n => n >= 7 ? 'text-emerald-600' : n >= 5 ? 'text-amber-500' : 'text-red-500';
-
-        let rowsHtml = '';
-        if (recs.length === 0) {
-            rowsHtml = '<p class="text-center py-10 text-slate-300 font-bold text-sm">Nenhuma reunião encontrada.</p>';
-        } else {
-            recs.forEach(r => {
-                const vn = normalizarVeredicto(r.qual_veredicto);
-                const dt = new Date(r.created_at).toLocaleDateString('pt-BR', {day:'2-digit', month:'short', year:'numeric'});
-                const nota = r.qual_nota_sdr || '—';
-                const notaCor = sc(r.qual_nota_sdr || 0);
-                const vend = r.vendedor_nome || '—';
-                const prod = r.produto || '—';
-                rowsHtml +=
-                    '<div class="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 bg-white hover:bg-violet-50/30 transition-colors cursor-pointer" onclick="abrirAnaliseCompleta(\'' + r.id + '\')">' +
-                        '<div class="flex-1 min-w-0">' +
-                            '<p class="font-black text-sm text-slate-700">' + vend + '</p>' +
-                            '<p class="text-[9px] text-slate-400">' + prod + ' · ' + dt + '</p>' +
-                        '</div>' +
-                        '<span class="px-2 py-1 rounded-lg border text-[9px] font-black ' + vn.css + '">' + vn.label + '</span>' +
-                        '<div class="text-center w-12">' +
-                            '<p class="text-[8px] font-black text-slate-400 uppercase">SDR</p>' +
-                            '<p class="text-lg font-black ' + notaCor + '">' + nota + '</p>' +
-                        '</div>' +
-                    '</div>';
-            });
-        }
-
-        const plural = recs.length !== 1;
-        content.innerHTML =
-            '<div class="flex items-center gap-4 mb-6">' +
-                '<button onclick="setDashMode(\'sdr\')" class="flex items-center gap-2 text-[10px] font-black text-violet-600 hover:text-violet-800 transition-colors">' +
-                    '<i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Painel SDR' +
-                '</button>' +
-            '</div>' +
-            '<div class="glass-card p-8">' +
-                '<div class="flex items-center gap-4 mb-6">' +
-                    '<div class="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center">' +
-                        '<i data-lucide="user-check" class="w-6 h-6 text-violet-600"></i>' +
-                    '</div>' +
-                    '<div>' +
-                        '<h3 class="font-black text-slate-800 text-lg">' + nomeSdr + '</h3>' +
-                        '<p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">' +
-                            recs.length + ' reuni' + (plural ? 'ões' : 'ão') + ' auditada' + (plural ? 's' : '') +
-                        '</p>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="space-y-3">' + rowsHtml + '</div>' +
-            '</div>';
-
+async function abrirDetalhesSdr(nomeSdr){
+    const content=document.getElementById('dash-content');
+    content.innerHTML='<div class="flex flex-col items-center py-16 text-slate-300"><div class="loader mb-4"></div><p class="font-bold text-xs uppercase tracking-widest animate-pulse">Carregando histórico de '+nomeSdr+'...</p></div>';
+    try{
+        const res=await fetch('/api/records?nome_sdr='+encodeURIComponent(nomeSdr)+'&limit=100&offset=0');const d=await res.json();const recs=d.records||[];
+        const sc=n=>n>=7?'text-emerald-600':n>=5?'text-amber-500':'text-red-500';
+        let rowsHtml='';
+        if(recs.length===0){rowsHtml='<p class="text-center py-10 text-slate-300 font-bold text-sm">Nenhuma reunião encontrada.</p>';}
+        else{recs.forEach(r=>{const vn=normalizarVeredicto(r.qual_veredicto);const dt=new Date(r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});rowsHtml+='<div class="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 bg-white hover:bg-violet-50/30 transition-colors cursor-pointer" onclick="abrirAnaliseCompleta(\''+r.id+'\')"><div class="flex-1 min-w-0"><p class="font-black text-sm text-slate-700">'+(r.vendedor_nome||'—')+'</p><p class="text-[9px] text-slate-400">'+(r.produto||'—')+' · '+dt+'</p></div><span class="px-2 py-1 rounded-lg border text-[9px] font-black '+vn.css+'">'+vn.label+'</span><div class="text-center w-12"><p class="text-[8px] font-black text-slate-400 uppercase">SDR</p><p class="text-lg font-black '+sc(r.qual_nota_sdr||0)+'">'+(r.qual_nota_sdr||'—')+'</p></div></div>';});}
+        const plural=recs.length!==1;
+        content.innerHTML='<div class="flex items-center gap-4 mb-6"><button onclick="setDashMode(\'sdr\')" class="flex items-center gap-2 text-[10px] font-black text-violet-600 hover:text-violet-800 transition-colors"><i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Painel SDR</button></div><div class="glass-card p-8"><div class="flex items-center gap-4 mb-6"><div class="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center"><i data-lucide="user-check" class="w-6 h-6 text-violet-600"></i></div><div><h3 class="font-black text-slate-800 text-lg">'+nomeSdr+'</h3><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">'+recs.length+' reuni'+(plural?'ões':'ão')+' auditada'+(plural?'s':'')+'</p></div></div><div class="space-y-3">'+rowsHtml+'</div></div>';
         lucide.createIcons();
-    } catch(err) {
-        content.innerHTML = '<p class="text-center py-20 text-red-400 font-bold">Erro: ' + err.message + '</p>';
-    }
-}
-async function deletarRegistro(id) {
-    if (!isAdmin()) { alert('Sem permissão.'); return; }
-    if (!confirm('Excluir esta análise permanentemente?')) return;
-    try {
-        const res = await fetch('/api/records', { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) });
-        const d = await res.json();
-        if (!d.ok) throw new Error(d.error);
-        const row = document.getElementById('hist-row-' + id);
-        if (row) row.remove();
-    } catch(err) { alert('Erro ao excluir: ' + err.message); }
+    }catch(err){content.innerHTML='<p class="text-center py-20 text-red-400 font-bold">Erro: '+err.message+'</p>';}
 }
 
-async function deletarNaoIdentificados() {
-    if (!isAdmin()) { alert('Sem permissão.'); return; }
-    if (!confirm('Excluir TODOS os registros sem vendedor identificado?')) return;
-    try {
-        const res = await fetch('/api/records', { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({modo:'nao_identificados'}) });
-        const d = await res.json();
-        if (!d.ok) throw new Error(d.error);
-        alert('Removidos: ' + d.count + ' registros.');
-        _fetchHistorico();
-    } catch(err) { alert('Erro: ' + err.message); }
+async function deletarRegistro(id){
+    if(!isAdmin()){alert('Sem permissão.');return;}
+    if(!confirm('Excluir esta análise permanentemente?'))return;
+    try{const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});const d=await res.json();if(!d.ok)throw new Error(d.error);const row=document.getElementById('hist-row-'+id);if(row)row.remove();}catch(err){alert('Erro ao excluir: '+err.message);}
+}
+async function deletarNaoIdentificados(){
+    if(!isAdmin()){alert('Sem permissão.');return;}
+    if(!confirm('Excluir TODOS os registros sem vendedor identificado?'))return;
+    try{const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({modo:'nao_identificados'})});const d=await res.json();if(!d.ok)throw new Error(d.error);alert('Removidos: '+d.count+' registros.');_fetchHistorico();}catch(err){alert('Erro: '+err.message);}
 }
 
-document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });
+document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons();});
 </script>
 </body>
 </html>
