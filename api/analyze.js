@@ -437,6 +437,67 @@ async function getBugs(transcript) {
     return parsed;
 }
 
+async function getMelhorias(transcript) {
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: transcript,
+        config: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 2048,
+            systemInstruction:
+                'Auditor de CS do Nibo. Sua tarefa tem duas partes:\n' +
+                '(1) Identifique o produto Nibo principal desta reunião. ' +
+                'Os produtos Nibo são: Nibo (contabilidade/fiscal/escrita contábil), ' +
+                'Radar (fluxo de caixa/financeiro/DRE), ' +
+                'Conciliador (conciliação bancária/OFX), ' +
+                'BPO (serviços contábeis terceirizados/escritório). ' +
+                'Retorne o nome exato de um dos produtos. Se dois produtos forem igualmente centrais, ' +
+                'retorne ambos separados por " + " (ex: "Nibo + Radar"). ' +
+                'Se não identificar, retorne "Não identificado".\n' +
+                '(2) Identifique sugestões de melhoria de produto mencionadas pelo cliente: ' +
+                'funcionalidades pedidas, problemas de usabilidade relatados, integrações desejadas, ' +
+                'relatórios que o cliente sentiu falta, fluxos de processo que o cliente achou confusos ou lentos, ' +
+                'comparações com outros sistemas ("no outro sistema tinha X", "seria bom se tivesse Y"). ' +
+                'Para cada melhoria: ' +
+                'descricao = o que o cliente quer ou precisa (objetiva, 1 frase); ' +
+                'produto = qual produto Nibo se aplica (Nibo, Radar, Conciliador, BPO, Outro); ' +
+                'tipo = "funcionalidade" (feature nova pedida), "usabilidade" (interface/UX difícil), ' +
+                '"integracao" (conexão com outro sistema), "processo" (fluxo confuso ou demorado), ' +
+                '"relatorio" (relatório ou exportação desejada), "outro"; ' +
+                'contexto = o que estava sendo feito quando surgiu a sugestão (1 frase curta); ' +
+                'frase_cliente = trecho exato ou próximo do que o cliente disse. ' +
+                'Se não houver nenhuma sugestão de melhoria, retorne tem_melhorias false e array vazio.',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    produto_reuniao: { type: Type.STRING },
+                    tem_melhorias:   { type: Type.BOOLEAN },
+                    melhorias: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                descricao:     { type: Type.STRING },
+                                produto:       { type: Type.STRING },
+                                tipo:          { type: Type.STRING },
+                                contexto:      { type: Type.STRING },
+                                frase_cliente: { type: Type.STRING },
+                            },
+                            required: ['descricao', 'produto', 'tipo'],
+                        },
+                    },
+                },
+                required: ['produto_reuniao', 'tem_melhorias', 'melhorias'],
+            },
+        },
+    });
+    const parsed = safeParse(res.text, 'getMelhorias');
+    parsed.melhorias = parsed.melhorias || [];
+    parsed.tem_melhorias = parsed.melhorias.length > 0;
+    parsed.produto_reuniao = parsed.produto_reuniao || 'Não identificado';
+    return parsed;
+}
+
 async function getRelatorio(numbers, meta, texts, coordinator) {
     const linhas = CS_PILLARS.map(function(p) {
         const k = p[0], nota = numbers['nota_' + k];
@@ -503,12 +564,13 @@ export default async function handler(req, res) {
         numbers.analista_nome = numbers.analista_nome || 'Não identificado';
         numbers.coordinator   = coordinator || numbers.coordinator || null;
 
-        const [meta, textsA, textsB, desalin, bugsResult] = await Promise.all([
+        const [meta, textsA, textsB, desalin, bugsResult, melhoriasResult] = await Promise.all([
             withRetry(() => getMeta(prompt, numbers),         'getMeta'),
             withRetry(() => getTextsA(prompt, numbers),       'getTextsA'),
             withRetry(() => getTextsB(prompt, numbers),       'getTextsB'),
             withRetry(() => getDesalinhamentos(prompt),       'getDesalinhamentos'),
             withRetry(() => getBugs(prompt),                  'getBugs'),
+            withRetry(() => getMelhorias(prompt),             'getMelhorias'),
         ]);
         const texts = Object.assign({}, textsA, textsB);
 
@@ -546,6 +608,9 @@ export default async function handler(req, res) {
                 desalinhamentos:     desalin.desalinhamentos,
                 tem_bugs:            bugsResult.tem_bugs,
                 bugs:                bugsResult.bugs,
+                produto_reuniao:     melhoriasResult.produto_reuniao,
+                tem_melhorias:       melhoriasResult.tem_melhorias,
+                melhorias:           melhoriasResult.melhorias,
             })
         );
 

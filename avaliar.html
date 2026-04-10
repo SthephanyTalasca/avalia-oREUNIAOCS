@@ -181,6 +181,10 @@
                     <p id="cliente-nome-display" class="text-2xl font-extrabold truncate" style="color:#002d72">—</p>
                 </div>
                 <div class="flex items-center gap-3 flex-wrap">
+                    <div id="produto-badge" class="hidden items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest" style="background:#ede9fe;color:#6431e2">
+                        <i data-lucide="package" class="w-3 h-3"></i>
+                        <span id="produto-badge-label">—</span>
+                    </div>
                     <div id="churn-badge" class="flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">
                         <span id="churn-badge-dot" class="w-2 h-2 rounded-full inline-block"></span>
                         <span id="churn-badge-label">Churn —</span>
@@ -293,6 +297,16 @@
                 </h3>
                 <p class="text-[11px] text-slate-500 mb-6">Problemas técnicos, falhas do sistema ou momentos em que o suporte precisou ser acionado.</p>
                 <div id="bugs-grid" class="space-y-4"></div>
+            </div>
+
+            <!-- Sugestões de Melhoria de Produto -->
+            <div id="melhorias-section" class="hidden glass-card p-8" style="border-left:6px solid #8b5cf6">
+                <h3 class="font-bold text-purple-700 text-[14px] mb-2 flex items-center gap-3">
+                    <i data-lucide="lightbulb" class="w-5 h-5 text-purple-500"></i>
+                    💡 Sugestões de Melhoria de Produto
+                </h3>
+                <p class="text-[11px] text-slate-500 mb-6">Pedidos, ideias e feedbacks do cliente sobre funcionalidades, usabilidade, integrações e fluxos.</p>
+                <div id="melhorias-grid" class="space-y-4"></div>
             </div>
 
             <!-- Desalinhamentos de Venda -->
@@ -794,6 +808,56 @@ function renderDashboard(data){
         }).join('');
     } else {
         desalinSection.classList.add('hidden');
+    }
+
+    // ── Produto e Sugestões de Melhoria ──────────────────────────────────
+    const prodBadge = document.getElementById('produto-badge');
+    const prodLabel = document.getElementById('produto-badge-label');
+    if (data.produto_reuniao && data.produto_reuniao !== 'Não identificado') {
+        const PROD_COLORS = {
+            'Nibo':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706'
+        };
+        const prodKey = Object.keys(PROD_COLORS).find(k => data.produto_reuniao.includes(k));
+        const prodColor = PROD_COLORS[prodKey] || '#6431e2';
+        prodBadge.style.cssText=`background:${prodColor}18;color:${prodColor};padding:0.5rem 1rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:0.5rem;`;
+        prodLabel.textContent = data.produto_reuniao;
+    } else {
+        prodBadge.classList.add('hidden');
+    }
+
+    const melhorias = data.melhorias || [];
+    const melhoriasSection = document.getElementById('melhorias-section');
+    if (data.tem_melhorias && melhorias.length) {
+        melhoriasSection.classList.remove('hidden');
+        const TIPO_META = {
+            funcionalidade: { label:'Funcionalidade', bg:'#ede9fe', color:'#6d28d9' },
+            usabilidade:    { label:'Usabilidade',    bg:'#fff7ed', color:'#c2410c' },
+            integracao:     { label:'Integração',     bg:'#ecfdf5', color:'#065f46' },
+            processo:       { label:'Processo',       bg:'#fef3c7', color:'#92400e' },
+            relatorio:      { label:'Relatório',      bg:'#eff6ff', color:'#1e40af' },
+            outro:          { label:'Outro',          bg:'#f1f5f9', color:'#475569' },
+        };
+        const PROD_COLORS2 = {
+            'Nibo':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706','Outro':'#64748b'
+        };
+        document.getElementById('melhorias-grid').innerHTML = melhorias.map(m => {
+            const tipo = TIPO_META[m.tipo] || TIPO_META.outro;
+            const prodKey2 = Object.keys(PROD_COLORS2).find(k => (m.produto||'').includes(k));
+            const prodColor2 = PROD_COLORS2[prodKey2] || '#64748b';
+            return `<div class="p-5 rounded-2xl border" style="background:#fafafa;border-color:#e2e8f0">
+                <div class="flex items-start justify-between gap-3 mb-3 flex-wrap">
+                    <p class="font-black text-slate-800 text-[12px] flex-1 min-w-0">${m.descricao||'—'}</p>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <span class="text-[9px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full" style="background:${prodColor2}18;color:${prodColor2}">${m.produto||'—'}</span>
+                        <span class="text-[9px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full" style="background:${tipo.bg};color:${tipo.color}">${tipo.label}</span>
+                    </div>
+                </div>
+                ${m.contexto?`<p class="text-[11px] text-slate-500 mb-2"><span class="font-bold text-slate-400 uppercase tracking-wide text-[9px]">Contexto: </span>${m.contexto}</p>`:''}
+                ${m.frase_cliente?`<div class="rounded-xl p-3 border border-purple-100 bg-purple-50/40 mt-2"><p class="text-[11px] text-slate-600 italic">"${m.frase_cliente}"</p></div>`:''}
+            </div>`;
+        }).join('');
+    } else {
+        melhoriasSection.classList.add('hidden');
     }
 
     renderRadar(data);

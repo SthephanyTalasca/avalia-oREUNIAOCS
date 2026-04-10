@@ -68,6 +68,10 @@ export default async function handler(req, res) {
             nota_ecossistema_nibo:  analise.nota_ecossistema_nibo  ?? null,
             nota_universo_contabil: analise.nota_universo_contabil ?? null,
 
+            // ── Produto e Melhorias ────────────────────────────────────
+            produto_reuniao: analise.produto_reuniao || null,
+            tem_melhorias:   analise.tem_melhorias   || false,
+
             // ── Desalinhamentos de venda ───────────────────────────────
             tem_desalinhamento: analise.tem_desalinhamento || false,
 

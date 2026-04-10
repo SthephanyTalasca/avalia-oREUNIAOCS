@@ -548,6 +548,34 @@
         </div>
     </div>
 
+    <!-- MELHORIAS POR PRODUTO -->
+    <div class="glass-card p-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                <i data-lucide="lightbulb" class="w-4 h-4 text-purple-500"></i>Sugestões de Melhoria por Produto
+            </h2>
+            <span class="text-xs text-slate-400 font-semibold" id="badge-melhorias">—</span>
+        </div>
+        <!-- Cards por produto -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6" id="melhorias-produtos-grid"></div>
+        <!-- Lista de sugestões recentes -->
+        <div id="melhorias-lista-wrap">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Sugestões Recentes</span>
+                <select id="melhorias-filtro-produto" onchange="renderMelhorias()" class="ml-auto text-xs p-1.5 border border-slate-200 rounded-lg bg-slate-50">
+                    <option value="">Todos os produtos</option>
+                    <option value="Nibo">Nibo</option>
+                    <option value="Radar">Radar</option>
+                    <option value="Conciliador">Conciliador</option>
+                    <option value="BPO">BPO</option>
+                    <option value="Outro">Outro</option>
+                </select>
+            </div>
+            <div id="melhorias-lista" class="space-y-2"></div>
+            <div id="melhorias-empty" class="hidden text-center py-8"><i data-lucide="inbox" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i><p class="text-sm text-slate-400">Nenhuma sugestão registrada</p></div>
+        </div>
+    </div>
+
     <!-- TABELA COMPLETA -->
     <div class="glass-card overflow-hidden">
         <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
@@ -860,7 +888,7 @@ function populateFilters() {
     af.innerHTML='<option value="">Todos os analistas</option>'+analistas.map(a=>`<option value="${a}"${a===ca?' selected':''}>${a}</option>`).join('');
 }
 
-function renderAll(){renderKPIs();renderSaudeChurn();renderEvo();renderRanking();renderPilares();renderCoord();renderChecklist();renderReunioes();lucide.createIcons();}
+function renderAll(){renderKPIs();renderSaudeChurn();renderEvo();renderRanking();renderPilares();renderCoord();renderChecklist();renderMelhorias();renderReunioes();lucide.createIcons();}
 
 function renderKPIs(){
     const s=statsData;
@@ -950,6 +978,70 @@ function renderChecklist(){
         const pct=ck[key]??0,color=pct<50?'#ef4444':pct<75?'#f59e0b':'#10b981';
         return `<div class="ck-row"><span style="font-weight:600">${label}</span><div style="display:flex;align-items:center"><div class="ck-bar-bg"><div class="ck-bar-fill" style="width:${pct}%;background:${color}"></div></div><span style="font-weight:800;font-size:0.78rem;color:${color};min-width:2.5rem;text-align:right">${pct}%</span></div></div>`;
     }).join('');
+}
+
+function renderMelhorias(){
+    const PROD_COLORS = {'Nibo':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706','Outro':'#64748b'};
+    const TIPO_LABEL  = {funcionalidade:'Funcionalidade',usabilidade:'Usabilidade',integracao:'Integração',processo:'Processo',relatorio:'Relatório',outro:'Outro'};
+    const filtro = (document.getElementById('melhorias-filtro-produto')?.value||'').toLowerCase();
+
+    // Coleta todas as melhorias de todas as reuniões
+    const todasMelhorias = [];
+    for(const r of allReunioes){
+        const lista = r.analise_json?.melhorias || [];
+        for(const m of lista){
+            todasMelhorias.push({...m, _cliente: r.nome_cliente||'—', _analista: r.analista_nome||'—', _data: r.data_reuniao||r.created_at});
+        }
+    }
+
+    // Contagem por produto
+    const countProd = {Nibo:0,Radar:0,Conciliador:0,BPO:0,Outro:0};
+    for(const m of todasMelhorias){
+        const prodKey = Object.keys(countProd).find(k=>(m.produto||'').includes(k));
+        if(prodKey) countProd[prodKey]++;
+        else countProd['Outro']++;
+    }
+
+    // Cards por produto
+    document.getElementById('melhorias-produtos-grid').innerHTML = Object.entries(countProd).map(([prod,cnt])=>{
+        const color = PROD_COLORS[prod]||'#64748b';
+        return `<div class="rounded-2xl p-4 text-center border cursor-pointer hover:shadow-md transition-all" style="background:${color}0d;border-color:${color}33" onclick="document.getElementById('melhorias-filtro-produto').value='${prod}';renderMelhorias()">
+            <div class="text-2xl font-black mb-1" style="color:${color}">${cnt}</div>
+            <div class="text-[10px] font-black uppercase tracking-widest" style="color:${color}">${prod}</div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('badge-melhorias').textContent = todasMelhorias.length + ' sugestão' + (todasMelhorias.length!==1?'s':'');
+
+    // Lista filtrada (50 mais recentes)
+    let lista = filtro ? todasMelhorias.filter(m=>(m.produto||'').toLowerCase().includes(filtro)) : todasMelhorias;
+    lista = [...lista].sort((a,b)=>new Date(b._data)-new Date(a._data)).slice(0,50);
+
+    const listEl = document.getElementById('melhorias-lista');
+    const emptyEl = document.getElementById('melhorias-empty');
+    if(!lista.length){listEl.innerHTML='';emptyEl.classList.remove('hidden');lucide.createIcons();return;}
+    emptyEl.classList.add('hidden');
+
+    listEl.innerHTML = lista.map(m=>{
+        const prodKey = Object.keys(PROD_COLORS).find(k=>(m.produto||'').includes(k));
+        const prodColor = PROD_COLORS[prodKey]||'#64748b';
+        const tipoLabel = TIPO_LABEL[m.tipo]||m.tipo||'—';
+        const dataStr = m._data ? new Date(m._data).toLocaleDateString('pt-BR') : '—';
+        return `<div class="rounded-2xl p-4 border border-slate-100 bg-slate-50/60 hover:bg-white transition-all">
+            <div class="flex items-start gap-3 flex-wrap">
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-slate-800 text-sm leading-snug">${m.descricao||'—'}</p>
+                    ${m.frase_cliente?`<p class="text-[10px] italic text-slate-500 mt-1">"${m.frase_cliente}"</p>`:''}
+                    <p class="text-[10px] text-slate-400 mt-1.5 font-semibold">${m._analista} · ${m._cliente} · ${dataStr}</p>
+                </div>
+                <div class="flex gap-1.5 flex-shrink-0 flex-wrap justify-end">
+                    <span class="text-[9px] font-black uppercase tracking-wide px-2 py-1 rounded-full" style="background:${prodColor}15;color:${prodColor}">${m.produto||'—'}</span>
+                    <span class="text-[9px] font-black uppercase tracking-wide px-2 py-1 rounded-full bg-slate-100 text-slate-500">${tipoLabel}</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+    lucide.createIcons();
 }
 
 function renderReunioes(){
