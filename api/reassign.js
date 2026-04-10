@@ -1,6 +1,5 @@
 // api/reassign.js — CS Auditor
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+import { db } from './firebase.js';
 
 function getSession(req) {
     const m = (req.headers.cookie || '').match(/nibo_cs_session=([^;]+)/);
@@ -10,7 +9,7 @@ function getSession(req) {
         if (s.exp && Date.now() > s.exp) return null;
         if (s.email.toLowerCase().split('@')[1] !== 'nibo.com.br') return null;
         return s;
-    } catch (e) { return null; }
+    } catch { return null; }
 }
 
 export default async function handler(req, res) {
@@ -25,13 +24,10 @@ export default async function handler(req, res) {
     if (coordenador_nome !== undefined) updates.coordenador = coordenador_nome.trim() || null;
 
     try {
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/cs_reunioes?id=eq.${reuniao_id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, Prefer:'return=representation' },
-            body: JSON.stringify(updates)
-        });
-        if (!r.ok) return res.status(500).json({ error: 'Erro ao reatribuir: ' + await r.text() });
-        return res.status(200).json({ ok: true, updated: (await r.json())[0] });
+        const ref = db.collection('cs_reunioes').doc(String(reuniao_id));
+        await ref.update(updates);
+        const doc = await ref.get();
+        return res.status(200).json({ ok: true, updated: { id: doc.id, ...doc.data() } });
     } catch (err) {
         return res.status(500).json({ error: err.message });
     }

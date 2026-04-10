@@ -1,6 +1,5 @@
 // api/save.js
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+import { db, FieldValue } from './firebase.js';
 
 function getSession(req) {
     const m = (req.headers.cookie || '').match(/nibo_cs_session=([^;]+)/);
@@ -74,29 +73,14 @@ export default async function handler(req, res) {
 
             // ── JSON completo (backup) ─────────────────────────────────
             analise_json: analise,
+            created_at:   FieldValue.serverTimestamp(),
         };
 
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/cs_reunioes`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                apikey: SUPABASE_KEY,
-                Authorization: `Bearer ${SUPABASE_KEY}`,
-                Prefer: 'return=representation',
-            },
-            body: JSON.stringify(row),
-        });
-
-        if (!r.ok) {
-            const err = await r.text();
-            console.error('Supabase error:', err);
-            return res.status(500).json({ error: err });
-        }
-
-        const saved = await r.json();
-        return res.status(200).json({ ok: true, id: saved[0]?.id });
+        const docRef = await db.collection('cs_reunioes').add(row);
+        return res.status(200).json({ ok: true, id: docRef.id });
 
     } catch (e) {
+        console.error('Firebase error:', e.message);
         return res.status(500).json({ error: e.message });
     }
 }

@@ -1,18 +1,16 @@
 // api/ingest.js — CS Auditor
-// POST /api/ingest → recebe do Apps Script (com analise já pronta) e salva no Supabase
+// POST /api/ingest → recebe do Apps Script (com analise já pronta) e salva no Firestore
 // GET  /api/ingest → não faz mais nada (cron pode ser desativado)
 //
 // ⚡ Gemini foi movido para o Apps Script — sem timeout no Vercel
-// ⚡ Usa SUPABASE_SERVICE_KEY para bypassar RLS no INSERT
 
+import { db, FieldValue } from './firebase.js';
 import { getConfig } from './config.js';
 
 export const maxDuration = 30;
 export const config = { api: { bodyParser: { sizeLimit: '20mb' } } };
 
-const SUPABASE_URL    = process.env.SUPABASE_URL;
-const SUPABASE_KEY    = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
-const INGEST_SECRET   = process.env.INGEST_SECRET || 'nibo_cs_2026_drive';
+const INGEST_SECRET = process.env.INGEST_SECRET || 'nibo_cs_2026_drive';
 
 const ALL_PILLARS = [
     'consultividade','escuta_ativa','jornada_cliente','encantamento','objecoes',
@@ -23,28 +21,24 @@ const ALL_PILLARS = [
 
 async function jaExisteNoBanco(driveFileId) {
     if (!driveFileId) return false;
-    const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/cs_reunioes?drive_file_id=eq.${driveFileId}&select=id`,
-        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-    );
-    const rows = await r.json();
-    return Array.isArray(rows) && rows.length > 0;
+    const snap = await db.collection('cs_reunioes')
+        .where('drive_file_id', '==', driveFileId)
+        .limit(1)
+        .get();
+    return !snap.empty;
 }
 
-// Resolve coordenador e nome canônico a partir do cs_membros via getConfig()
 async function resolverAnalista(rawNome) {
     if (!rawNome) return { nome: rawNome, coordenador: null };
     try {
         const { CS_TO_COORDINATOR, CS_NOME_LOOKUP } = await getConfig();
         const lower = rawNome.toLowerCase().trim();
-        // Tenta match exato primeiro
         if (CS_TO_COORDINATOR[lower]) {
             return {
                 nome: CS_NOME_LOOKUP[lower] || rawNome,
                 coordenador: CS_TO_COORDINATOR[lower],
             };
         }
-        // Tenta match parcial (nome dentro do rawNome ou vice-versa)
         const sorted = Object.keys(CS_TO_COORDINATOR).sort((a, b) => b.length - a.length);
         for (const key of sorted) {
             if (lower.includes(key) || key.includes(lower)) {
@@ -124,33 +118,19 @@ export default async function handler(req, res) {
             ck_suporte:              analise?.ck_suporte         || false,
             ...notasCols,
             analise_json: { ...analise, file_name: file_name || null },
+            created_at: FieldValue.serverTimestamp(),
         };
 
         try {
-            const r = await fetch(`${SUPABASE_URL}/rest/v1/cs_reunioes`, {
-                method:  'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    apikey:         SUPABASE_KEY,
-                    Authorization:  `Bearer ${SUPABASE_KEY}`,
-                    Prefer:         'return=representation',
-                },
-                body: JSON.stringify(row),
-            });
-
-            if (!r.ok) throw new Error('Supabase: ' + await r.text());
-            const saved = await r.json();
-            const id    = saved[0]?.id;
-
-            console.log(`Salvo ID ${id} | Analista: ${analistaNome} | Média: ${analise?.media_final}`);
+            const docRef = await db.collection('cs_reunioes').add(row);
+            console.log(`Salvo ID ${docRef.id} | Analista: ${analistaNome} | Média: ${analise?.media_final}`);
             return res.status(200).json({
                 ok:           true,
-                id,
+                id:           docRef.id,
                 analista:     analistaNome,
                 media_final:  analise?.media_final,
                 nome_cliente: analise?.nome_cliente,
             });
-
         } catch (err) {
             console.error('Erro ao salvar:', err.message);
             return res.status(500).json({ error: err.message });

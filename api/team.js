@@ -1,6 +1,5 @@
 // api/team.js — CS Auditor
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+import { db, docsToArray } from './firebase.js';
 
 function getSession(req) {
     const m = (req.headers.cookie || '').match(/nibo_cs_session=([^;]+)/);
@@ -10,28 +9,19 @@ function getSession(req) {
         if (s.exp && Date.now() > s.exp) return null;
         if (s.email.toLowerCase().split('@')[1] !== 'nibo.com.br') return null;
         return s;
-    } catch (e) { console.error('getSession error:', e); return null; }
+    } catch { return null; }
 }
-
-const H = (extra = {}) => ({
-    'Content-Type': 'application/json',
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
-    ...extra
-});
 
 export default async function handler(req, res) {
     if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
 
     // GET — listar analistas
     if (req.method === 'GET') {
-        const filter = req.query.incluir_inativos === '1' ? '' : '&ativo=eq.true';
-        const r = await fetch(
-            `${SUPABASE_URL}/rest/v1/cs_analistas?select=*&order=nome.asc${filter}`,
-            { headers: H() }
-        );
-        if (!r.ok) return res.status(500).json({ error: await r.text() });
-        return res.status(200).json(await r.json());
+        let query = db.collection('cs_analistas');
+        if (req.query.incluir_inativos !== '1') query = query.where('ativo', '==', true);
+        const snap = await query.get();
+        const analistas = docsToArray(snap).sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+        return res.status(200).json(analistas);
     }
 
     // POST — criar analista
@@ -39,38 +29,28 @@ export default async function handler(req, res) {
         const { nome, coordenador } = req.body;
         if (!nome?.trim()) return res.status(400).json({ error: 'Nome obrigatório' });
 
-        // verifica existente
-        const chk = await fetch(
-            `${SUPABASE_URL}/rest/v1/cs_analistas?nome=ilike.${encodeURIComponent(nome.trim())}&select=*`,
-            { headers: H() }
-        );
-        const existing = await chk.json();
-        if (existing?.length) {
-            const a = existing[0];
-            if (a.ativo) return res.status(409).json({ error: 'Analista já cadastrado.' });
-            // reativar
-            const r = await fetch(
-                `${SUPABASE_URL}/rest/v1/cs_analistas?id=eq.${a.id}`,
-                {
-                    method: 'PATCH',
-                    headers: H({ Prefer: 'return=representation' }),
-                    body: JSON.stringify({ ativo: true, coordenador: coordenador || a.coordenador || null })
-                }
-            );
-            if (!r.ok) return res.status(500).json({ error: await r.text() });
-            return res.status(200).json({ ok: true, reativado: true, analista: (await r.json())[0] });
+        // Verifica existente (case-insensitive via fetch all)
+        const snap = await db.collection('cs_analistas').get();
+        const existing = docsToArray(snap).find(a => a.nome?.toLowerCase() === nome.trim().toLowerCase());
+
+        if (existing) {
+            if (existing.ativo) return res.status(409).json({ error: 'Analista já cadastrado.' });
+            // Reativar
+            const updates = { ativo: true, coordenador: coordenador || existing.coordenador || null };
+            await db.collection('cs_analistas').doc(existing.id).update(updates);
+            return res.status(200).json({ ok: true, reativado: true, analista: { ...existing, ...updates } });
         }
 
-        const r = await fetch(
-            `${SUPABASE_URL}/rest/v1/cs_analistas`,
-            {
-                method: 'POST',
-                headers: H({ Prefer: 'return=representation' }),
-                body: JSON.stringify({ nome: nome.trim(), coordenador: coordenador || null, ativo: true })
-            }
-        );
-        if (!r.ok) return res.status(500).json({ error: await r.text() });
-        return res.status(200).json({ ok: true, reativado: false, analista: (await r.json())[0] });
+        const docRef = await db.collection('cs_analistas').add({
+            nome: nome.trim(),
+            coordenador: coordenador || null,
+            ativo: true,
+        });
+        return res.status(200).json({
+            ok: true,
+            reativado: false,
+            analista: { id: docRef.id, nome: nome.trim(), coordenador: coordenador || null, ativo: true },
+        });
     }
 
     // PATCH — editar analista
@@ -82,32 +62,17 @@ export default async function handler(req, res) {
         if (nome !== undefined) updates.nome = nome.trim();
         if (coordenador !== undefined) updates.coordenador = coordenador || null;
 
-        const r = await fetch(
-            `${SUPABASE_URL}/rest/v1/cs_analistas?id=eq.${id}`,
-            {
-                method: 'PATCH',
-                headers: H({ Prefer: 'return=representation' }),
-                body: JSON.stringify(updates)
-            }
-        );
-        if (!r.ok) return res.status(500).json({ error: await r.text() });
-        return res.status(200).json({ ok: true, analista: (await r.json())[0] });
+        const ref = db.collection('cs_analistas').doc(String(id));
+        await ref.update(updates);
+        const doc = await ref.get();
+        return res.status(200).json({ ok: true, analista: { id: doc.id, ...doc.data() } });
     }
 
     // DELETE — desativar analista
     if (req.method === 'DELETE') {
         const { id } = req.body;
         if (!id) return res.status(400).json({ error: 'id obrigatório' });
-
-        const r = await fetch(
-            `${SUPABASE_URL}/rest/v1/cs_analistas?id=eq.${id}`,
-            {
-                method: 'PATCH',
-                headers: H({ Prefer: 'return=representation' }),
-                body: JSON.stringify({ ativo: false })
-            }
-        );
-        if (!r.ok) return res.status(500).json({ error: await r.text() });
+        await db.collection('cs_analistas').doc(String(id)).update({ ativo: false });
         return res.status(200).json({ ok: true });
     }
 

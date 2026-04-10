@@ -1,6 +1,5 @@
 // api/dashboard.js — CS Auditor
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+import { db, docsToArray } from './firebase.js';
 
 function getSession(req) {
     const m = (req.headers.cookie || '').match(/nibo_cs_session=([^;]+)/);
@@ -20,36 +19,53 @@ export default async function handler(req, res) {
     const { coordenador, analista, periodo, data_inicio, data_fim, origem } = req.query;
 
     try {
-        let filter = '';
-        if (coordenador && coordenador !== 'todos')
-            filter += `&coordenador=eq.${encodeURIComponent(coordenador)}`;
-        if (analista && analista !== 'todos')
-            filter += `&analista_nome=ilike.*${encodeURIComponent(analista.split(' ')[0])}*`;
-        if (periodo && periodo !== 'todos' && !data_inicio) {
-            const since = new Date(Date.now() - parseInt(periodo) * 86400000).toISOString();
-            // Usa data_reuniao se existir, senão created_at
-            filter += `&or=(data_reuniao.gte.${since.slice(0,10)},and(data_reuniao.is.null,created_at.gte.${since}))`;
+        let query = db.collection('cs_reunioes');
+        if (coordenador && coordenador !== 'todos') {
+            query = query.where('coordenador', '==', coordenador);
         }
-        if (data_inicio) filter += `&created_at=gte.${new Date(data_inicio).toISOString()}`;
-        if (data_fim) {
-            const fim = new Date(data_fim); fim.setHours(23, 59, 59, 999);
-            filter += `&created_at=lte.${fim.toISOString()}`;
-        }
-        if (origem === 'auto')
-            filter += `&analise_json->>origem=eq.drive_automatico`;
-        else if (origem === 'manual')
-            filter += `&or=(analise_json->>origem.is.null,analise_json->>origem.neq.drive_automatico)`;
 
-        const url = `${SUPABASE_URL}/rest/v1/cs_reunioes?select=*&order=created_at.desc${filter}`;
-        const response = await fetch(url, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        const snap = await query.get();
+        let reunioes = docsToArray(snap);
+
+        // Filtros aplicados em JS (Firestore não suporta ilike nem queries em JSON aninhado)
+        if (analista && analista !== 'todos') {
+            const q = analista.split(' ')[0].toLowerCase();
+            reunioes = reunioes.filter(r => (r.analista_nome || '').toLowerCase().includes(q));
+        }
+
+        if (periodo && periodo !== 'todos' && !data_inicio) {
+            const since = new Date(Date.now() - parseInt(periodo) * 86400000);
+            reunioes = reunioes.filter(r => {
+                if (r.data_reuniao) return new Date(r.data_reuniao) >= since;
+                if (r.created_at)   return new Date(r.created_at)   >= since;
+                return false;
+            });
+        }
+
+        if (data_inicio) {
+            const from = new Date(data_inicio);
+            reunioes = reunioes.filter(r => r.created_at && new Date(r.created_at) >= from);
+        }
+
+        if (data_fim) {
+            const to = new Date(data_fim); to.setHours(23, 59, 59, 999);
+            reunioes = reunioes.filter(r => r.created_at && new Date(r.created_at) <= to);
+        }
+
+        if (origem === 'auto') {
+            reunioes = reunioes.filter(r => r.analise_json?.origem === 'drive_automatico');
+        } else if (origem === 'manual') {
+            reunioes = reunioes.filter(r => !r.analise_json?.origem || r.analise_json.origem !== 'drive_automatico');
+        }
+
+        // Ordena por created_at desc
+        reunioes.sort((a, b) => {
+            const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return tb - ta;
         });
 
-        if (!response.ok) return res.status(500).json({ error: 'Erro ao buscar dados: ' + await response.text() });
-
-        const reunioes = await response.json();
         if (!reunioes.length) return res.status(200).json({ reunioes: [], stats: null });
-
         return res.status(200).json({ reunioes, stats: calcStats(reunioes) });
     } catch (error) {
         return res.status(500).json({ error: error.message });
@@ -63,7 +79,6 @@ const PILLARS = [
     'ecossistema_nibo','universo_contabil'
 ];
 
-// Média ignorando 0, -1 e null
 function avg(arr) {
     const valid = arr.filter(v => v != null && v > 0 && v <= 5);
     return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
@@ -71,7 +86,6 @@ function avg(arr) {
 
 function calcStats(reunioes) {
     const total  = reunioes.length;
-    // Usa media_final do banco, mas ignora 0
     const medias = reunioes.map(r => r.media_final).filter(v => v != null && v > 0);
 
     // ── Por coordenador ──────────────────────────────────────────────────
@@ -151,22 +165,19 @@ function calcStats(reunioes) {
     }
 
     // ── Risco de Churn ───────────────────────────────────────────────────
-
-const churnStats = { alto: 0, medio: 0, baixo: 0, indefinido: 0 };
-for (const r of reunioes) {
-    const v = (r.risco_churn || '').toLowerCase();
-    const temNegacao = /\bnão\b|\bnao\b|\bsem\b|\bnenhum/.test(v);
-
-    if (!temNegacao && (/\balto\b/.test(v) || /\bcrítico\b/.test(v) || /\bcritico\b/.test(v)))
-        churnStats.alto++;
-    else if (/\bmédio\b/.test(v) || /\bmedio\b/.test(v) || /\bmoderando\b/.test(v))
-        churnStats.medio++;
-    else if (/\bbaixo\b/.test(v))
-        churnStats.baixo++;
-    else
-        churnStats.indefinido++;
-}
-    
+    const churnStats = { alto: 0, medio: 0, baixo: 0, indefinido: 0 };
+    for (const r of reunioes) {
+        const v = (r.risco_churn || '').toLowerCase();
+        const temNegacao = /\bnão\b|\bnao\b|\bsem\b|\bnenhum/.test(v);
+        if (!temNegacao && (/\balto\b/.test(v) || /\bcrítico\b/.test(v) || /\bcritico\b/.test(v)))
+            churnStats.alto++;
+        else if (/\bmédio\b/.test(v) || /\bmedio\b/.test(v) || /\bmoderando\b/.test(v))
+            churnStats.medio++;
+        else if (/\bbaixo\b/.test(v))
+            churnStats.baixo++;
+        else
+            churnStats.indefinido++;
+    }
 
     // ── Checklist ────────────────────────────────────────────────────────
     const ckKeys = ['definiu_prazo_implementacao','alinhou_dever_de_casa','validou_certificado_digital',
@@ -187,7 +198,7 @@ for (const r of reunioes) {
         if (items.length > 0) desalinStats.com_desalinhamento++;
         for (const d of items) {
             desalinStats.total++;
-            if (d.severidade === 'alta')  desalinStats.alta++;
+            if (d.severidade === 'alta')       desalinStats.alta++;
             else if (d.severidade === 'media') desalinStats.media++;
             else if (d.severidade === 'baixa') desalinStats.baixa++;
 
