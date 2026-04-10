@@ -214,6 +214,32 @@
                 </div>
             </div>
 
+            <!-- Saúde & Churn -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-card p-8">
+                    <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                        <i data-lucide="heart-pulse" class="w-4 h-4 text-pink-500"></i>Saúde do Cliente
+                    </h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div id="sc-saudavel" class="rounded-2xl p-3 text-center border transition-all duration-300"><div class="text-2xl font-black" id="sc-saudavel-icon">—</div><div class="text-[9px] font-bold uppercase tracking-wide mt-0.5">Saudável</div></div>
+                        <div id="sc-risco"    class="rounded-2xl p-3 text-center border transition-all duration-300"><div class="text-2xl font-black" id="sc-risco-icon">—</div><div class="text-[9px] font-bold uppercase tracking-wide mt-0.5">Em Risco</div></div>
+                        <div id="sc-critico"  class="rounded-2xl p-3 text-center border transition-all duration-300"><div class="text-2xl font-black" id="sc-critico-icon">—</div><div class="text-[9px] font-bold uppercase tracking-wide mt-0.5">Crítico</div></div>
+                        <div id="sc-nd"       class="rounded-2xl p-3 text-center border transition-all duration-300"><div class="text-2xl font-black" id="sc-nd-icon">—</div><div class="text-[9px] font-bold uppercase tracking-wide mt-0.5">Indefinido</div></div>
+                    </div>
+                </div>
+                <div class="glass-card p-8">
+                    <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                        <i data-lucide="alert-circle" class="w-4 h-4 text-red-500"></i>Risco de Churn
+                    </h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div id="cc-alto"  class="rounded-2xl p-3 text-center border transition-all duration-300"><div class="text-2xl font-black" id="cc-alto-icon">—</div><div class="text-[9px] font-bold uppercase tracking-wide mt-0.5">Alto</div></div>
+                        <div id="cc-medio" class="rounded-2xl p-3 text-center border transition-all duration-300"><div class="text-2xl font-black" id="cc-medio-icon">—</div><div class="text-[9px] font-bold uppercase tracking-wide mt-0.5">Médio</div></div>
+                        <div id="cc-baixo" class="rounded-2xl p-3 text-center border transition-all duration-300"><div class="text-2xl font-black" id="cc-baixo-icon">—</div><div class="text-[9px] font-bold uppercase tracking-wide mt-0.5">Baixo</div></div>
+                        <div id="cc-nd"    class="rounded-2xl p-3 text-center border transition-all duration-300"><div class="text-2xl font-black" id="cc-nd-icon">—</div><div class="text-[9px] font-bold uppercase tracking-wide mt-0.5">Indefinido</div></div>
+                    </div>
+                </div>
+            </div>
+
             <div id="notas-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-4"></div>
 
             <!-- Sistemas / Ferramentas do Cliente -->
@@ -603,6 +629,43 @@ function renderDashboard(data){
         saudeBadge.style.cssText='background:#dcfce7;color:#166534;padding:0.5rem 1rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;';
         saudeLabel.textContent='Saúde Boa';
     }
+
+    // ── Saúde & Churn — boxes visuais ────────────────────────────────────
+    const saudeBoxes={
+        saudavel:{id:'sc-saudavel',active:'bg-emerald-50 border-emerald-300 text-emerald-700',dim:'bg-slate-50 border-slate-200 text-slate-300',icon:'✅'},
+        risco:   {id:'sc-risco',   active:'bg-amber-50 border-amber-300 text-amber-700',     dim:'bg-slate-50 border-slate-200 text-slate-300',icon:'⚠️'},
+        critico: {id:'sc-critico', active:'bg-red-50 border-red-300 text-red-700',           dim:'bg-slate-50 border-slate-200 text-slate-300',icon:'🔴'},
+        nd:      {id:'sc-nd',      active:'bg-slate-100 border-slate-300 text-slate-500',    dim:'bg-slate-50 border-slate-200 text-slate-300',icon:'❓'},
+    };
+    const saudeTxtLow=(data.saude_cliente||'').toLowerCase();
+    const saudeKey=/ruim|cr[ií]tico|insatisf|negativo|problem/.test(saudeTxtLow)?'critico':
+                   /regular|aten[çc]|mediano|neutro|risco/.test(saudeTxtLow)?'risco':
+                   /bom|bem|positivo|saud[aá]vel|satisf/.test(saudeTxtLow)?'saudavel':'nd';
+    Object.entries(saudeBoxes).forEach(([key,b])=>{
+        const el=document.getElementById(b.id);
+        const iconEl=document.getElementById(b.id+'-icon');
+        const isActive=key===saudeKey;
+        el.className=`rounded-2xl p-3 text-center border transition-all duration-300 ${isActive?b.active:b.dim}`;
+        if(iconEl) iconEl.textContent=isActive?b.icon:'—';
+    });
+
+    const churnBoxes={
+        alto:  {id:'cc-alto',  active:'bg-red-50 border-red-300 text-red-700',        dim:'bg-slate-50 border-slate-200 text-slate-300',icon:'🔴'},
+        medio: {id:'cc-medio', active:'bg-amber-50 border-amber-300 text-amber-700',  dim:'bg-slate-50 border-slate-200 text-slate-300',icon:'⚠️'},
+        baixo: {id:'cc-baixo', active:'bg-emerald-50 border-emerald-300 text-emerald-700',dim:'bg-slate-50 border-slate-200 text-slate-300',icon:'✅'},
+        nd:    {id:'cc-nd',    active:'bg-slate-100 border-slate-300 text-slate-500', dim:'bg-slate-50 border-slate-200 text-slate-300',icon:'❓'},
+    };
+    const churnTxtLow2=(data.risco_churn||'').toLowerCase();
+    const churnKey2=/alto|cr[ií]tico|iminente|elevado/.test(churnTxtLow2)?'alto':
+                    /m[eé]dio|moderado|aten[çc]|risco/.test(churnTxtLow2)?'medio':
+                    /baixo|m[ií]nimo|saud[aá]vel|nenhum/.test(churnTxtLow2)?'baixo':'nd';
+    Object.entries(churnBoxes).forEach(([key,b])=>{
+        const el=document.getElementById(b.id);
+        const iconEl=document.getElementById(b.id+'-icon');
+        const isActive=key===churnKey2;
+        el.className=`rounded-2xl p-3 text-center border transition-all duration-300 ${isActive?b.active:b.dim}`;
+        if(iconEl) iconEl.textContent=isActive?b.icon:'—';
+    });
 
     // ── Sistemas do cliente ───────────────────────────────────────────────
     const sistemas=data.sistemas_citados||[];
