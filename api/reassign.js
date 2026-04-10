@@ -1,5 +1,5 @@
 // api/reassign.js — CS Auditor
-import { db } from './firebase.js';
+import { db } from './_firebase.js';
 
 function getSession(req) {
     const m = (req.headers.cookie || '').match(/nibo_cs_session=([^;]+)/);

@@ -2,7 +2,7 @@
 // Serve pilares, membros e prompts dinamicamente do Firestore.
 // Usado por analyze.js, ingest.js, dashboard.js e os HTMLs.
 
-import { db, docsToArray } from './firebase.js';
+import { db, docsToArray } from './_firebase.js';
 
 // Cache em memória por 5 minutos (evita bater no Firestore a cada análise)
 let _cache = null;
