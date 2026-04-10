@@ -284,6 +284,16 @@
                 </div>
             </div>
 
+            <!-- Bugs / Erros do Sistema -->
+            <div id="bugs-section" class="hidden glass-card p-8" style="border-left:6px solid #f97316">
+                <h3 class="font-bold text-orange-700 text-[14px] mb-2 flex items-center gap-3">
+                    <i data-lucide="bug" class="w-5 h-5 text-orange-500"></i>
+                    🐛 Bugs e Erros Detectados
+                </h3>
+                <p class="text-[11px] text-slate-500 mb-6">Problemas técnicos, falhas do sistema ou momentos em que o suporte precisou ser acionado.</p>
+                <div id="bugs-grid" class="space-y-4"></div>
+            </div>
+
             <!-- Desalinhamentos de Venda -->
             <div id="desalinhamentos-section" class="hidden glass-card p-8" style="border-left:6px solid #ef4444">
                 <h3 class="font-bold text-red-700 text-[14px] mb-2 flex items-center gap-3">
@@ -604,7 +614,10 @@ function renderDashboard(data){
     const churnBadge=document.getElementById('churn-badge');
     const churnDot=document.getElementById('churn-badge-dot');
     const churnLabel=document.getElementById('churn-badge-label');
-    if(/alto|cr[ií]tico|iminente|elevado/.test(churnTxt)){
+    if(/baixo|m[ií]nimo|saud[aá]vel|nenhum/.test(churnTxt)){
+        churnBadge.style.cssText='background:#dcfce7;color:#166534;padding:0.5rem 1rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;';
+        churnDot.style.background='#22c55e'; churnLabel.textContent='Churn Baixo';
+    } else if(/alto|cr[ií]tico|iminente|elevado/.test(churnTxt)){
         churnBadge.style.cssText='background:#fee2e2;color:#991b1b;padding:0.5rem 1rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;';
         churnDot.style.background='#ef4444'; churnLabel.textContent='Churn Alto';
     } else if(/m[eé]dio|moderado|aten[çc][aã]o|risco/.test(churnTxt)){
@@ -656,9 +669,9 @@ function renderDashboard(data){
         nd:    {id:'cc-nd',    active:'bg-slate-100 border-slate-300 text-slate-500', dim:'bg-slate-50 border-slate-200 text-slate-300',icon:'❓'},
     };
     const churnTxtLow2=(data.risco_churn||'').toLowerCase();
-    const churnKey2=/alto|cr[ií]tico|iminente|elevado/.test(churnTxtLow2)?'alto':
-                    /m[eé]dio|moderado|aten[çc]|risco/.test(churnTxtLow2)?'medio':
-                    /baixo|m[ií]nimo|saud[aá]vel|nenhum/.test(churnTxtLow2)?'baixo':'nd';
+    const churnKey2=/baixo|m[ií]nimo|saud[aá]vel|nenhum/.test(churnTxtLow2)?'baixo':
+                    /alto|cr[ií]tico|iminente|elevado/.test(churnTxtLow2)?'alto':
+                    /m[eé]dio|moderado|aten[çc]|risco/.test(churnTxtLow2)?'medio':'nd';
     Object.entries(churnBoxes).forEach(([key,b])=>{
         const el=document.getElementById(b.id);
         const iconEl=document.getElementById(b.id+'-icon');
@@ -724,6 +737,34 @@ function renderDashboard(data){
     document.getElementById('lista-fortes').innerHTML=(data.pontos_fortes||[]).map(i=>`<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
     document.getElementById('lista-atencao').innerHTML=(data.pontos_atencao||[]).map(i=>`<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
     document.getElementById('markdown-body').innerHTML=marked.parse(data.justificativa_detalhada||'');
+
+    // ── Bugs / Erros do Sistema ───────────────────────────────────────────
+    const bugs=data.bugs||[];
+    const bugsSection=document.getElementById('bugs-section');
+    if(data.tem_bugs && bugs.length){
+        bugsSection.classList.remove('hidden');
+        const impColor={alto:'border-red-200 bg-red-50',medio:'border-orange-200 bg-orange-50',baixo:'border-yellow-100 bg-yellow-50'};
+        const statusIcon={resolvido:'check-circle',escalado_suporte:'life-buoy',em_aberto:'circle-dot',aguardando_cliente:'clock'};
+        const statusLabel={resolvido:'Resolvido',escalado_suporte:'Suporte Acionado',em_aberto:'Em Aberto',aguardando_cliente:'Aguardando Cliente'};
+        document.getElementById('bugs-grid').innerHTML=bugs.map(b=>{
+            const imp=b.impacto||'baixo';
+            const st=b.status||'em_aberto';
+            const cardCls=impColor[imp]||impColor.baixo;
+            const icon=statusIcon[st]||'help-circle';
+            const stLbl=statusLabel[st]||st;
+            return `<div class="p-5 rounded-2xl border ${cardCls}">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                    <span class="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${imp==='alto'?'bg-red-200 text-red-800':imp==='medio'?'bg-orange-200 text-orange-800':'bg-yellow-100 text-yellow-800'}">Impacto ${imp==='alto'?'Alto':imp==='medio'?'Médio':'Baixo'}</span>
+                    <span class="flex items-center gap-1.5 text-[9px] font-bold text-slate-500"><i data-lucide="${icon}" class="w-3 h-3"></i>${stLbl}</span>
+                </div>
+                <p class="text-[12px] font-black text-slate-800 mb-1">${b.descricao||'—'}</p>
+                ${b.contexto?`<p class="text-[11px] text-slate-600 mb-1"><span class="font-bold">Contexto:</span> ${b.contexto}</p>`:''}
+                ${b.frase_cliente?`<p class="text-[10px] italic text-slate-500 border-t border-slate-200 mt-2 pt-2">"${b.frase_cliente}"</p>`:''}
+            </div>`;
+        }).join('');
+    } else {
+        bugsSection.classList.add('hidden');
+    }
 
     // ── Desalinhamentos de Venda ──────────────────────────────────────────
     const desalins=data.desalinhamentos||[];

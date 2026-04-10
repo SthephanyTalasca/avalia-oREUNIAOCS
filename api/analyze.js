@@ -386,6 +386,57 @@ async function getDesalinhamentos(transcript) {
     return parsed;
 }
 
+async function getBugs(transcript) {
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: transcript,
+        config: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 2048,
+            systemInstruction:
+                'Auditor de CS do Nibo. Identifique na transcrição situações de bugs, erros ou falhas do sistema: ' +
+                '(1) erros ou comportamentos inesperados no sistema/produto Nibo relatados pelo cliente ou detectados durante a reunião; ' +
+                '(2) funcionalidades que não funcionaram como esperado ou como foram prometidas; ' +
+                '(3) momentos em que foi necessário acionar o suporte técnico ou abrir chamado; ' +
+                '(4) integrações que falharam ou não configuraram corretamente; ' +
+                '(5) dados incorretos, importações com erro ou processos que travaram. ' +
+                'Para cada ocorrência preencha: ' +
+                'descricao = descrição objetiva do problema; ' +
+                'contexto = o que estava sendo feito quando o problema ocorreu; ' +
+                'impacto: "alto" = bloqueou o cliente de usar o sistema, "medio" = causou retrabalho ou confusão, "baixo" = inconveniente menor; ' +
+                'status: "resolvido" = foi resolvido na reunião, "escalado_suporte" = CS acionou suporte ou abriu chamado, ' +
+                '"em_aberto" = ficou sem resolução, "aguardando_cliente" = cliente precisa fazer algo; ' +
+                'frase_cliente = trecho exato ou próximo do que o cliente disse sobre o problema (se houver). ' +
+                'Se não houver nenhum bug ou erro, retorne tem_bugs false e array vazio.',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    tem_bugs: { type: Type.BOOLEAN },
+                    bugs: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                descricao:     { type: Type.STRING },
+                                contexto:      { type: Type.STRING },
+                                impacto:       { type: Type.STRING },
+                                status:        { type: Type.STRING },
+                                frase_cliente: { type: Type.STRING },
+                            },
+                            required: ['descricao', 'impacto', 'status'],
+                        },
+                    },
+                },
+                required: ['tem_bugs', 'bugs'],
+            },
+        },
+    });
+    const parsed = safeParse(res.text, 'getBugs');
+    parsed.bugs = parsed.bugs || [];
+    parsed.tem_bugs = parsed.bugs.length > 0;
+    return parsed;
+}
+
 async function getRelatorio(numbers, meta, texts, coordinator) {
     const linhas = CS_PILLARS.map(function(p) {
         const k = p[0], nota = numbers['nota_' + k];
@@ -452,11 +503,12 @@ export default async function handler(req, res) {
         numbers.analista_nome = numbers.analista_nome || 'Não identificado';
         numbers.coordinator   = coordinator || numbers.coordinator || null;
 
-        const [meta, textsA, textsB, desalin] = await Promise.all([
+        const [meta, textsA, textsB, desalin, bugsResult] = await Promise.all([
             withRetry(() => getMeta(prompt, numbers),         'getMeta'),
             withRetry(() => getTextsA(prompt, numbers),       'getTextsA'),
             withRetry(() => getTextsB(prompt, numbers),       'getTextsB'),
             withRetry(() => getDesalinhamentos(prompt),       'getDesalinhamentos'),
+            withRetry(() => getBugs(prompt),                  'getBugs'),
         ]);
         const texts = Object.assign({}, textsA, textsB);
 
@@ -492,6 +544,8 @@ export default async function handler(req, res) {
                 nome_cliente: meta.nome_cliente,
                 tem_desalinhamento:  desalin.tem_desalinhamento,
                 desalinhamentos:     desalin.desalinhamentos,
+                tem_bugs:            bugsResult.tem_bugs,
+                bugs:                bugsResult.bugs,
             })
         );
 
