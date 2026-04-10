@@ -116,6 +116,14 @@ function repairJson(raw) {
     return s;
 }
 
+function safeText(res, label) {
+    const t = res.text;
+    if (typeof t === 'string' && t.length > 0) return t;
+    const fallback = res.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (typeof fallback === 'string' && fallback.length > 0) return fallback;
+    throw new Error('EMPTY_RESPONSE_' + label);
+}
+
 function safeParse(text, label) {
     try { return JSON.parse(text); } catch (_) {
         try {
@@ -123,8 +131,9 @@ function safeParse(text, label) {
             console.log(label + ' reparado OK');
             return r;
         } catch (e2) {
-            console.error(label + ' falhou mesmo após repair:', (text || '').slice(-80));
-            throw new Error('JSON_FAIL_' + label);
+            const snippet = (text || '').slice(-120);
+            console.error(label + ' falhou mesmo após repair. Trecho final:', snippet);
+            throw new Error('JSON_FAIL_' + label + ': ' + snippet);
         }
     }
 }
@@ -216,7 +225,7 @@ async function getNumbers(transcript) {
         },
     });
 
-    const parsed = safeParse(res.text, 'getNumbers');
+    const parsed = safeParse(safeText(res, 'getNumbers'), 'getNumbers');
 
     CS_PILLARS.forEach(function(p) {
         const val = parsed['nota_' + p[0]];
@@ -288,7 +297,7 @@ async function getMeta(transcript, numbers) {
             },
         },
     });
-    return safeParse(res.text, 'getMeta');
+    return safeParse(safeText(res, 'getMeta'), 'getMeta');
 }
 
 async function getTextsA(transcript, numbers) {
@@ -307,7 +316,7 @@ async function getTextsA(transcript, numbers) {
         contents: transcript,
         config: { responseMimeType: 'application/json', maxOutputTokens: 3000, systemInstruction: instruction, responseSchema: makeTextSchema(group) },
     });
-    return safeParse(res.text, 'getTextsA');
+    return safeParse(safeText(res, 'getTextsA'), 'getTextsA');
 }
 
 async function getTextsB(transcript, numbers) {
@@ -326,7 +335,7 @@ async function getTextsB(transcript, numbers) {
         contents: transcript,
         config: { responseMimeType: 'application/json', maxOutputTokens: 3000, systemInstruction: instruction, responseSchema: makeTextSchema(group) },
     });
-    return safeParse(res.text, 'getTextsB');
+    return safeParse(safeText(res, 'getTextsB'), 'getTextsB');
 }
 
 async function getDesalinhamentos(transcript) {
@@ -380,7 +389,7 @@ async function getDesalinhamentos(transcript) {
             },
         },
     });
-    const parsed = safeParse(res.text, 'getDesalinhamentos');
+    const parsed = safeParse(safeText(res, 'getDesalinhamentos'), 'getDesalinhamentos');
     parsed.desalinhamentos = parsed.desalinhamentos || [];
     parsed.tem_desalinhamento = parsed.desalinhamentos.length > 0;
     return parsed;
@@ -431,7 +440,7 @@ async function getBugs(transcript) {
             },
         },
     });
-    const parsed = safeParse(res.text, 'getBugs');
+    const parsed = safeParse(safeText(res, 'getBugs'), 'getBugs');
     parsed.bugs = parsed.bugs || [];
     parsed.tem_bugs = parsed.bugs.length > 0;
     return parsed;
@@ -443,7 +452,7 @@ async function getMelhorias(transcript) {
         contents: transcript,
         config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 2048,
+            maxOutputTokens: 4096,
             systemInstruction:
                 'Auditor de CS do Nibo. Sua tarefa tem duas partes:\n' +
                 '(1) Identifique o produto Nibo principal desta reunião. ' +
@@ -491,7 +500,7 @@ async function getMelhorias(transcript) {
             },
         },
     });
-    const parsed = safeParse(res.text, 'getMelhorias');
+    const parsed = safeParse(safeText(res, 'getMelhorias'), 'getMelhorias');
     parsed.melhorias = parsed.melhorias || [];
     parsed.tem_melhorias = parsed.melhorias.length > 0;
     parsed.produto_reuniao = parsed.produto_reuniao || 'Não identificado';
@@ -545,6 +554,12 @@ async function getRelatorio(numbers, meta, texts, coordinator) {
 
 // ── Handler ───────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
+    if (req.method === 'OPTIONS') {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        return res.status(204).end();
+    }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido.' });
 
     const prompt      = req.body && req.body.prompt;
