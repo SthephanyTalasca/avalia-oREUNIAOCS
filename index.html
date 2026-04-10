@@ -9,85 +9,112 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #0f172a; }
-        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: all 0.3s ease; }
-        .glass-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
+        /* ── Nibo Design Tokens ─────────────────────────────────────────────────── */
+        :root {
+            --nibo-purple:   #6431e2;
+            --nibo-purple-h: #5229c5;
+            --nibo-blue:     #0072ce;
+            --nibo-blue-lt:  #41b6e6;
+            --nibo-petroleo: #002d72;
+            --nibo-ice:      #b8ccea;
+            --nibo-pink:     #ff40b3;
+            --nibo-yellow:   #ffe800;
+            --nibo-white:    #ffffff;
+            --nibo-bg:       #eef2f8;
+            --nibo-text:     #0d1b3e;
+            --nibo-muted:    #4a5773;
+        }
+        /* ── Base ───────────────────────────────────────────────────────────────── */
+        body { font-family: 'Roca', 'Poppins', 'Helvetica Neue', Helvetica, sans-serif; background-color: var(--nibo-bg); color: var(--nibo-text); }
+        h1,h2,h3,h4,h5,h6 { font-family: 'Roca', 'Poppins', 'Helvetica Neue', Helvetica, sans-serif; }
+        /* ── Card ───────────────────────────────────────────────────────────────── */
+        .glass-card { background: white; border: 1px solid #d8e2f0; border-radius: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0,45,114,0.06); transition: all 0.3s ease; }
+        .glass-card:hover { box-shadow: 0 20px 25px -5px rgba(100,49,226,0.12); }
+        /* ── Loader ─────────────────────────────────────────────────────────────── */
+        .loader { border: 4px solid #e8edf5; border-top: 4px solid var(--nibo-purple); border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .markdown-content h1,.markdown-content h2 { font-weight:800;color:#1e3a8a;margin-top:1.5rem;margin-bottom:.75rem;font-size:1rem;text-transform:uppercase;border-bottom:2px solid #2563eb;padding-bottom:.5rem; }
-        .markdown-content p { margin-bottom:1rem;color:#475569;line-height:1.6;font-size:.9rem; }
+        /* ── Markdown ───────────────────────────────────────────────────────────── */
+        .markdown-content h1,.markdown-content h2 { font-family:'Roca','Poppins',sans-serif;font-weight:800;color:var(--nibo-petroleo);margin-top:1.5rem;margin-bottom:.75rem;font-size:1rem;text-transform:uppercase;border-bottom:2px solid var(--nibo-purple);padding-bottom:.5rem; }
+        .markdown-content p { margin-bottom:1rem;color:var(--nibo-muted);line-height:1.7;font-size:.9rem; }
         .markdown-content ul { list-style-type:none;padding-left:0;margin-bottom:1.25rem; }
-        .markdown-content li { position:relative;padding-left:1.5rem;margin-bottom:.4rem;color:#475569;font-size:.85rem; }
-        .markdown-content li::before { content:"•";position:absolute;left:0;color:#2563eb;font-weight:bold; }
-        .markdown-content strong { color:#1e3a8a; }
-        .markdown-content blockquote { border-left:3px solid #2563eb;margin:1rem 0;background:#eff6ff;border-radius:0 .5rem .5rem 0;padding:.75rem 1rem; }
-        .markdown-content blockquote p { color:#1e40af;font-style:italic;margin:0; }
+        .markdown-content li { position:relative;padding-left:1.5rem;margin-bottom:.4rem;color:var(--nibo-muted);font-size:.85rem; }
+        .markdown-content li::before { content:"•";position:absolute;left:0;color:var(--nibo-purple);font-weight:bold; }
+        .markdown-content strong { color:var(--nibo-petroleo); }
+        .markdown-content blockquote { border-left:3px solid var(--nibo-purple);margin:1rem 0;background:#f0ebff;border-radius:0 .5rem .5rem 0;padding:.75rem 1rem; }
+        .markdown-content blockquote p { color:#4c1d95;font-style:italic;margin:0; }
+        /* ── Animações ──────────────────────────────────────────────────────────── */
         .tag-concorrente { animation:pulse-tag 2s infinite; }
         @keyframes pulse-tag { 0%,100%{opacity:1} 50%{opacity:.7} }
+        /* ── Pilar card ─────────────────────────────────────────────────────────── */
         .pilar-card { cursor:pointer;position:relative;transition:all .2s ease; }
-        .pilar-card:hover { transform:translateY(-4px);box-shadow:0 20px 40px -10px rgba(37,99,235,.2); }
+        .pilar-card:hover { transform:translateY(-4px);box-shadow:0 20px 40px -10px rgba(100,49,226,.22); }
         .zoom-icon { position:absolute;top:1rem;right:1rem;opacity:0;transition:opacity .2s; }
         .pilar-card:hover .zoom-icon { opacity:1; }
         .click-hint { font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;display:block;text-align:right; }
+        /* ── Stars ──────────────────────────────────────────────────────────────── */
         .stars-row { display:flex;gap:2px; }
         .star { font-size:14px;color:#e2e8f0; }
         .star.filled { color:#f59e0b; }
         .star-sm { font-size:9px;color:#e2e8f0; }
         .star-sm.filled { color:#f59e0b; }
+        /* ── Score ring ─────────────────────────────────────────────────────────── */
         .score-ring { width:80px;height:80px;border-radius:50%;border:5px solid;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:900;flex-shrink:0; }
+        /* ── Tabs ───────────────────────────────────────────────────────────────── */
         .section-tab { display:flex;align-items:center;gap:.5rem;padding:.75rem .25rem;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;border-bottom:3px solid transparent;color:#94a3b8;transition:all .2s;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none; }
-        .section-tab.active { color:#2563eb;border-bottom-color:#2563eb; }
-        .section-tab:hover:not(.active) { color:#475569; }
-        .role-badge-admin  { background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd; }
+        .section-tab.active { color:var(--nibo-purple);border-bottom-color:var(--nibo-purple); }
+        .section-tab:hover:not(.active) { color:var(--nibo-muted); }
+        /* ── Role badges ────────────────────────────────────────────────────────── */
+        .role-badge-admin  { background:#ede9ff;color:#5229c5;border:1px solid #c4b5fd; }
         .role-badge-viewer { background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db; }
-        .viewer-banner { background: linear-gradient(135deg,#f8fafc,#f1f5f9); border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; }
+        /* ── Viewer banner ──────────────────────────────────────────────────────── */
+        .viewer-banner { background: linear-gradient(135deg,#f8fafc,var(--nibo-bg)); border: 1px solid #d8e2f0; border-left: 4px solid var(--nibo-ice); }
     </style>
 </head>
 <body class="pb-20 antialiased">
 
 <!-- LOGIN -->
-<div id="login-screen" class="hidden fixed inset-0 z-[200] bg-[#001a4d] flex items-center justify-center p-6">
+<div id="login-screen" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-6" style="background:linear-gradient(135deg,#002d72 0%,#6431e2 60%,#41b6e6 100%)">
     <div class="bg-white rounded-[2.5rem] p-12 max-w-sm w-full text-center shadow-2xl flex flex-col items-center gap-6">
-        <div class="bg-[#002d72] p-4 rounded-2xl"><i data-lucide="shield-check" class="text-white w-10 h-10"></i></div>
+        <div class="p-4 rounded-2xl" style="background:linear-gradient(135deg,#002d72,#6431e2)"><i data-lucide="shield-check" class="text-white w-10 h-10"></i></div>
         <div>
-            <h1 class="font-black text-[#002d72] text-2xl uppercase tracking-tight mb-1">Nibo Auditor</h1>
-            <p class="text-slate-400 text-sm font-medium">Acesso restrito — equipe Nibo</p>
+            <h1 class="font-black text-2xl uppercase tracking-tight mb-1" style="color:#002d72">Nibo Auditor</h1>
+            <p class="text-slate-400 text-sm font-medium">Acesso restrito — equipe Nibo 🔐</p>
         </div>
         <div id="login-error" class="hidden w-full bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700 font-medium"></div>
-        <a href="/api/auth" class="w-full flex items-center justify-center gap-3 bg-white border-2 border-slate-200 hover:border-blue-400 text-slate-700 font-bold px-6 py-4 rounded-2xl transition-all shadow-sm hover:shadow-md">
+        <a href="/api/auth" class="w-full flex items-center justify-center gap-3 bg-white border-2 border-slate-200 hover:border-[#6431e2] text-slate-700 font-bold px-6 py-4 rounded-2xl transition-all shadow-sm hover:shadow-md">
             <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             Entrar com Google Nibo
         </a>
-        <p class="text-[10px] text-slate-300 font-medium">Somente emails @nibo.com.br têm acesso</p>
+        <p class="text-[10px] text-slate-300 font-medium">Somente emails @nibo.com.br têm acesso 🏢</p>
     </div>
 </div>
 
 <!-- APP -->
 <div id="app-screen" class="hidden">
-<nav class="bg-[#002d72] text-white py-4 px-8 sticky top-0 z-50 shadow-xl border-b border-blue-400">
+<nav class="text-white py-4 px-8 sticky top-0 z-50 shadow-xl" style="background:linear-gradient(90deg,#002d72 0%,#3a1fa8 60%,#6431e2 100%);border-bottom:1px solid rgba(65,182,230,0.3)">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="flex items-center gap-3">
-            <div class="bg-white p-2.5 rounded-2xl shadow-inner"><i data-lucide="shield-check" class="text-[#002d72] w-6 h-6"></i></div>
+            <div class="bg-white p-2.5 rounded-2xl shadow-inner"><i data-lucide="shield-check" class="w-6 h-6" style="color:#6431e2"></i></div>
             <div>
-                <h1 class="font-extrabold text-lg uppercase tracking-tight">Nibo <span class="text-blue-400">Auditor de Vendas</span></h1>
-                <p class="text-[9px] text-blue-200 uppercase tracking-widest font-bold mt-1">Performance de Consultores + Qualificação de Leads (SDR)</p>
+                <h1 class="font-extrabold text-lg uppercase tracking-tight">Nibo <span style="color:#41b6e6">Auditor de Vendas</span></h1>
+                <p class="text-[9px] uppercase tracking-widest font-bold mt-1" style="color:#b8ccea">Performance de Consultores + Qualificação de Leads (SDR) 📊</p>
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <img id="user-avatar" src="" class="w-8 h-8 rounded-full border-2 border-blue-300 hidden" />
+            <img id="user-avatar" src="" class="w-8 h-8 rounded-full border-2 hidden" style="border-color:#41b6e6" />
             <div id="user-info" class="text-right hidden">
                 <div class="flex items-center gap-2 justify-end">
                     <p id="user-name" class="text-sm font-bold leading-none"></p>
                     <span id="user-role-badge" class="hidden px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest"></span>
                 </div>
-                <p id="user-email" class="text-[10px] text-blue-300 font-medium mt-0.5"></p>
+                <p id="user-email" class="text-[10px] font-medium mt-0.5" style="color:#b8ccea"></p>
             </div>
-            <button onclick="showDashboard()" class="ml-2 flex items-center gap-1.5 bg-blue-800/40 hover:bg-blue-600 border border-blue-400/30 text-blue-200 hover:text-white px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all">
-                <i data-lucide="layout-dashboard" class="w-3 h-3"></i> Dashboard
+            <button onclick="showDashboard()" class="ml-2 flex items-center gap-1.5 border text-white px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-white/20" style="background:rgba(100,49,226,0.35);border-color:rgba(65,182,230,0.3)">
+                <i data-lucide="layout-dashboard" class="w-3 h-3"></i> Dashboard 📈
             </button>
-            <button onclick="handleLogout()" class="ml-2 flex items-center gap-1.5 bg-blue-900/40 hover:bg-red-600 border border-blue-400/30 hover:border-red-400 text-blue-200 hover:text-white px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all">
+            <button onclick="handleLogout()" class="ml-2 flex items-center gap-1.5 border hover:bg-red-600 hover:border-red-400 text-white px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all" style="background:rgba(0,45,114,0.4);border-color:rgba(65,182,230,0.3)">
                 <i data-lucide="log-out" class="w-3 h-3"></i> Sair
             </button>
         </div>
@@ -109,31 +136,33 @@
     <section id="transcricao-section" class="mb-10 hidden">
         <div class="glass-card p-8 md:p-10">
             <div class="flex items-center gap-3 mb-6">
-                <i data-lucide="message-square" class="text-blue-600"></i>
+                <i data-lucide="message-square" style="color:#6431e2"></i>
                 <h2 class="font-bold text-slate-800 text-lg">Submeter Transcrição</h2>
             </div>
             <div class="flex gap-4 mb-6">
                 <label class="flex-1 cursor-pointer">
                     <input type="radio" name="coordenador" value="Simone Rangel" class="hidden peer" />
-                    <div class="peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 border-2 border-slate-200 rounded-2xl p-4 text-center transition-all hover:border-blue-300">
+                    <div class="peer-checked:text-white peer-checked:border-[#6431e2] border-2 border-slate-200 rounded-2xl p-4 text-center transition-all hover:border-[#6431e2]/40" style="--tw-peer-bg:#6431e2">
+                        <style>.peer:checked ~ div[class*="peer-checked:text-white"][class*="Simone"],label:has(input[name=coordenador][value="Simone Rangel"]:checked) div{background:#6431e2;color:white;border-color:#6431e2;}</style>
                         <i data-lucide="user-circle" class="w-5 h-5 mx-auto mb-1"></i>
                         <p class="font-black text-sm">Simone Rangel</p>
-                        <p class="text-[10px] font-medium opacity-70">Coordenadora</p>
+                        <p class="text-[10px] font-medium opacity-70">Coordenadora 🤝</p>
                     </div>
                 </label>
                 <label class="flex-1 cursor-pointer">
                     <input type="radio" name="coordenador" value="Jonathan Dornelas" class="hidden peer" />
-                    <div class="peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 border-2 border-slate-200 rounded-2xl p-4 text-center transition-all hover:border-blue-300">
+                    <div class="peer-checked:text-white peer-checked:border-[#6431e2] border-2 border-slate-200 rounded-2xl p-4 text-center transition-all hover:border-[#6431e2]/40">
+                        <style>label:has(input[name=coordenador][value="Jonathan Dornelas"]:checked) div{background:#6431e2;color:white;border-color:#6431e2;}</style>
                         <i data-lucide="user-circle" class="w-5 h-5 mx-auto mb-1"></i>
                         <p class="font-black text-sm">Jonathan Dornelas</p>
-                        <p class="text-[10px] font-medium opacity-70">Coordenador</p>
+                        <p class="text-[10px] font-medium opacity-70">Coordenador 🤝</p>
                     </div>
                 </label>
             </div>
-            <textarea id="transcript-input" rows="5" class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:ring-4 ring-blue-500/5 focus:outline-none transition-all text-sm mb-6" placeholder="Cole aqui o diálogo completo da reunião..."></textarea>
+            <textarea id="transcript-input" rows="5" class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:outline-none transition-all text-sm mb-6" style="focus-ring:4px solid rgba(100,49,226,0.1)" placeholder="Cole aqui o diálogo completo da reunião..."></textarea>
             <div class="flex justify-end">
-                <button id="analyze-btn" class="flex items-center gap-3 bg-blue-600 hover:bg-[#002d72] text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span id="btn-text">Gerar Auditoria Completa</span>
+                <button id="analyze-btn" class="flex items-center gap-3 text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" style="background:#6431e2;font-family:'Poppins',sans-serif;font-weight:600" onmouseover="this.style.background='#002d72'" onmouseout="this.style.background='#6431e2'">
+                    <span id="btn-text">Gerar Auditoria Completa 🚀</span>
                     <i data-lucide="zap" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -147,7 +176,7 @@
         </div>
         <div id="analysis-content" class="hidden space-y-8">
             <div id="vendedor-banner" class="hidden bg-white border border-slate-200 rounded-[2rem] p-5 flex items-center gap-4 shadow-sm">
-                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-600 text-lg flex-shrink-0" id="vendedor-avatar">?</div>
+                <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-lg flex-shrink-0" id="vendedor-avatar" style="background:#ede9ff;color:#6431e2">?</div>
                 <div class="flex-1 min-w-0">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Consultor identificado pela IA</p>
                     <p id="vendedor-nome-display" class="font-black text-slate-800 text-base truncate"></p>
@@ -156,7 +185,7 @@
                     <select id="vendedor-corrigir-sel" class="text-xs font-bold border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 ring-blue-300 max-w-[180px]">
                         <option value="">— Corrigir vendedor —</option>
                     </select>
-                    <button id="vendedor-corrigir-btn" class="hidden flex items-center gap-1.5 bg-blue-600 hover:bg-[#002d72] text-white px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95">
+                    <button id="vendedor-corrigir-btn" class="hidden flex items-center gap-1.5 text-white px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95" style="background:#6431e2" onmouseover="this.style.background='#002d72'" onmouseout="this.style.background='#6431e2'">
                         <i data-lucide="check" class="w-3 h-3"></i> Salvar
                     </button>
                     <span id="vendedor-salvo-tag" class="hidden px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black">✅ Salvo</span>
@@ -166,22 +195,22 @@
                 </div>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center border-b-[10px] border-blue-600">
-                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Média Global (Máx 5)</span>
-                    <div id="media-final" class="text-7xl font-black text-[#002d72] mb-3">0.0</div>
+                <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center" style="border-bottom:10px solid #6431e2">
+                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Média Global (Máx 5) 🏆</span>
+                    <div id="media-final" class="text-7xl font-black mb-3" style="color:#002d72">0.0</div>
                     <div id="status-tag" class="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">---</div>
                 </div>
-                <div class="lg:col-span-3 glass-card p-10 bg-gradient-to-br from-blue-700 to-blue-900 text-white flex flex-col justify-center">
+                <div class="lg:col-span-3 glass-card p-10 text-white flex flex-col justify-center" style="background:linear-gradient(135deg,#6431e2 0%,#002d72 60%,#41b6e6 100%)">
                     <div id="concorrentes-tags" class="flex flex-wrap gap-2 mb-4"></div>
                     <h3 class="font-bold text-blue-200 text-[10px] uppercase tracking-widest mb-4">Diagnóstico Geral</h3>
                     <p id="resumo-text" class="text-xl md:text-2xl font-bold leading-tight mb-8"></p>
                     <div class="flex gap-4">
-                        <div class="p-4 bg-white/10 rounded-2xl border border-white/20 flex-1">
-                            <span class="text-[9px] font-black text-blue-300 uppercase block mb-1 tracking-widest">Probabilidade de Fechamento:</span>
+                        <div class="p-4 rounded-2xl border border-white/20 flex-1" style="background:rgba(255,255,255,0.1)">
+                            <span class="text-[9px] font-black uppercase block mb-1 tracking-widest" style="color:#b8ccea">Probabilidade de Fechamento 🎯:</span>
                             <p id="chance-text" class="text-base font-bold text-white"></p>
                         </div>
-                        <div class="p-4 bg-red-500/20 rounded-2xl border border-red-400/30 flex-1">
-                            <span class="text-[9px] font-black text-red-300 uppercase block mb-1 tracking-widest">Alerta de Risco:</span>
+                        <div class="p-4 rounded-2xl border border-red-400/30 flex-1" style="background:rgba(220,38,38,0.2)">
+                            <span class="text-[9px] font-black text-red-300 uppercase block mb-1 tracking-widest">⚠️ Alerta de Risco:</span>
                             <p id="alerta-text" class="text-base font-bold text-white"></p>
                         </div>
                     </div>
@@ -191,8 +220,8 @@
                 <button onclick="showSection('vendas')" id="tab-vendas" class="section-tab active"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Auditoria de Vendas</button>
                 <button onclick="showSection('qualif')" id="tab-qualif" class="section-tab"><i data-lucide="user-check" class="w-4 h-4"></i> Qualificação do Lead (SDR)</button>
                 <div class="ml-auto pb-1.5">
-                    <button id="btn-pdf-sdr" onclick="exportarPDFSdr()" class="hidden items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">
-                        <i data-lucide="file-down" class="w-3 h-3"></i> PDF Qualificação
+                    <button id="btn-pdf-sdr" onclick="exportarPDFSdr()" class="hidden items-center gap-1.5 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm" style="background:#6431e2;font-family:'Poppins',sans-serif" onmouseover="this.style.background='#5229c5'" onmouseout="this.style.background='#6431e2'">
+                        <i data-lucide="file-down" class="w-3 h-3"></i> 📝 PDF Qualificação
                     </button>
                 </div>
             </div>
@@ -226,8 +255,13 @@
                         <ul id="pontos-atencao-list" class="space-y-3 text-[12px] font-bold text-amber-900"></ul>
                     </div>
                 </div>
-                <div class="glass-card p-12 shadow-2xl border-t-[10px] border-[#002d72]">
-                    <h3 class="text-xl font-extrabold text-[#002d72] uppercase tracking-widest mb-2 flex items-center gap-4"><i data-lucide="graduation-cap"></i> Plano de Coaching</h3>
+                <div id="desalinhamentos-section" class="hidden glass-card p-8" style="border-top:4px solid #ef4444">
+                    <h3 class="text-sm font-extrabold uppercase tracking-widest mb-1 flex items-center gap-3" style="color:#b91c1c"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Desalinhamentos de Venda</h3>
+                    <p class="text-[10px] text-slate-400 font-semibold mb-6 ml-8">O que foi prometido na venda e não corresponde ao que o cliente recebeu &mdash; não interfere na nota do analista</p>
+                    <div id="desalinhamentos-body" class="space-y-4"></div>
+                </div>
+                <div class="glass-card p-12 shadow-2xl" style="border-top:10px solid #6431e2">
+                    <h3 class="text-xl font-extrabold uppercase tracking-widest mb-2 flex items-center gap-4" style="color:#002d72;font-family:'Roca','Poppins',sans-serif"><i data-lucide="graduation-cap"></i> 💡 Plano de Coaching</h3>
                     <p class="text-[11px] text-slate-400 font-semibold mb-10 ml-10">O que fazer diferente na próxima reunião</p>
                     <div id="coaching-body" class="markdown-content"></div>
                 </div>
@@ -271,16 +305,16 @@
 <div id="dashboard-modal" class="hidden fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-sm overflow-y-auto p-4">
     <div class="max-w-7xl mx-auto mt-8 mb-16">
         <div class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
-            <div class="bg-[#002d72] p-8 flex items-center justify-between">
+            <div class="p-8 flex items-center justify-between" style="background:linear-gradient(135deg,#002d72 0%,#3a1fa8 60%,#6431e2 100%)">
                 <div>
-                    <h2 class="font-black text-white text-2xl uppercase tracking-tight flex items-center gap-3"><i data-lucide="layout-dashboard" class="w-7 h-7"></i> Dashboard Comercial</h2>
-                    <p class="text-blue-300 text-xs font-bold mt-1 uppercase tracking-widest">Análise consolidada dos times</p>
+                    <h2 class="font-black text-white text-2xl uppercase tracking-tight flex items-center gap-3" style="font-family:'Roca','Poppins',sans-serif"><i data-lucide="layout-dashboard" class="w-7 h-7"></i> 📊 Dashboard Comercial</h2>
+                    <p class="text-xs font-bold mt-1 uppercase tracking-widest" style="color:#b8ccea">Análise consolidada dos times</p>
                 </div>
                 <button onclick="closeDashboard()" class="bg-white/10 hover:bg-white/20 text-white p-3 rounded-2xl transition-all"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="p-4 border-b border-slate-100 bg-slate-50">
                 <div class="flex gap-2 mb-4">
-                    <button onclick="setDashMode('gestor')" id="dash-mode-gestor" class="flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-[#002d72] text-white shadow-md"><i data-lucide="layout-dashboard" class="w-3 h-3 inline mr-1"></i> Gestor</button>
+                    <button onclick="setDashMode('gestor')" id="dash-mode-gestor" class="flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all text-white shadow-md" style="background:#6431e2"><i data-lucide="layout-dashboard" class="w-3 h-3 inline mr-1"></i> Gestor</button>
                     <button onclick="setDashMode('vendedor')" id="dash-mode-vendedor" class="flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-slate-200 text-slate-500"><i data-lucide="user" class="w-3 h-3 inline mr-1"></i> Meu Desempenho</button>
                     <button onclick="setDashMode('gestao')" id="dash-mode-gestao" class="admin-only hidden flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-slate-200 text-slate-500"><i data-lucide="settings" class="w-3 h-3 inline mr-1"></i> Gestão</button>
                     <button onclick="setDashMode('sdr')" id="dash-mode-sdr" class="flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-slate-200 text-slate-500"><i data-lucide="user-check" class="w-3 h-3 inline mr-1"></i> SDRs</button>
@@ -331,7 +365,7 @@
                     <button onclick="toggleCalendarioInline()" id="btn-cal-toggle" class="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:border-sky-400 text-slate-500 hover:text-sky-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
                         <i data-lucide="calendar" class="w-3 h-3"></i> Calendário
                     </button>
-                    <div id="dash-loading" class="hidden flex items-center gap-2 text-blue-600 text-xs font-bold">
+                    <div id="dash-loading" class="hidden flex items-center gap-2 text-xs font-bold" style="color:#6431e2">
                         <div class="loader" style="width:16px;height:16px;border-width:2px"></div> Carregando...
                     </div>
                 </div>
@@ -487,7 +521,7 @@ window._savePending = false;
 
 function getScoreColor(n) {
     if (n >= 4) return { text: 'text-emerald-500', border: '#10b981', bg: '#ecfdf5' };
-    if (n >= 3) return { text: 'text-blue-600', border: '#2563eb', bg: '#eff6ff' };
+    if (n >= 3) return { text: 'text-[#0072ce]', border: '#0072ce', bg: '#e6f3ff' };
     return { text: 'text-red-500', border: '#ef4444', bg: '#fef2f2' };
 }
 function buildStars(score, sm) {
@@ -528,7 +562,7 @@ async function exportarPDFSdr() {
         const isQual = /QUALIFICADO/i.test(rawText) && !isMal && !isParc && !isFora;
         const badgeColor = isFora?'#7c3aed':isMal?'#dc2626':isParc?'#d97706':isQual?'#059669':'#64748b';
         const badgeLabel = isFora?'Fora do Portfolio':isMal?'Mal Qualificado':isParc?'Parcialmente Qualificado':isQual?'Qualificado':'Sem veredicto';
-        w.innerHTML = `<div style="background:#4c1d95;padding:28px 36px 24px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><div><p style="color:#c4b5fd;font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin:0 0 4px;">Nibo · Relatório de Qualificação SDR</p><h1 style="color:white;font-size:24px;font-weight:900;margin:0;">Qualificação do Lead</h1></div><div style="background:${badgeColor};color:white;padding:8px 18px;border-radius:40px;font-size:11px;font-weight:900;letter-spacing:1px;text-transform:uppercase;">${badgeLabel}</div></div><div style="display:flex;gap:24px;border-top:1px solid rgba(255,255,255,0.15);padding-top:14px;"><div><p style="color:#a78bfa;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin:0 0 3px;">Vendedor</p><p style="color:white;font-size:13px;font-weight:900;margin:0;">${vendNome}</p></div><div><p style="color:#a78bfa;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin:0 0 3px;">Coordenador</p><p style="color:white;font-size:13px;font-weight:900;margin:0;">${coordNome}</p></div><div><p style="color:#a78bfa;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin:0 0 3px;">Data</p><p style="color:white;font-size:13px;font-weight:900;margin:0;">${dataHoje}</p></div></div></div><div style="padding:28px 36px;" id="pdf-qual-body"></div>`;
+        w.innerHTML = `<div style="background:linear-gradient(135deg,#002d72 0%,#6431e2 70%,#41b6e6 100%);padding:28px 36px 24px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><div><p style="color:#b8ccea;font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin:0 0 4px;">Nibo · Relatório de Qualificação SDR 📊</p><h1 style="color:white;font-size:24px;font-weight:900;margin:0;font-family:'Roca','Poppins',sans-serif">Qualificação do Lead</h1></div><div style="background:${badgeColor};color:white;padding:8px 18px;border-radius:40px;font-size:11px;font-weight:900;letter-spacing:1px;text-transform:uppercase;">${badgeLabel}</div></div><div style="display:flex;gap:24px;border-top:1px solid rgba(255,255,255,0.15);padding-top:14px;"><div><p style="color:#b8ccea;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin:0 0 3px;">Consultor</p><p style="color:white;font-size:13px;font-weight:900;margin:0;">${vendNome}</p></div><div><p style="color:#b8ccea;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin:0 0 3px;">Coordenador</p><p style="color:white;font-size:13px;font-weight:900;margin:0;">${coordNome}</p></div><div><p style="color:#b8ccea;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin:0 0 3px;">Data</p><p style="color:white;font-size:13px;font-weight:900;margin:0;">${dataHoje}</p></div></div></div><div style="padding:28px 36px;" id="pdf-qual-body"></div>`;
         const clone = qc.cloneNode(true);
         clone.querySelectorAll('button,select,input').forEach(el => el.remove());
         clone.querySelectorAll('.hidden').forEach(el => el.classList.remove('hidden'));
@@ -666,28 +700,42 @@ function renderDashboard(data) {
     renderVendedorBanner(data);
     document.getElementById('concorrentes-tags').innerHTML = (data.concorrentes_detectados||[]).map(c => `<span class="px-3 py-1 bg-red-600 text-white text-[9px] font-black rounded-lg shadow uppercase tracking-widest flex items-center gap-1.5" style="animation:pulse-tag 2s infinite"><i data-lucide="alert-circle" class="w-3 h-3"></i> ${c}</span>`).join('');
     const status = document.getElementById('status-tag');
-    if (media >= 4.5) { status.textContent='Elite Sales'; status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg'; }
-    else if (media >= 3.5) { status.textContent='Alta Performance'; status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-700'; }
-    else { status.textContent='Acompanhamento'; status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700'; }
+    if (media >= 4.5) { status.textContent='🏆 Elite Sales'; status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg'; }
+    else if (media >= 3.5) { status.textContent='🚀 Alta Performance'; status.style.cssText='background:#ede9ff;color:#5229c5;padding:0.5rem 1.25rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;'; status.className=''; }
+    else { status.textContent='📈 Acompanhamento'; status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700'; }
     pilarData = fields.map(f => ({
         label:f.l, icon:f.icon, color:f.color||'blue',
         score: data[`nota_${f.k}`]||0, porque: data[`porque_${f.k}`]||'Sem justificativa.', melhoria: data[`melhoria_${f.k}`]||'Critério atingido.',
         criterios: (f.criterios||[]).map(c => ({ label:c.l, desc:c.desc||'', score:data[`nota_${c.k}`]||0, porque:data[`porque_${c.k}`]||'', melhoria:data[`melhoria_${c.k}`]||'' }))
     }));
-    const colorMap = { blue:{border:'border-blue-500',light:'bg-blue-50',text:'text-blue-700'}, indigo:{border:'border-indigo-500',light:'bg-indigo-50',text:'text-indigo-700'}, violet:{border:'border-violet-500',light:'bg-violet-50',text:'text-violet-700'}, emerald:{border:'border-emerald-500',light:'bg-emerald-50',text:'text-emerald-700'} };
+    const colorMap = { blue:{border:'border-[#0072ce]',light:'bg-[#e6f3ff]',text:'text-[#0072ce]'}, indigo:{border:'border-[#6431e2]',light:'bg-[#ede9ff]',text:'text-[#6431e2]'}, violet:{border:'border-[#6431e2]',light:'bg-[#ede9ff]',text:'text-[#6431e2]'}, emerald:{border:'border-emerald-500',light:'bg-emerald-50',text:'text-emerald-700'} };
     document.getElementById('notas-grid').innerHTML = pilarData.map((p,idx) => {
         const col = getScoreColor(p.score); const cm = colorMap[p.color]||colorMap.blue;
         const cHTML = (p.criterios||[]).map(c => { const cc=getScoreColor(c.score); return `<div class="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-100"><div class="flex-shrink-0 w-8 h-8 rounded-lg ${cm.light} flex items-center justify-center"><span class="text-xs font-black ${cm.text}">${c.score||'—'}</span></div><div class="flex-1 min-w-0"><p class="text-[9px] font-black text-slate-600 uppercase tracking-wide truncate">${c.label}</p><p class="text-[8px] text-slate-400 truncate italic">${c.desc}</p></div><div class="flex-shrink-0 flex gap-px">${buildStars(c.score,true)}</div></div>`; }).join('');
         return `<div onclick="openModal(${idx})" class="pilar-card bg-white rounded-[2rem] p-6 flex flex-col cursor-pointer border-t-4 ${cm.border} shadow-sm hover:shadow-md transition-all"><div class="zoom-icon"><i data-lucide="zoom-in" class="w-3 h-3 text-blue-400"></i></div><div class="flex items-center gap-3 mb-4"><div class="w-10 h-10 rounded-xl ${cm.light} flex items-center justify-center flex-shrink-0"><i data-lucide="${p.icon}" class="w-5 h-5 ${cm.text}"></i></div><div class="flex-1 min-w-0"><span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Etapa ${idx+1}</span><p class="text-[11px] font-black text-slate-700 leading-tight">${p.label}</p></div><div class="text-center flex-shrink-0"><div class="text-4xl font-black ${col.text} leading-none">${p.score}</div><div class="flex gap-px mt-1">${buildStars(p.score,true)}</div></div></div><div class="space-y-1.5 mb-3">${cHTML}</div><span class="click-hint mt-auto">ver detalhes →</span></div>`;
     }).join('');
     const tc=parseFloat(data.tempo_fala_consultor||0), tl=parseFloat(data.tempo_fala_cliente||0);
-    document.getElementById('talk-time-container').innerHTML = `<div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Consultor</span><span class="text-blue-600">${data.tempo_fala_consultor||'0%'}</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-600" style="width:${tc}%"></div></div></div><div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente</span><span class="text-emerald-500">${data.tempo_fala_cliente||'0%'}</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500" style="width:${tl}%"></div></div></div>`;
+    document.getElementById('talk-time-container').innerHTML = `<div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Consultor 🎯</span><span style="color:#6431e2">${data.tempo_fala_consultor||'0%'}</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${tc}%;background:linear-gradient(90deg,#6431e2,#0072ce)"></div></div></div><div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente 🤝</span><span class="text-emerald-500">${data.tempo_fala_cliente||'0%'}</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:${tl}%"></div></div></div>`;
     renderAuditoriaObjecoes(data.auditoria_objecoes||[]);
     document.getElementById('pontos-fortes-list').innerHTML = (data.pontos_fortes||[]).map(i=>`<li class="flex items-start gap-2"><span>▶</span>${i}</li>`).join('');
     document.getElementById('pontos-atencao-list').innerHTML = (data.pontos_atencao||[]).map(i=>`<li class="flex items-start gap-2"><span>▶</span>${i}</li>`).join('');
     document.getElementById('coaching-body').innerHTML = marked.parse(data.justificativa_detalhada||'');
     document.getElementById('qual-content').innerHTML = _buildQualSection(data, prodConfig);
+    renderDesalinhamentos(data.desalinhamentos||[], data.tem_desalinhamento||false);
     renderRadar(data);
+    lucide.createIcons();
+}
+
+function renderDesalinhamentos(items, temDesalin) {
+    const section = document.getElementById('desalinhamentos-section');
+    if (!section) return;
+    if (!temDesalin || !items || items.length === 0) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+    const sevColor = s => s==='alta'?'bg-red-100 text-red-700 border-red-200':s==='media'?'bg-amber-100 text-amber-700 border-amber-200':'bg-slate-100 text-slate-600 border-slate-200';
+    const tratLabel = {explicou:'✅ Explicou', escalou:'📞 Escalou', registrou:'📝 Registrou', ignorou:'❌ Ignorou', nao_identificado:'❓ Não ident.'};
+    const rows = items.map((d,i) => `<div class="rounded-2xl border border-red-100 bg-red-50/40 p-5 flex flex-col gap-3"><div class="flex items-start justify-between gap-3"><div class="flex-1"><div class="flex items-center gap-2 mb-2"><span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Desalinhamento ${i+1}</span><span class="text-[8px] font-black px-2 py-0.5 rounded-lg border ${sevColor(d.severidade)}">${(d.severidade||'').toUpperCase()}</span></div><p class="text-[12px] font-bold text-slate-700 italic leading-relaxed">"${d.frase_cliente||''}"</p></div><span class="text-[9px] font-black px-2 py-1 rounded-xl bg-white border border-slate-200 text-slate-500 flex-shrink-0">${tratLabel[d.como_tratado]||d.como_tratado||'—'}</span></div><div class="grid grid-cols-2 gap-3"><div class="bg-white rounded-xl p-3 border border-red-100"><p class="text-[8px] font-black text-red-500 uppercase tracking-widest mb-1">O que esperava</p><p class="text-[11px] font-medium text-slate-700 leading-relaxed">${d.expectativa||'—'}</p></div><div class="bg-white rounded-xl p-3 border border-slate-100"><p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">O que existe de fato</p><p class="text-[11px] font-medium text-slate-600 leading-relaxed">${d.realidade||'Não mencionado'}</p></div></div></div>`).join('');
+    const alta=items.filter(d=>d.severidade==='alta').length, media=items.filter(d=>d.severidade==='media').length, baixa=items.filter(d=>d.severidade==='baixa').length;
+    document.getElementById('desalinhamentos-body').innerHTML = `<div class="flex items-center gap-4 mb-5 p-4 bg-red-50 rounded-2xl border border-red-200"><div class="text-3xl font-black text-red-600">${items.length}</div><div class="flex-1"><p class="font-black text-sm text-red-700">desalinhamento${items.length>1?'s':''} identificado${items.length>1?'s':''}</p><p class="text-[10px] text-red-500 font-bold">${alta} alta · ${media} média · ${baixa} baixa</p></div><div class="text-[9px] font-bold text-slate-400 text-right">Não impacta<br>a nota do analista</div></div>${rows}`;
     lucide.createIcons();
 }
 
@@ -709,7 +757,7 @@ function renderRadar(data) {
     const all=[]; fields.forEach(f=>{(f.criterios||[]).forEach(c=>{all.push({label:c.l,key:c.k});});});
     const labels=all.length>0?all.map(c=>c.label):fields.map(f=>f.l);
     const values=all.length>0?all.map(c=>data[`nota_${c.key}`]||0):fields.map(f=>data[`nota_${f.k}`]||0);
-    radarChartInstance=new Chart(ctx,{type:'radar',data:{labels,datasets:[{label:'Desempenho',data:values,backgroundColor:'rgba(37,99,235,0.12)',borderColor:'#2563eb',borderWidth:2,pointRadius:4,pointBackgroundColor:'#1e3a8a',pointBorderColor:'#fff',pointBorderWidth:1.5}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:9,weight:'800'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});
+    radarChartInstance=new Chart(ctx,{type:'radar',data:{labels,datasets:[{label:'Desempenho',data:values,backgroundColor:'rgba(100,49,226,0.13)',borderColor:'#6431e2',borderWidth:2,pointRadius:4,pointBackgroundColor:'#002d72',pointBorderColor:'#fff',pointBorderWidth:1.5}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#d8e2f0'},angleLines:{color:'#d8e2f0'},pointLabels:{font:{size:9,weight:'800'},color:'#4a5773'}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});
 }
 
 function openModal(idx) {
@@ -750,11 +798,11 @@ function _buildQualSection(data, pCfg) {
     const critRows=[[data.qual_sabia_o_que_veria,'Lead sabia o que veria na demo',data.qual_sabia_evidencia],[data.qual_produto_correto,'Produto correto para o cenário',data.qual_produto_evidencia],[data.qual_interesse_real,'Interesse real identificado',data.qual_interesse_evidencia],[data.qual_cenario_diagnosticado,'Cenário diagnosticado pelo SDR',data.qual_cenario_evidencia]].map(([ok,label,ev])=>`<div class="rounded-2xl p-5 border flex flex-col gap-2 ${ok?'bg-emerald-50 border-emerald-100':'bg-red-50 border-red-100'}"><div class="flex items-center justify-between"><span class="text-[10px] font-black uppercase tracking-widest ${ok?'text-emerald-700':'text-red-700'}">${label}</span><div class="w-6 h-6 rounded-full flex items-center justify-center ${ok?'bg-emerald-500':'bg-red-400'}"><i data-lucide="${ok?'check':'x'}" class="text-white w-3 h-3"></i></div></div><p class="text-[11px] italic leading-relaxed ${ok?'text-emerald-700':'text-red-600'}">${ev||'Sem evidência.'}</p></div>`).join('');
     const ctxRows=(data.qual_contexto||[]).map(c=>`<div class="flex items-start gap-4 py-3 border-b border-slate-50 last:border-0"><span class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-36 flex-shrink-0 mt-0.5">${c.label}</span><span class="text-[12px] font-bold text-slate-700 flex-1">${c.valor||'—'}</span></div>`).join('');
     return `${foraPortfolio?`<div class="bg-red-600 text-white p-6 rounded-[2rem] flex items-start gap-4"><i data-lucide="alert-triangle" class="w-8 h-8 flex-shrink-0"></i><div><p class="font-black text-lg uppercase mb-1">⚠️ Produto fora do portfólio Nibo!</p><p class="text-sm font-medium text-red-100">${data.qual_produto_alerta||''}</p></div></div>`:''}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="glass-card p-6 flex flex-col gap-3"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Produto</h4><span class="px-4 py-2 rounded-full text-sm font-black border inline-flex items-center gap-2 ${foraPortfolio?'bg-red-100 text-red-800 border-red-300':prodCfg.color}"><i data-lucide="${prodCfg.icon||'box'}" class="w-4 h-4"></i> ${data.qual_produto_identificado||'—'}</span><p class="text-[11px] text-slate-500 italic leading-relaxed">${data.qual_produto_alerta||''}</p></div><div class="glass-card p-6 flex flex-col gap-4"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Veredicto</h4><div class="px-5 py-3 rounded-2xl border-2 text-sm font-black text-center tracking-wide ${vc}">${verd||'—'}</div></div><div class="glass-card p-6 flex flex-col items-center justify-center text-center border-b-[8px] border-violet-500"><span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Nota do SDR</span><div class="text-6xl font-black text-violet-600 mb-1">${data.qual_nota_sdr||'—'}</div><span class="text-[9px] text-slate-400 font-bold">/ 10</span><p class="text-[10px] text-slate-500 mt-3 leading-relaxed font-medium text-center">${data.qual_nota_sdr_justificativa||''}</p></div></div>
-    <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4 text-blue-400"></i> Contexto Extraído</h4><div>${ctxRows}</div></div>
-    <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="search" class="w-4 h-4 text-blue-400"></i> Critérios de Qualificação</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${critRows}</div></div>
-    <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 flex items-center gap-2"><i data-lucide="check-square" class="w-4 h-4 text-blue-400"></i> SLA de Qualificação</h4><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">${slaGrid}</div></div>
-    <div class="glass-card p-12 border-t-[10px] border-violet-600"><h3 class="text-xl font-extrabold text-violet-800 uppercase tracking-widest mb-10 border-b pb-6 flex items-center gap-4"><i data-lucide="file-search"></i> Análise Completa da Qualificação (SDR)</h3><div class="markdown-content">${marked.parse(data.qual_analise_completa||'')}</div></div>`;
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="glass-card p-6 flex flex-col gap-3"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">📦 Produto</h4><span class="px-4 py-2 rounded-full text-sm font-black border inline-flex items-center gap-2 ${foraPortfolio?'bg-red-100 text-red-800 border-red-300':prodCfg.color}"><i data-lucide="${prodCfg.icon||'box'}" class="w-4 h-4"></i> ${data.qual_produto_identificado||'—'}</span><p class="text-[11px] text-slate-500 italic leading-relaxed">${data.qual_produto_alerta||''}</p></div><div class="glass-card p-6 flex flex-col gap-4"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">✅ Veredicto</h4><div class="px-5 py-3 rounded-2xl border-2 text-sm font-black text-center tracking-wide ${vc}">${verd||'—'}</div></div><div class="glass-card p-6 flex flex-col items-center justify-center text-center" style="border-bottom:8px solid #6431e2"><span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">🎯 Nota do SDR</span><div class="text-6xl font-black mb-1" style="color:#6431e2">${data.qual_nota_sdr||'—'}</div><span class="text-[9px] text-slate-400 font-bold">/ 10</span><p class="text-[10px] text-slate-500 mt-3 leading-relaxed font-medium text-center">${data.qual_nota_sdr_justificativa||''}</p></div></div>
+    <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4" style="color:#41b6e6"></i> 📋 Contexto Extraído</h4><div>${ctxRows}</div></div>
+    <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="search" class="w-4 h-4" style="color:#41b6e6"></i> 🔍 Critérios de Qualificação</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${critRows}</div></div>
+    <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 flex items-center gap-2"><i data-lucide="check-square" class="w-4 h-4" style="color:#41b6e6"></i> 📝 SLA de Qualificação</h4><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">${slaGrid}</div></div>
+    <div class="glass-card p-12" style="border-top:10px solid #6431e2"><h3 class="text-xl font-extrabold uppercase tracking-widest mb-10 border-b pb-6 flex items-center gap-4" style="color:#002d72;font-family:'Roca','Poppins',sans-serif"><i data-lucide="file-search"></i> 📊 Análise Completa da Qualificação (SDR)</h3><div class="markdown-content">${marked.parse(data.qual_analise_completa||'')}</div></div>`;
 }
 
 if (analyzeBtn) analyzeBtn.addEventListener('click', handleAnalysis);
@@ -786,11 +834,11 @@ async function loadDashboard() {
 function renderDashboardData({reunioes,stats}) {
     const content=document.getElementById('dash-content');
     if(!stats||reunioes.length===0){content.innerHTML='<div class="flex flex-col items-center py-20 text-slate-300"><i data-lucide="inbox" class="w-12 h-12 mb-3"></i><p class="font-bold text-sm">Nenhuma análise encontrada.</p></div>';lucide.createIcons();return;}
-    const sc=n=>n>=4?'text-emerald-600':n>=3?'text-blue-600':'text-red-500';
-    const scBg=n=>n>=4?'bg-emerald-50 border-emerald-200':n>=3?'bg-blue-50 border-blue-200':'bg-red-50 border-red-200';
-    const kpiMalQual=(stats.total_mal_qualif||0)>0?`<div class="glass-card p-6 border-t-4 border-orange-400"><p class="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1">Leads Mal Qualif.</p><p class="text-4xl font-black text-orange-500">${stats.total_mal_qualif}</p><p class="text-[10px] text-slate-400 font-bold mt-1">NÃO contam na média</p><button onclick="scrollToRelatorioMalQual()" class="mt-2 text-[9px] font-black text-orange-500 underline">ver relatório →</button></div>`:'';
-    const kpis=`<div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div class="glass-card p-6 border-t-4 border-blue-600"><p class="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">Reuniões Válidas</p><p class="text-4xl font-black text-blue-600">${stats.total_validas||stats.total}</p></div><div class="glass-card p-6 border-t-4 border-emerald-500"><p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Média Geral</p><p class="text-4xl font-black ${sc(stats.media_geral)}">${stats.media_geral}</p></div>${kpiMalQual}<div class="glass-card p-6 border-t-4 border-violet-500"><p class="text-[9px] font-black text-violet-500 uppercase tracking-widest mb-1">Total Analisado</p><p class="text-4xl font-black text-slate-700">${stats.total}</p></div></div>`;
-    const coordCards=Object.entries(stats.porCoordenador).map(([nome,coData])=>{const isS=nome.includes('Simone');return`<div class="glass-card p-8 border-t-4 ${isS?'border-blue-500':'border-violet-500'}"><div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 rounded-full ${isS?'bg-blue-100':'bg-violet-100'} flex items-center justify-center"><i data-lucide="user-circle" class="w-5 h-5 ${isS?'text-blue-600':'text-violet-600'}"></i></div><div><p class="font-black text-sm text-slate-800">${nome}</p><button onclick="abrirAnalysesCoord('${nome.replace(/'/g,"\\'")}'" class="text-[10px] text-blue-500 hover:text-blue-700 font-black underline">${coData.total} reuniões →</button></div></div><div class="grid grid-cols-3 gap-3"><div class="text-center p-3 bg-slate-50 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase mb-1">Média Vendas</p><p class="text-2xl font-black ${sc(coData.media_vendas)}">${coData.media_vendas||'—'}</p></div><div class="text-center p-3 bg-slate-50 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase mb-1">Nota SDR</p><p class="text-2xl font-black ${sc(coData.media_sdr/2)}">${coData.media_sdr||'—'}</p></div><div class="text-center p-3 bg-red-50 rounded-2xl"><p class="text-[8px] font-black text-red-400 uppercase mb-1">Mal Qualif.</p><p class="text-2xl font-black text-red-500">${coData.mal_qualificados}</p></div></div></div>`;}).join('');
+    const sc=n=>n>=4?'text-emerald-600':n>=3?'text-[#0072ce]':'text-red-500';
+    const scBg=n=>n>=4?'bg-emerald-50 border-emerald-200':n>=3?'bg-[#e6f3ff] border-[#0072ce]/20':'bg-red-50 border-red-200';
+    const kpiMalQual=(stats.total_mal_qualif||0)>0?`<div class="glass-card p-6" style="border-top:4px solid #f97316"><p class="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1">⚠️ Leads Mal Qualif.</p><p class="text-4xl font-black text-orange-500">${stats.total_mal_qualif}</p><p class="text-[10px] text-slate-400 font-bold mt-1">NÃO contam na média</p><button onclick="scrollToRelatorioMalQual()" class="mt-2 text-[9px] font-black text-orange-500 underline">ver relatório →</button></div>`:'';
+    const kpis=`<div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div class="glass-card p-6" style="border-top:4px solid #0072ce"><p class="text-[9px] font-black uppercase tracking-widest mb-1" style="color:#0072ce">📋 Reuniões Válidas</p><p class="text-4xl font-black" style="color:#0072ce">${stats.total_validas||stats.total}</p></div><div class="glass-card p-6" style="border-top:4px solid #10b981"><p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">📈 Média Geral</p><p class="text-4xl font-black ${sc(stats.media_geral)}">${stats.media_geral}</p></div>${kpiMalQual}<div class="glass-card p-6" style="border-top:4px solid #6431e2"><p class="text-[9px] font-black uppercase tracking-widest mb-1" style="color:#6431e2">🎯 Total Analisado</p><p class="text-4xl font-black text-slate-700">${stats.total}</p></div></div>`;
+    const coordCards=Object.entries(stats.porCoordenador).map(([nome,coData])=>{const isS=nome.includes('Simone');return`<div class="glass-card p-8" style="border-top:4px solid ${isS?'#0072ce':'#6431e2'}"><div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 rounded-full flex items-center justify-center" style="background:${isS?'#e6f3ff':'#ede9ff'}"><i data-lucide="user-circle" class="w-5 h-5" style="color:${isS?'#0072ce':'#6431e2'}"></i></div><div><p class="font-black text-sm text-slate-800">🤝 ${nome}</p><button onclick="abrirAnalysesCoord('${nome.replace(/'/g,"\\'")}'" class="text-[10px] font-black underline" style="color:#0072ce">${coData.total} reuniões →</button></div></div><div class="grid grid-cols-3 gap-3"><div class="text-center p-3 bg-slate-50 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase mb-1">Média Vendas</p><p class="text-2xl font-black ${sc(coData.media_vendas)}">${coData.media_vendas||'—'}</p></div><div class="text-center p-3 bg-slate-50 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase mb-1">Nota SDR</p><p class="text-2xl font-black ${sc(coData.media_sdr/2)}">${coData.media_sdr||'—'}</p></div><div class="text-center p-3 bg-red-50 rounded-2xl"><p class="text-[8px] font-black text-red-400 uppercase mb-1">Mal Qualif.</p><p class="text-2xl font-black text-red-500">${coData.mal_qualificados}</p></div></div></div>`;}).join('');
 
     // ── RANKING PATCH: sempre 5 colunas individuais + SPIN ───────────────────
     const ranking=stats.ranking.map((v,i)=>{
@@ -849,9 +897,21 @@ function renderDashboardData({reunioes,stats}) {
     }
     const prejudicadosSection = '<div class="glass-card p-8 border-t-4 border-red-400"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4 text-red-400"></i> Vendedores Mais Prejudicados por Leads Mal Qualificados</h4><p class="text-[10px] text-slate-400 mb-6">Vendedores que receberam mais reuniões fora do portfólio ou mal qualificadas pelo SDR.</p><div class="space-y-3">' + prejudicadosHTML + '</div></div>';
 
-    content.innerHTML=kpis+'<div class="grid grid-cols-1 md:grid-cols-2 gap-6">'+coordCards+'</div>'+evolChart+'<div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i> Ranking de Vendedores</h4><div class="space-y-3">'+ranking+'</div></div><div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="user-check" class="w-4 h-4 text-violet-400"></i> Qualificação de Leads (SDR)</h4><div class="space-y-4">'+vBars+'</div></div>'+prejudicadosSection+relatorioMalQual;
+    const ds = stats.desalinStats||{};
+    const desalinCard = ds.total > 0
+        ? (() => {
+            const tratRows = Object.entries(ds.tratamento||{}).filter(([,v])=>v>0).map(([k,v])=>{
+                const lbl={explicou:'✅ Explicou',escalou:'📞 Escalou',registrou:'📝 Registrou',ignorou:'❌ Ignorou',nao_identificado:'❓ Não ident.'};
+                const w = Math.round((v/ds.total)*100);
+                return `<div class="flex items-center gap-3"><span class="text-[9px] font-black text-slate-500 w-28 flex-shrink-0">${lbl[k]||k}</span><div class="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full bg-rose-400" style="width:${w}%"></div></div><span class="text-[9px] font-black text-slate-500 w-8 text-right">${v}</span></div>`;
+            }).join('');
+            const topRows = (ds.topExpectativas||[]).slice(0,5).map((e,i)=>`<div class="flex items-center gap-3 p-3 rounded-xl ${i%2===0?'bg-slate-50':'bg-white'} border border-slate-100"><span class="text-[9px] font-black text-rose-500 w-5">${i+1}</span><p class="flex-1 text-[11px] font-bold text-slate-700">${e.expectativa}</p><span class="text-[10px] font-black text-slate-400">${e.count}x</span></div>`).join('');
+            return `<div class="glass-card p-8 border-t-4 border-rose-500"><h4 class="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-2 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Desalinhamentos de Venda</h4><p class="text-[10px] text-slate-400 mb-6">Promessas feitas na venda que não corresponderam ao que o CS entregou. <strong class="text-slate-600">Não impactam a nota do analista.</strong></p><div class="grid grid-cols-3 gap-4 mb-6"><div class="text-center p-4 bg-red-50 rounded-2xl border border-red-100"><p class="text-3xl font-black text-red-600">${ds.total}</p><p class="text-[9px] font-black text-red-400 uppercase mt-1">Total</p></div><div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-3xl font-black text-slate-700">${ds.com_desalinhamento}</p><p class="text-[9px] font-black text-slate-400 uppercase mt-1">Reuniões afetadas</p></div><div class="text-center p-4 bg-orange-50 rounded-2xl border border-orange-100"><p class="text-3xl font-black text-orange-600">${ds.alta}</p><p class="text-[9px] font-black text-orange-400 uppercase mt-1">Severidade Alta</p></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><h5 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Top Expectativas Não Atendidas</h5><div class="space-y-1">${topRows||'<p class="text-[11px] text-slate-300">Sem dados</p>'}</div></div><div><h5 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Como o Analista Tratou</h5><div class="space-y-2">${tratRows||'<p class="text-[11px] text-slate-300">Sem dados</p>'}</div></div></div></div>`;
+        })()
+        : '';
+    content.innerHTML=kpis+'<div class="grid grid-cols-1 md:grid-cols-2 gap-6">'+coordCards+'</div>'+evolChart+'<div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i> Ranking de Vendedores</h4><div class="space-y-3">'+ranking+'</div></div><div class="glass-card p-8"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><i data-lucide="user-check" class="w-4 h-4 text-violet-400"></i> Qualificação de Leads (SDR)</h4><div class="space-y-4">'+vBars+'</div></div>'+prejudicadosSection+relatorioMalQual+desalinCard;
     lucide.createIcons();
-    if(stats.evolucao.length>1){if(window.dashChartEvolucao)window.dashChartEvolucao.destroy();const ctx=document.getElementById('dashEvolucaoChart').getContext('2d');window.dashChartEvolucao=new Chart(ctx,{type:'line',data:{labels:stats.evolucao.map(e=>e.semana),datasets:[{label:'Média',data:stats.evolucao.map(e=>e.media),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#1e3a8a',tension:.3,fill:true}]},options:{scales:{y:{min:0,max:5,ticks:{stepSize:1}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});}
+    if(stats.evolucao.length>1){if(window.dashChartEvolucao)window.dashChartEvolucao.destroy();const ctx=document.getElementById('dashEvolucaoChart').getContext('2d');window.dashChartEvolucao=new Chart(ctx,{type:'line',data:{labels:stats.evolucao.map(e=>e.semana),datasets:[{label:'Média',data:stats.evolucao.map(e=>e.media),borderColor:'#6431e2',backgroundColor:'rgba(100,49,226,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#002d72',tension:.3,fill:true}]},options:{scales:{y:{min:0,max:5,ticks:{stepSize:1}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});}
 }
 
 function scrollToRelatorioMalQual(){const el=document.getElementById('relatorio-mal-qualificado');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
@@ -862,8 +922,8 @@ function toggleCalendarioInline(){calendarVisible=!calendarVisible;const btn=doc
 let dashMode='gestor';
 function setDashMode(mode){
     dashMode=mode;
-    const btns={gestor:{id:'dash-mode-gestor',active:'bg-[#002d72] text-white shadow-md',inactive:'bg-slate-200 text-slate-500'},vendedor:{id:'dash-mode-vendedor',active:'bg-violet-600 text-white shadow-md',inactive:'bg-slate-200 text-slate-500'},gestao:{id:'dash-mode-gestao',active:'bg-emerald-600 text-white shadow-md',inactive:'bg-slate-200 text-slate-500'},sdr:{id:'dash-mode-sdr',active:'bg-violet-700 text-white shadow-md',inactive:'bg-slate-200 text-slate-500'},historico:{id:'dash-mode-historico',active:'bg-slate-700 text-white shadow-md',inactive:'bg-slate-200 text-slate-500'}};
-    Object.entries(btns).forEach(([k,b])=>{const el=document.getElementById(b.id);if(el)el.className='flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all '+(k===mode?b.active:b.inactive)+' '+(el.classList.contains('admin-only')?'admin-only':'');});
+    const btns={gestor:{id:'dash-mode-gestor',activeBg:'#6431e2'},vendedor:{id:'dash-mode-vendedor',activeBg:'#0072ce'},gestao:{id:'dash-mode-gestao',activeBg:'#10b981'},sdr:{id:'dash-mode-sdr',activeBg:'#002d72'},historico:{id:'dash-mode-historico',activeBg:'#475569'}};
+    Object.entries(btns).forEach(([k,b])=>{const el=document.getElementById(b.id);if(!el)return;const isActive=k===mode;el.className='flex-1 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all '+(isActive?'text-white shadow-md':'bg-slate-200 text-slate-500')+' '+(el.classList.contains('admin-only')?'admin-only':'');el.style.background=isActive?b.activeBg:'';});
     document.getElementById('dash-filters-gestor').classList.toggle('hidden', mode!=='gestor');
     document.getElementById('dash-filters-vendedor').classList.toggle('hidden', mode!=='vendedor');
     document.getElementById('dash-filters-sdr').classList.toggle('hidden', mode!=='sdr');
@@ -895,16 +955,16 @@ function renderVendedorDash(nome,obj){
     const reunioes=obj.reunioes,stats=obj.stats,content=document.getElementById('dash-content');
     if(!stats||!reunioes.length){content.innerHTML=`<div class="flex flex-col items-center py-20 text-slate-300"><i data-lucide="inbox" class="w-12 h-12 mb-3"></i><p class="font-bold text-sm">Nenhuma análise para ${nome}.</p></div>`;lucide.createIcons();return;}
     const v=stats.ranking.find(r=>r.nome===nome)||stats.ranking[0];if(!v)return;
-    const sc=n=>n>=4?'text-emerald-600':n>=3?'text-blue-600':'text-red-500';
+    const sc=n=>n>=4?'text-emerald-600':n>=3?'text-[#0072ce]':'text-red-500';
     const fmt=n=>(typeof n==='number'&&!isNaN(n)&&n>0)?n.toFixed(1):'—';
     const reunioesValidas=reunioes.filter(r=>!r.mal_qualificado&&r.analise_json);
-    const subMap={rapport:{l:'Rapport',color:'bg-blue-400'},spin:{l:'SPIN',color:'bg-blue-500'},comunicacao:{l:'Comunicação Eficaz',color:'bg-blue-600'},produto:{l:'Produto',color:'bg-violet-400'},objecoes:{l:'Objeções',color:'bg-violet-500'},solucao_dor:{l:'Solução da Dor',color:'bg-violet-600'},encantamento:{l:'Encantamento',color:'bg-violet-700'},pre_fechamento_sub:{l:'Pré-Fechamento',color:'bg-emerald-400'},escuta_ativa:{l:'Escuta Ativa',color:'bg-emerald-500'},resiliencia:{l:'Resiliência',color:'bg-emerald-600'},gestao_tempo:{l:'Gestão do Tempo',color:'bg-emerald-700'},regras_fechamento:{l:'Regras de Fechamento',color:'bg-teal-600'}};
+    const subMap={rapport:{l:'Rapport',color:'bg-[#41b6e6]'},spin:{l:'SPIN',color:'bg-[#0072ce]'},comunicacao:{l:'Comunicação Eficaz',color:'bg-[#002d72]'},produto:{l:'Produto',color:'bg-[#6431e2]'},objecoes:{l:'Objeções',color:'bg-[#5229c5]'},solucao_dor:{l:'Solução da Dor',color:'bg-[#3a1fa8]'},encantamento:{l:'Encantamento',color:'bg-[#002d72]'},pre_fechamento_sub:{l:'Pré-Fechamento',color:'bg-emerald-400'},escuta_ativa:{l:'Escuta Ativa',color:'bg-emerald-500'},resiliencia:{l:'Resiliência',color:'bg-emerald-600'},gestao_tempo:{l:'Gestão do Tempo',color:'bg-emerald-700'},regras_fechamento:{l:'Regras de Fechamento',color:'bg-teal-600'}};
     const subMedias={};Object.keys(subMap).forEach(k=>{const vals=reunioesValidas.map(r=>r.analise_json[`nota_${k}`]).filter(v=>v!==undefined&&v!==null&&v>0);subMedias[k]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;});
     const medias=reunioes.filter(r=>r.media_final&&!r.mal_qualificado).map(r=>r.media_final);
     const avgMedia=medias.length?medias.reduce((a,b)=>a+b,0)/medias.length:0;
     const stdDev=medias.length>1?Math.sqrt(medias.map(m=>Math.pow(m-avgMedia,2)).reduce((a,b)=>a+b,0)/medias.length):0;
     const consLabel=stdDev<0.5?'Alta':stdDev<1.0?'Média':'Baixa';
-    const consColor=stdDev<0.5?'text-emerald-600 bg-emerald-50':stdDev<1.0?'text-blue-600 bg-blue-50':'text-red-500 bg-red-50';
+    const consColor=stdDev<0.5?'text-emerald-600 bg-emerald-50':stdDev<1.0?'text-[#0072ce] bg-[#e6f3ff]':'text-red-500 bg-red-50';
     const radarLabels=Object.values(subMap).map(s=>s.l);
     const radarVals=Object.keys(subMap).map(k=>subMedias[k]);
     const allVals=Object.keys(subMap).map(k=>({l:subMap[k].l,v:subMedias[k]})).filter(x=>x.v>0);
@@ -919,7 +979,7 @@ function renderVendedorDash(nome,obj){
     <div class="glass-card p-7"><h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Últimas Análises Válidas</h4><div class="space-y-2">${ultimasRows}</div></div>`;
     lucide.createIcons();
     const rCtx=document.getElementById('radarVendedor')?.getContext('2d');
-    if(rCtx)new Chart(rCtx,{type:'radar',data:{labels:radarLabels,datasets:[{label:nome,data:radarVals,backgroundColor:'rgba(37,99,235,0.12)',borderColor:'#2563eb',borderWidth:2,pointRadius:4,pointBackgroundColor:'#1e3a8a',pointBorderColor:'#fff',pointBorderWidth:1.5}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:9,weight:'800'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});
+    if(rCtx)new Chart(rCtx,{type:'radar',data:{labels:radarLabels,datasets:[{label:nome,data:radarVals,backgroundColor:'rgba(100,49,226,0.13)',borderColor:'#6431e2',borderWidth:2,pointRadius:4,pointBackgroundColor:'#002d72',pointBorderColor:'#fff',pointBorderWidth:1.5}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#d8e2f0'},angleLines:{color:'#d8e2f0'},pointLabels:{font:{size:9,weight:'800'},color:'#4a5773'}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});
 }
 
 async function loadGestaoPanel(){
@@ -933,10 +993,10 @@ async function loadGestaoPanel(){
         const vendByCoord={};vendors.forEach(v=>{if(!vendByCoord[v.coordenador])vendByCoord[v.coordenador]=[];vendByCoord[v.coordenador].push(v);});
         const cards=['Simone Rangel','Jonathan Dornelas'].map(coord=>{
             const vends=vendByCoord[coord]||[];
-            const sc=m=>m>=4?'text-emerald-600':m>=3?'text-blue-600':'text-red-500';
-            const vendRows=vends.map(v=>{const vS=porVendedor[v.nome]||{total:0,total_validas:0,total_mal_qualif:0,media:0};return`<div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors border border-slate-100"><div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-black text-sm flex items-center justify-center flex-shrink-0">${v.nome.charAt(0)}</div><div class="flex-1 min-w-0"><p class="font-black text-sm text-slate-700 truncate">${v.nome}</p><p class="text-[9px] text-slate-400">${vS.total_validas||0} válidas${(vS.total_mal_qualif||0)>0?' · <span class="text-orange-500">'+(vS.total_mal_qualif||0)+' excl.</span>':''}</p></div><span class="text-xl font-black ${sc(vS.media)}">${vS.media>0?vS.media.toFixed(1):'—'}</span></div>`;}).join('')||'<p class="text-[10px] text-slate-300 text-center py-4">Nenhum vendedor cadastrado.</p>';
-            const bc=coord.includes('Simone')?'border-blue-500':'border-violet-500';
-            return`<div class="glass-card border-t-4 ${bc} overflow-hidden"><div class="p-6 border-b border-slate-100"><h4 class="font-black text-slate-700 text-sm flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-blue-500"></i> ${coord}</h4><p class="text-[10px] text-slate-400 mt-1">${vends.length} vendedor(es)</p><button onclick="abrirAnalysesCoord('${coord.replace(/'/g,"\\'")}'" class="mt-3 text-[10px] font-black text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i data-lucide="history" class="w-3 h-3"></i> Ver histórico →</button></div><div class="p-6 space-y-2">${vendRows}</div><div class="px-6 pb-6"><button onclick="abrirModalAddVendedor('${coord.replace(/'/g,"\\'")}'" class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 hover:border-blue-400 text-slate-400 hover:text-blue-600 rounded-2xl py-3 text-[10px] font-black uppercase tracking-widest transition-all"><i data-lucide="user-plus" class="w-3 h-3"></i> Adicionar vendedor</button></div></div>`;
+            const sc=m=>m>=4?'text-emerald-600':m>=3?'text-[#0072ce]':'text-red-500';
+            const vendRows=vends.map(v=>{const vS=porVendedor[v.nome]||{total:0,total_validas:0,total_mal_qualif:0,media:0};return`<div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 transition-colors" style="background:#f8f9fe" onmouseover="this.style.background='#ede9ff'" onmouseout="this.style.background='#f8f9fe'"><div class="w-8 h-8 rounded-full font-black text-sm flex items-center justify-center flex-shrink-0" style="background:#ede9ff;color:#6431e2">${v.nome.charAt(0)}</div><div class="flex-1 min-w-0"><p class="font-black text-sm text-slate-700 truncate">${v.nome}</p><p class="text-[9px] text-slate-400">${vS.total_validas||0} válidas${(vS.total_mal_qualif||0)>0?' · <span class="text-orange-500">'+(vS.total_mal_qualif||0)+' excl.</span>':''}</p></div><span class="text-xl font-black ${sc(vS.media)}">${vS.media>0?vS.media.toFixed(1):'—'}</span></div>`;}).join('')||'<p class="text-[10px] text-slate-300 text-center py-4">Nenhum vendedor cadastrado.</p>';
+            const bColor=coord.includes('Simone')?'#0072ce':'#6431e2';
+            return`<div class="glass-card overflow-hidden" style="border-top:4px solid ${bColor}"><div class="p-6 border-b border-slate-100"><h4 class="font-black text-slate-700 text-sm flex items-center gap-2"><i data-lucide="users" class="w-4 h-4" style="color:#6431e2"></i> 🤝 ${coord}</h4><p class="text-[10px] text-slate-400 mt-1">${vends.length} vendedor(es)</p><button onclick="abrirAnalysesCoord('${coord.replace(/'/g,"\\'")}'" class="mt-3 text-[10px] font-black underline flex items-center gap-1" style="color:#0072ce"><i data-lucide="history" class="w-3 h-3"></i> Ver histórico →</button></div><div class="p-6 space-y-2">${vendRows}</div><div class="px-6 pb-6"><button onclick="abrirModalAddVendedor('${coord.replace(/'/g,"\\'")}'" class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-2xl py-3 text-[10px] font-black uppercase tracking-widest transition-all" style="color:#94a3b8" onmouseover="this.style.borderColor='#6431e2';this.style.color='#6431e2'" onmouseout="this.style.borderColor='';this.style.color='#94a3b8'"><i data-lucide="user-plus" class="w-3 h-3"></i> Adicionar vendedor</button></div></div>`;
         }).join('');
         content.innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-6">${cards}</div>`;
         lucide.createIcons();
@@ -1038,7 +1098,7 @@ async function _fetchHistorico() {
         const res = await fetch('/api/records?' + qs);
         const d   = await res.json();
         if (d.error) throw new Error(d.error);
-        const sc = n => (n||0) >= 4 ? 'text-emerald-600' : (n||0) >= 3 ? 'text-blue-600' : 'text-red-500';
+        const sc = n => (n||0) >= 4 ? 'text-emerald-600' : (n||0) >= 3 ? 'text-[#0072ce]' : 'text-red-500';
         const rows = d.records.map(r => {
             const dt   = new Date(r.created_at).toLocaleDateString('pt-BR', {day:'2-digit', month:'short', year:'numeric'});
             const vn   = normalizarVeredicto(r.qual_veredicto);
@@ -1047,7 +1107,7 @@ async function _fetchHistorico() {
                 <select id="hsel-${r.id}" style="font-size:10px;font-weight:700;border:1px solid #e2e8f0;border-radius:10px;padding:4px 8px;background:white;max-width:130px;cursor:pointer;">
                     <option value="">— vendedor —</option>
                 </select>
-                <button id="hbtn-${r.id}" style="display:none;font-size:10px;font-weight:900;color:white;background:#2563eb;border:none;border-radius:8px;padding:4px 10px;cursor:pointer;">✓</button>
+                <button id="hbtn-${r.id}" style="display:none;font-size:10px;font-weight:900;color:white;background:#6431e2;border:none;border-radius:8px;padding:4px 10px;cursor:pointer;">✓</button>
                 <button id="hdel-${r.id}" style="font-size:10px;font-weight:900;color:#f87171;background:none;border:none;cursor:pointer;text-decoration:underline;">excluir</button>
             ` : '';
             return `<tr class="border-b border-slate-50 hover:bg-blue-50/30 transition-colors" id="hist-row-${r.id}">
@@ -1104,7 +1164,7 @@ async function _fetchHistorico() {
                         const nomeEl = row?.querySelector('.hist-nome-cell');
                         if (nomeEl) nomeEl.textContent = novoNome;
                         sel.style.borderColor = '#10b981'; btn.textContent = '✓ Salvo!'; btn.style.background = '#10b981'; btn.style.opacity = '1';
-                        setTimeout(() => { sel.style.borderColor = ''; btn.style.display = 'none'; btn.disabled = false; btn.textContent = '✓ Salvar'; btn.style.background = '#2563eb'; }, 2000);
+                        setTimeout(() => { sel.style.borderColor = ''; btn.style.display = 'none'; btn.disabled = false; btn.textContent = '✓ Salvar'; btn.style.background = '#6431e2'; }, 2000);
                     } catch (err) { alert('Erro ao reatribuir: ' + err.message); btn.disabled = false; btn.textContent = '✓ Salvar'; btn.style.opacity = '1'; }
                 });
             }
@@ -1147,7 +1207,7 @@ async function _fetchHistorico() {
         });
         const pg = document.getElementById('hist-pagination');
         pg.innerHTML = histPage > 0 ? '<button onclick="histPage--;_fetchHistorico()" class="px-5 py-2 bg-slate-100 hover:bg-blue-100 text-slate-600 font-black rounded-xl text-xs uppercase transition-all">← Anterior</button>' : '';
-        if (d.records.length === HIST_PER_PAGE) pg.innerHTML += '<button onclick="histPage++;_fetchHistorico()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase transition-all">Próxima →</button>';
+        if (d.records.length === HIST_PER_PAGE) pg.innerHTML += '<button onclick="histPage++;_fetchHistorico()" class="px-5 py-2 text-white font-black rounded-xl text-xs uppercase transition-all" style="background:#6431e2" onmouseover="this.style.background=\'#002d72\'" onmouseout="this.style.background=\'#6431e2\'">Próxima →</button>';
         lucide.createIcons();
     } catch(err) { tc.innerHTML = `<p class="text-center py-12 text-red-400 font-bold">Erro: ${err.message}</p>`; }
 }
@@ -1194,11 +1254,11 @@ async function abrirAnaliseCompleta(id){
         ];
         const etapasHTML = etapas.map(e => {
             const nE = e.nota || 0;
-            const cE = nE >= 4 ? 'text-emerald-500' : nE >= 3 ? 'text-blue-600' : 'text-red-500';
+            const cE = nE >= 4 ? 'text-emerald-500' : nE >= 3 ? 'text-[#0072ce]' : 'text-red-500';
             const subCrits = e.criterios.map(c => {
                 const n = j[`nota_${c.k}`] || 0;
-                const col = n >= 4 ? 'text-emerald-600' : n >= 3 ? 'text-blue-600' : 'text-red-500';
-                const bg2 = n >= 4 ? 'bg-emerald-50 border-emerald-100' : n >= 3 ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100';
+                const col = n >= 4 ? 'text-emerald-600' : n >= 3 ? 'text-[#0072ce]' : 'text-red-500';
+                const bg2 = n >= 4 ? 'bg-emerald-50 border-emerald-100' : n >= 3 ? 'bg-[#e6f3ff] border-[#0072ce]/20' : 'bg-red-50 border-red-100';
                 return `<div class="p-4 rounded-2xl border ${bg2}"><div class="flex items-start justify-between gap-3 mb-1"><div class="flex-1"><p class="text-[10px] font-black ${col} uppercase tracking-wide">${c.l}</p><p class="text-[9px] text-slate-400 italic mt-0.5">${c.desc}</p></div><div class="text-center flex-shrink-0"><div class="text-2xl font-black ${col}">${n}</div><div class="flex gap-px">${bldStars(n,true)}</div></div></div>${j[`porque_${c.k}`]?`<p class="text-[11px] text-slate-600 font-medium leading-relaxed mt-2">${j[`porque_${c.k}`]}</p>`:''} ${j[`melhoria_${c.k}`]&&n<5?`<div class="flex items-start gap-1.5 mt-2 p-2 bg-amber-50 rounded-xl border border-amber-100"><i data-lucide="lightbulb" class="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5"></i><p class="text-[10px] text-amber-800 font-bold leading-relaxed">${j[`melhoria_${c.k}`]}</p></div>`:''}</div>`;
             }).join('');
             return `<div class="rounded-[2rem] border-t-4 ${e.cor} bg-white shadow-sm overflow-hidden"><div class="p-6 ${e.bg} border-b border-slate-100"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-xl bg-white/70 border border-white flex items-center justify-center flex-shrink-0"><i data-lucide="${e.icon}" class="w-5 h-5 ${e.text}"></i></div><div class="flex-1"><span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">${e.titulo}</span><p class="text-[13px] font-black ${e.text}">${e.label}</p></div><div class="text-center flex-shrink-0"><div class="text-4xl font-black ${cE}">${nE}</div><div class="flex gap-px mt-1">${bldStars(nE,true)}</div></div></div>${e.porque?`<p class="text-[12px] text-slate-600 font-medium mt-3 leading-relaxed">${e.porque}</p>`:''} ${e.melhoria&&nE<5?`<p class="text-[11px] text-amber-700 font-semibold mt-2 flex items-start gap-1"><i data-lucide="target" class="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500"></i>${e.melhoria}</p>`:''}</div><div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-3">${subCrits}</div></div>`;
@@ -1213,7 +1273,7 @@ async function abrirAnaliseCompleta(id){
             objecoesHTML = `<div class="flex items-center gap-4 mb-4 p-4 rounded-2xl border ${scoreColor}"><div class="text-3xl font-black">${pct}%</div><div class="flex-1"><p class="font-black text-sm">Taxa de contorno</p><p class="text-[10px] font-bold opacity-70">${totalBem} de ${objs.length} objeções contornadas</p></div><div class="flex gap-2 flex-shrink-0"><div class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl text-center"><p class="text-xs font-black">✅ ${totalBem}</p><p class="text-[8px] font-bold uppercase">Contornadas</p></div><div class="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl text-center"><p class="text-xs font-black">❌ ${totalMal}</p><p class="text-[8px] font-bold uppercase">Perdidas</p></div></div></div><div class="space-y-3">${objRows}</div>`;
         }
         const tc2 = parseFloat(j.tempo_fala_consultor||0), tl = parseFloat(j.tempo_fala_cliente||0);
-        const tempoFalaHTML = `<div class="space-y-4"><div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Consultor</span><span class="text-blue-600">${j.tempo_fala_consultor||'0%'}</span></div><div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-600 rounded-full" style="width:${tc2}%"></div></div></div><div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente</span><span class="text-emerald-500">${j.tempo_fala_cliente||'0%'}</span></div><div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:${tl}%"></div></div></div></div>`;
+        const tempoFalaHTML = `<div class="space-y-4"><div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Consultor 🎯</span><span style="color:#6431e2">${j.tempo_fala_consultor||'0%'}</span></div><div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${tc2}%;background:linear-gradient(90deg,#6431e2,#0072ce)"></div></div></div><div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente 🤝</span><span class="text-emerald-500">${j.tempo_fala_cliente||'0%'}</span></div><div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:${tl}%"></div></div></div></div>`;
         const _vn = normalizarVeredicto(r.qual_veredicto);
         const verd = _vn.label;
         const vc = _vn.css.replace('text-','border-2 text-').replace('bg-','bg-');
@@ -1221,7 +1281,7 @@ async function abrirAnaliseCompleta(id){
         const ctxRows = (j.qual_contexto||[]).map(c=>`<div class="flex items-start gap-4 py-3 border-b border-slate-50 last:border-0"><span class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-40 flex-shrink-0 mt-0.5">${c.label}</span><span class="text-[12px] font-bold text-slate-700 flex-1">${c.valor||'—'}</span></div>`).join('');
         const critRows = [{l:'Lead sabia o que veria na demo',ok:j.qual_sabia_o_que_veria,ev:j.qual_sabia_evidencia},{l:'Produto correto para o cenário',ok:j.qual_produto_correto,ev:j.qual_produto_evidencia},{l:'Interesse real identificado',ok:j.qual_interesse_real,ev:j.qual_interesse_evidencia},{l:'Cenário diagnosticado pelo SDR',ok:j.qual_cenario_diagnosticado,ev:j.qual_cenario_evidencia}].map(c=>`<div class="rounded-2xl p-5 border flex flex-col gap-2 ${c.ok?'bg-emerald-50 border-emerald-100':'bg-red-50 border-red-100'}"><div class="flex items-center justify-between"><span class="text-[10px] font-black uppercase tracking-widest ${c.ok?'text-emerald-700':'text-red-700'}">${c.l}</span><div class="w-6 h-6 rounded-full flex items-center justify-center ${c.ok?'bg-emerald-500':'bg-red-400'}"><i data-lucide="${c.ok?'check':'x'}" class="text-white w-3 h-3"></i></div></div><p class="text-[11px] italic leading-relaxed ${c.ok?'text-emerald-700':'text-red-600'}">${c.ev||'Sem evidência.'}</p></div>`).join('');
         const slaRows = [{l:j.qual_sla_1_label||'SLA 1',ok:j.qual_sla_1_ok,ev:j.qual_sla_1_ev},{l:j.qual_sla_2_label||'SLA 2',ok:j.qual_sla_2_ok,ev:j.qual_sla_2_ev},{l:j.qual_sla_3_label||'SLA 3',ok:j.qual_sla_3_ok,ev:j.qual_sla_3_ev}].map(s=>`<div class="rounded-2xl p-5 border flex flex-col gap-3 ${s.ok?'bg-emerald-50 border-emerald-100':'bg-red-50 border-red-100'}"><div class="flex items-center justify-between"><span class="text-[9px] font-black uppercase tracking-widest ${s.ok?'text-emerald-700':'text-red-700'}">${s.l}</span><div class="w-6 h-6 rounded-full flex items-center justify-center ${s.ok?'bg-emerald-500':'bg-red-400'}"><i data-lucide="${s.ok?'check':'x'}" class="text-white w-3 h-3"></i></div></div><p class="text-[11px] italic leading-relaxed ${s.ok?'text-emerald-700':'text-red-600'}">${s.ev||'Sem evidência.'}</p></div>`).join('');
-        const prodConfigs={'RADAR-ECAC':{color:'bg-sky-100 text-sky-800 border-sky-300',icon:'radar'},'NIBO OBRIGAÇÕES':{color:'bg-violet-100 text-violet-800 border-violet-300',icon:'file-text'},'CONCILIADOR':{color:'bg-blue-100 text-blue-800 border-blue-300',icon:'git-merge'},'WHATSAPP WEB':{color:'bg-emerald-100 text-emerald-800 border-emerald-300',icon:'message-circle'},'EMISSOR DE NOTAS':{color:'bg-orange-100 text-orange-800 border-orange-300',icon:'file-plus'}};
+        const prodConfigs={'RADAR-ECAC':{color:'bg-[#e6f3ff] text-[#0072ce] border-[#0072ce]/30',icon:'radar'},'NIBO OBRIGAÇÕES':{color:'bg-[#ede9ff] text-[#6431e2] border-[#6431e2]/30',icon:'file-text'},'CONCILIADOR':{color:'bg-[#e0f6ff] text-[#002d72] border-[#002d72]/20',icon:'git-merge'},'WHATSAPP WEB':{color:'bg-emerald-100 text-emerald-800 border-emerald-300',icon:'message-circle'},'EMISSOR DE NOTAS':{color:'bg-orange-100 text-orange-800 border-orange-300',icon:'file-plus'}};
         const pCfg = prodConfigs[j.qual_produto_identificado]||{color:'bg-red-100 text-red-800 border-red-300',icon:'alert-triangle'};
         const foraPortfolio = !j.qual_produto_no_portfolio;
         document.getElementById('analise-modal-body-'+id).innerHTML = `
@@ -1237,10 +1297,10 @@ async function abrirAnaliseCompleta(id){
             <div class="glass-card p-8 flex flex-col items-center justify-center text-center border-b-[8px] border-blue-600">
               <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Média Global (Máx 5)</span>
               <div class="text-7xl font-black text-[#002d72] mb-3">${(r.media_final||0).toFixed(1)}</div>
-              <div class="${(r.media_final||0)>=4.5?'bg-emerald-500 text-white':(r.media_final||0)>=3.5?'bg-blue-100 text-blue-700':'bg-amber-100 text-amber-700'} px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">${(r.media_final||0)>=4.5?'Elite Sales':(r.media_final||0)>=3.5?'Alta Performance':'Acompanhamento'}</div>
+              <div style="${(r.media_final||0)>=4.5?'background:#10b981;color:white':(r.media_final||0)>=3.5?'background:#ede9ff;color:#5229c5':'background:#fef3c7;color:#92400e'}" class="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">${(r.media_final||0)>=4.5?'🏆 Elite Sales':(r.media_final||0)>=3.5?'🚀 Alta Performance':'📈 Acompanhamento'}</div>
             </div>
-            <div class="lg:col-span-3 rounded-[2rem] bg-gradient-to-br from-blue-700 to-blue-900 p-10 text-white flex flex-col justify-center">
-              <h3 class="font-bold text-blue-200 text-[10px] uppercase tracking-widest mb-4">Diagnóstico Geral</h3>
+            <div class="lg:col-span-3 rounded-[2rem] p-10 text-white flex flex-col justify-center" style="background:linear-gradient(135deg,#6431e2 0%,#002d72 60%,#41b6e6 100%)">
+              <h3 class="font-bold text-[10px] uppercase tracking-widest mb-4" style="color:#b8ccea">Diagnóstico Geral 📊</h3>
               <p class="text-xl md:text-2xl font-bold leading-tight mb-8">${j.resumo_executivo||'—'}</p>
               <div class="flex gap-4">
                 <div class="p-4 bg-white/10 rounded-2xl border border-white/20 flex-1"><span class="text-[9px] font-black text-blue-300 uppercase block mb-1 tracking-widest">Probabilidade de Fechamento:</span><p class="text-base font-bold text-white">${j.chance_fechamento||'N/A'}</p></div>
@@ -1270,16 +1330,16 @@ async function abrirAnaliseCompleta(id){
             <div class="glass-card p-6 flex flex-col items-center justify-center text-center border-b-[8px] border-violet-500"><span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">SDR Responsável</span><p class="text-sm font-black text-violet-700 mb-4">${r.nome_sdr||j.nome_sdr||'Não identificado'}</p><span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Nota</span><div class="text-6xl font-black ${sdColor(j.qual_nota_sdr||0)} mb-1">${j.qual_nota_sdr!==null&&j.qual_nota_sdr!==undefined?j.qual_nota_sdr:'—'}</div><span class="text-[9px] text-slate-400 font-bold">/ 10</span><p class="text-[10px] text-slate-500 mt-3 leading-relaxed font-medium text-center">${j.qual_nota_sdr_justificativa||''}</p></div>
           </div>
           ${(j.qual_contexto||[]).length>0?`<div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4 text-blue-400"></i> Contexto Extraído</h4><div>${ctxRows}</div></div>`:''}
-          <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="search" class="w-4 h-4 text-blue-400"></i> Critérios de Qualificação</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${critRows}</div></div>
-          <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="check-square" class="w-4 h-4 text-blue-400"></i> SLA de Qualificação</h4><div class="grid grid-cols-1 md:grid-cols-3 gap-4">${slaRows}</div></div>
-          ${j.qual_analise_completa?`<div class="glass-card p-12 border-t-[10px] border-violet-600"><h3 class="text-xl font-extrabold text-violet-800 uppercase tracking-widest mb-2 flex items-center gap-4"><i data-lucide="file-search"></i> Análise Completa da Qualificação (SDR)</h3><p class="text-[11px] text-slate-400 font-semibold mb-10 ml-10">Avaliação detalhada da atuação do SDR nesta reunião</p><div class="markdown-content">${marked.parse(j.qual_analise_completa)}</div></div>`:''}
+          <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="search" class="w-4 h-4" style="color:#41b6e6"></i> 🔍 Critérios de Qualificação</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${critRows}</div></div>
+          <div class="glass-card p-8"><h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2"><i data-lucide="check-square" class="w-4 h-4" style="color:#41b6e6"></i> 📝 SLA de Qualificação</h4><div class="grid grid-cols-1 md:grid-cols-3 gap-4">${slaRows}</div></div>
+          ${j.qual_analise_completa?`<div class="glass-card p-12" style="border-top:10px solid #6431e2"><h3 class="text-xl font-extrabold uppercase tracking-widest mb-2 flex items-center gap-4" style="color:#002d72;font-family:'Roca','Poppins',sans-serif"><i data-lucide="file-search"></i> 📊 Análise Completa da Qualificação (SDR)</h3><p class="text-[11px] text-slate-400 font-semibold mb-10 ml-10">Avaliação detalhada da atuação do SDR nesta reunião</p><div class="markdown-content">${marked.parse(j.qual_analise_completa)}</div></div>`:''}
         </div>`;
         lucide.createIcons();
         const radarCtx = document.getElementById('radarModal-'+id)?.getContext('2d');
         if (radarCtx) {
             const radarLabels=['Rapport','Comunicação Eficaz','Situação','Problema','Implicação','Necessidade','Produto','Objeções','Solução da Dor','Encantamento e Emoção','Pré-Fechamento','Escuta Ativa','Resiliência','Gestão do Tempo','Regras de Fech.'];
             const radarKeys=['nota_rapport','nota_comunicacao','nota_spin_s','nota_spin_p','nota_spin_i','nota_spin_n','nota_produto','nota_objecoes','nota_solucao_dor','nota_encantamento','nota_pre_fechamento_sub','nota_escuta_ativa','nota_resiliencia','nota_gestao_tempo','nota_regras_fechamento'];
-            new Chart(radarCtx,{type:'radar',data:{labels:radarLabels,datasets:[{label:'Desempenho',data:radarKeys.map(k=>j[k]||0),backgroundColor:'rgba(37,99,235,0.12)',borderColor:'#2563eb',borderWidth:2,pointRadius:4,pointBackgroundColor:'#1e3a8a',pointBorderColor:'#fff',pointBorderWidth:1.5}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:9,weight:'800'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});
+            new Chart(radarCtx,{type:'radar',data:{labels:radarLabels,datasets:[{label:'Desempenho',data:radarKeys.map(k=>j[k]||0),backgroundColor:'rgba(100,49,226,0.13)',borderColor:'#6431e2',borderWidth:2,pointRadius:4,pointBackgroundColor:'#002d72',pointBorderColor:'#fff',pointBorderWidth:1.5}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#d8e2f0'},angleLines:{color:'#d8e2f0'},pointLabels:{font:{size:9,weight:'800'},color:'#4a5773'}}},plugins:{legend:{display:false}},maintainAspectRatio:true}});
         }
     } catch(err) { document.getElementById('analise-modal-body-'+id).innerHTML=`<p class="text-center py-20 text-red-400 font-bold">Erro ao carregar análise: ${err.message}</p>`; }
     modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -1328,14 +1388,14 @@ async function loadCalendario(){
         for(let dd=1;dd<=diasNoMes;dd++){
             const isoStr=`${ano}-${String(mes+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
             const rDs=porDia[isoStr]||[],hasData=rDs.length>0,isHoje=isoStr===agora.toISOString().split('T')[0];
-            const bgCls=isHoje?'bg-blue-600 text-white border-blue-600':hasData?'bg-blue-50 border-blue-200 text-blue-700 cursor-pointer hover:bg-blue-100':'bg-slate-50 border-slate-100 text-slate-400';
+            const bgCls=isHoje?'text-white border-[#6431e2] cursor-default" style="background:#6431e2':hasData?'border-[#0072ce]/30 text-[#0072ce] cursor-pointer hover:bg-[#e6f3ff]" style="background:#e6f3ff':'bg-slate-50 border-slate-100 text-slate-400';
             html+=`<div class="rounded-2xl border text-center py-2 px-1 transition-all ${bgCls}"${hasData?` onclick="mostrarDiaCal('${isoStr}')"`:''}><p class="text-[11px] font-black">${dd}</p>${hasData?`<p class="text-[8px] font-black mt-0.5">${rDs.length} RD${rDs.length>1?'s':''}</p>`:''}</div>`;
         }
         html+='</div></div><div id="cal-dia-detalhe" class="hidden mt-6 glass-card p-8"></div>';
         content.innerHTML=html;lucide.createIcons();
     }catch(err){content.innerHTML=`<p class="text-center py-20 text-red-400 font-bold">Erro: ${err.message}</p>`;}
 }
-window.mostrarDiaCal=async function(dia){const el=document.getElementById('cal-dia-detalhe');el.classList.remove('hidden');el.innerHTML='<div class="flex items-center py-8 justify-center text-slate-300"><div class="loader"></div></div>';try{const res=await fetch('/api/records?data_inicio='+dia+'&data_fim='+dia+'&limit=50&offset=0'),d=await res.json();const sc=n=>n>=4?'text-emerald-600':n>=3?'text-blue-600':'text-red-500';const rows=(d.records||[]).map(r=>`<div class="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors" onclick="abrirAnaliseCompleta('${r.id}')"><div class="flex-1"><p class="font-black text-sm text-slate-700">${r.vendedor_nome||'—'}</p><p class="text-[10px] text-slate-400">${r.produto||'—'}</p></div><span class="text-2xl font-black ${sc(r.media_final)}">${(r.media_final||0).toFixed(1)}</span></div>`).join('');el.innerHTML='<h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">'+dia+'</h5>'+(rows||'<p class="text-slate-300 text-center py-4 text-sm">Nenhuma análise.</p>');lucide.createIcons();}catch{el.innerHTML='<p class="text-red-400 text-sm text-center py-4">Erro ao carregar.</p>';}};
+window.mostrarDiaCal=async function(dia){const el=document.getElementById('cal-dia-detalhe');el.classList.remove('hidden');el.innerHTML='<div class="flex items-center py-8 justify-center text-slate-300"><div class="loader"></div></div>';try{const res=await fetch('/api/records?data_inicio='+dia+'&data_fim='+dia+'&limit=50&offset=0'),d=await res.json();const sc=n=>n>=4?'text-emerald-600':n>=3?'text-[#0072ce]':'text-red-500';const rows=(d.records||[]).map(r=>`<div class="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 cursor-pointer hover:bg-blue-50 transition-colors" onclick="abrirAnaliseCompleta('${r.id}')"><div class="flex-1"><p class="font-black text-sm text-slate-700">${r.vendedor_nome||'—'}</p><p class="text-[10px] text-slate-400">${r.produto||'—'}</p></div><span class="text-2xl font-black ${sc(r.media_final)}">${(r.media_final||0).toFixed(1)}</span></div>`).join('');el.innerHTML='<h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">'+dia+'</h5>'+(rows||'<p class="text-slate-300 text-center py-4 text-sm">Nenhuma análise.</p>');lucide.createIcons();}catch{el.innerHTML='<p class="text-red-400 text-sm text-center py-4">Erro ao carregar.</p>';}};
 
 async function loadSdrDash(){
     const content=document.getElementById('dash-content');
@@ -1350,7 +1410,7 @@ async function loadSdrDash(){
         const res=await fetch(sdrQuery);const d=await res.json();
         const reunioes=(d.reunioes||[]).filter(r=>r.nome_sdr);
         if(!reunioes.length){content.innerHTML='<div class="glass-card p-12 text-center text-slate-300"><i data-lucide="user-x" class="w-12 h-12 mx-auto mb-4"></i><p class="font-black text-sm">Nenhuma reunião com SDR identificado.</p><p class="text-[10px] mt-2">Atribua SDRs pelo histórico ou aguarde o Apps Script processar.</p></div>';lucide.createIcons();return;}
-        const sc=n=>(n||0)>=4?'text-emerald-600':(n||0)>=3?'text-blue-600':'text-red-500';
+        const sc=n=>(n||0)>=4?'text-emerald-600':(n||0)>=3?'text-[#0072ce]':'text-red-500';
         const bySdr={};
         reunioes.forEach(r=>{const nome=r.nome_sdr;if(!bySdr[nome])bySdr[nome]={total:0,somaNotas:0,qualif:0,parc:0,naoQual:0,reunioes:[]};const s=bySdr[nome];s.total++;if(r.qual_nota_sdr)s.somaNotas+=Number(r.qual_nota_sdr);const v=(r.qual_veredicto||'').toUpperCase();if(v.includes('PARC'))s.parc++;else if(v==='QUALIFICADO'||(v.includes('QUAL')&&!v.includes('NÃO')&&!v.includes('NAO')&&!v.includes('MAL')&&!v.includes('FORA')))s.qualif++;else s.naoQual++;s.reunioes.push(r);});
         const totalReunioes=reunioes.length,totalSdrs=Object.keys(bySdr).length,mediaNotaGeral=reunioes.reduce((a,r)=>a+(Number(r.qual_nota_sdr)||0),0)/totalReunioes;

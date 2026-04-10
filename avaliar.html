@@ -9,18 +9,31 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #0f172a; }
-        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: all 0.3s ease; }
-        .glass-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        /* ── Nibo Design Tokens ─────────────────────────────────────────────────── */
+        :root {
+            --nibo-purple:   #6431e2;
+            --nibo-purple-h: #5229c5;
+            --nibo-blue:     #0072ce;
+            --nibo-blue-lt:  #41b6e6;
+            --nibo-petroleo: #002d72;
+            --nibo-ice:      #b8ccea;
+            --nibo-bg:       #eef2f8;
+            --nibo-text:     #0d1b3e;
+            --nibo-muted:    #4a5773;
+        }
+        body { font-family: 'Roca', 'Poppins', 'Helvetica Neue', Helvetica, sans-serif; background-color: var(--nibo-bg); color: var(--nibo-text); }
+        h1,h2,h3,h4,h5,h6 { font-family: 'Roca', 'Poppins', 'Helvetica Neue', Helvetica, sans-serif; }
+        .glass-card { background: white; border: 1px solid #d8e2f0; border-radius: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0,45,114,0.06); transition: all 0.3s ease; }
+        .glass-card:hover { box-shadow: 0 20px 25px -5px rgba(100,49,226,0.12); }
         @keyframes pulse-opacity { 0%,100%{opacity:1} 50%{opacity:.4} }
         .pulse-text { animation: pulse-opacity 1.8s ease-in-out infinite; }
-        .markdown-content h1, .markdown-content h2 { font-weight:800;color:#1e3a8a;margin-top:1.5rem;margin-bottom:0.75rem;font-size:1rem;text-transform:uppercase;border-bottom:2px solid #2563eb;padding-bottom:0.5rem; }
-        .markdown-content p { margin-bottom:1rem;color:#475569;line-height:1.6;font-size:0.9rem; }
+        .markdown-content h1, .markdown-content h2 { font-family:'Roca','Poppins',sans-serif;font-weight:800;color:var(--nibo-petroleo);margin-top:1.5rem;margin-bottom:0.75rem;font-size:1rem;text-transform:uppercase;border-bottom:2px solid var(--nibo-purple);padding-bottom:0.5rem; }
+        .markdown-content p { margin-bottom:1rem;color:var(--nibo-muted);line-height:1.7;font-size:0.9rem; }
         .markdown-content ul { list-style-type:none;padding-left:0;margin-bottom:1.25rem; }
-        .markdown-content li { position:relative;padding-left:1.5rem;margin-bottom:0.4rem;color:#475569;font-size:0.85rem; }
-        .markdown-content li::before { content:"•";position:absolute;left:0;color:#2563eb;font-weight:bold; }
+        .markdown-content li { position:relative;padding-left:1.5rem;margin-bottom:0.4rem;color:var(--nibo-muted);font-size:0.85rem; }
+        .markdown-content li::before { content:"•";position:absolute;left:0;color:var(--nibo-purple);font-weight:bold; }
         select { background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 0.5rem center;background-size:1.5em 1.5em;padding-right:2.5rem; }
         /* banner de sucesso ao salvar */
         #save-banner { display:none;position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:200;background:#059669;color:white;padding:0.75rem 1.5rem;border-radius:1rem;font-weight:700;font-size:0.875rem;box-shadow:0 8px 24px rgba(0,0,0,0.2);display:none;align-items:center;gap:0.5rem; }
@@ -36,28 +49,26 @@
     <a href="/" class="ml-2 underline text-emerald-100 hover:text-white">Ver no Dashboard →</a>
 </div>
 
-<nav class="bg-[#002d72] text-white py-4 px-8 sticky top-0 z-50 shadow-xl border-b border-blue-400">
+<nav class="text-white py-4 px-8 sticky top-0 z-50 shadow-xl" style="background:linear-gradient(90deg,#002d72 0%,#3a1fa8 60%,#6431e2 100%);border-bottom:1px solid rgba(65,182,230,0.3)">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="flex items-center gap-3">
             <div class="bg-white p-2.5 rounded-2xl shadow-inner">
-                <i data-lucide="headset" class="text-[#002d72] w-6 h-6"></i>
+                <i data-lucide="headset" class="w-6 h-6" style="color:#6431e2"></i>
             </div>
             <div>
-                <h1 class="font-extrabold text-lg uppercase tracking-tight">Nibo <span class="text-blue-400">Auditor de CS</span></h1>
-                <p class="text-[9px] text-blue-200 uppercase tracking-widest font-bold mt-1">Análise de Implementação e Onboarding</p>
+                <h1 class="font-extrabold text-lg uppercase tracking-tight">Nibo <span style="color:#41b6e6">Auditor de CS</span></h1>
+                <p class="text-[9px] uppercase tracking-widest font-bold mt-1" style="color:#b8ccea">Análise de Implementação e Onboarding 📱</p>
             </div>
         </div>
         <div class="flex items-center gap-4 flex-wrap justify-center md:justify-end">
-            <!-- Analista detectado automaticamente -->
-            <div id="analista-badge" class="hidden items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600/30 border border-emerald-400/50 text-emerald-200 text-sm font-bold">
+            <div id="analista-badge" class="hidden items-center gap-2 px-4 py-2 rounded-xl border text-sm font-bold" style="background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.4);color:#a7f3d0">
                 <i data-lucide="user-check" class="w-4 h-4"></i>
                 <span id="analista-badge-nome">—</span>
             </div>
-            <!-- Coordenador: opcional -->
             <div class="relative">
-                <i data-lucide="shield" class="absolute left-3 top-2.5 w-4 h-4 text-amber-300"></i>
+                <i data-lucide="shield" class="absolute left-3 top-2.5 w-4 h-4" style="color:#b8ccea"></i>
                 <select id="coordinator-select"
-                    class="pl-10 pr-5 py-2 rounded-xl bg-amber-900/40 border border-amber-400/50 text-white text-sm focus:outline-none focus:ring-2 ring-amber-300 transition-all cursor-pointer">
+                    class="pl-10 pr-5 py-2 rounded-xl text-white text-sm focus:outline-none transition-all cursor-pointer" style="background:rgba(100,49,226,0.35);border:1px solid rgba(65,182,230,0.3)">
                     <option value="">Coordenador (opcional)</option>
                     <option value="Sayuri">Sayuri</option>
                     <option value="Tayanara">Tayanara</option>
@@ -66,9 +77,9 @@
                     <option value="Jéssica">Jéssica</option>
                 </select>
             </div>
-            <a href="/" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-[#002d72] text-sm font-bold hover:bg-blue-50 transition-all shadow">
+            <a href="/" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-sm font-bold transition-all shadow" style="color:#002d72" onmouseover="this.style.background='#ede9ff'" onmouseout="this.style.background='white'">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-                ← Dashboard
+                ← Dashboard 📊
             </a>
         </div>
     </div>
@@ -79,28 +90,28 @@
     <section class="mb-10">
         <div class="glass-card p-8 md:p-10">
             <div class="flex items-center gap-3 mb-6">
-                <i data-lucide="message-square" class="text-blue-600"></i>
+                <i data-lucide="message-square" style="color:#6431e2"></i>
                 <h2 class="font-bold text-slate-800 text-lg">Submeter Transcrição do Cliente</h2>
             </div>
-            <div class="flex items-start gap-3 mb-5 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                <i data-lucide="info" class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0"></i>
-                <p class="text-xs text-blue-700 font-medium">O nome do analista será detectado automaticamente pela IA a partir da transcrição. O coordenador é opcional.</p>
+            <div class="flex items-start gap-3 mb-5 p-4 rounded-2xl border" style="background:#ede9ff;border-color:#c4b5fd">
+                <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color:#6431e2"></i>
+                <p class="text-xs font-medium" style="color:#5229c5">💡 O nome do analista será detectado automaticamente pela IA a partir da transcrição. O coordenador é opcional.</p>
             </div>
             <textarea id="transcript-input" rows="6"
-                class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:ring-4 ring-blue-500/5 focus:outline-none transition-all text-sm resize-none"
+                class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:outline-none transition-all text-sm resize-none"
                 placeholder="Cole aqui o diálogo da reunião de Onboarding..."></textarea>
             <div class="flex items-center justify-between mt-3 mb-6 px-1">
                 <div class="text-[11px] font-bold text-slate-400"><span id="char-count">0</span> caracteres</div>
-                <label class="text-[11px] font-bold text-slate-400 cursor-pointer hover:text-blue-600 transition-colors flex items-center gap-2">
+                <label class="text-[11px] font-bold text-slate-400 cursor-pointer transition-colors flex items-center gap-2" style="hover-color:#6431e2" onmouseover="this.style.color='#6431e2'" onmouseout="this.style.color=''">
                     <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                    Ou carregar PDF
+                    Ou carregar PDF 📄
                     <input type="file" id="pdf-upload" accept=".pdf" class="hidden" />
                 </label>
             </div>
             <div class="flex justify-end">
                 <button id="analyze-btn"
-                    class="flex items-center gap-3 bg-blue-600 hover:bg-[#002d72] text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span id="btn-text">Analisar Sucesso do Cliente</span>
+                    class="flex items-center gap-3 text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" style="background:#6431e2;font-family:'Poppins',sans-serif;font-weight:600" onmouseover="this.style.background='#002d72'" onmouseout="this.style.background='#6431e2'">
+                    <span id="btn-text">Analisar Sucesso do Cliente 🚀</span>
                     <i data-lucide="zap" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -113,28 +124,28 @@
         <div id="loading-spinner" class="glass-card p-12">
             <div class="max-w-lg mx-auto space-y-6">
                 <div id="step-scores" class="flex items-center gap-4 transition-opacity duration-500">
-                    <div id="step-scores-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-500"></i>
+                    <div id="step-scores-icon" class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style="background:#ede9ff">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4" style="color:#6431e2"></i>
                     </div>
                     <div class="flex-1">
                         <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                            <span>Avaliando os 17 pilares</span><span id="step-scores-pct">—</span>
+                            <span>📊 Avaliando os 17 pilares</span><span id="step-scores-pct">—</span>
                         </div>
                         <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div id="bar-scores" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width:0%"></div>
+                            <div id="bar-scores" class="h-full rounded-full transition-all duration-500" style="width:0%;background:linear-gradient(90deg,#6431e2,#0072ce)"></div>
                         </div>
                     </div>
                 </div>
                 <div id="step-report" class="flex items-center gap-4 opacity-30 transition-opacity duration-500">
-                    <div id="step-report-icon" class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="scroll-text" class="w-4 h-4 text-blue-500"></i>
+                    <div id="step-report-icon" class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style="background:#e6f3ff">
+                        <i data-lucide="scroll-text" class="w-4 h-4" style="color:#0072ce"></i>
                     </div>
                     <div class="flex-1">
                         <div class="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                            <span>Gerando relatório de auditoria</span><span id="step-report-pct">—</span>
+                            <span>📝 Gerando relatório de auditoria</span><span id="step-report-pct">—</span>
                         </div>
                         <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div id="bar-report" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width:0%"></div>
+                            <div id="bar-report" class="h-full rounded-full transition-all duration-500" style="width:0%;background:#0072ce"></div>
                         </div>
                     </div>
                 </div>
@@ -160,22 +171,22 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center border-b-[10px] border-blue-600">
-                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Média de CS (Máx 5)</span>
-                    <div id="media-final" class="text-7xl font-black text-[#002d72] mb-3">0.0</div>
+                <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center" style="border-bottom:10px solid #6431e2">
+                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Média de CS (Máx 5) 🏆</span>
+                    <div id="media-final" class="text-7xl font-black mb-3" style="color:#002d72">0.0</div>
                     <div id="status-tag" class="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-3">---</div>
                 </div>
-                <div class="lg:col-span-3 glass-card p-10 bg-gradient-to-br from-blue-700 to-blue-900 text-white flex flex-col justify-center">
+                <div class="lg:col-span-3 glass-card p-10 text-white flex flex-col justify-center" style="background:linear-gradient(135deg,#6431e2 0%,#002d72 60%,#41b6e6 100%)">
                     <div id="concorrentes-tags" class="flex flex-wrap gap-2 mb-4"></div>
-                    <h3 class="font-bold text-blue-200 text-[10px] uppercase tracking-widest mb-4">Diagnóstico da Implementação</h3>
+                    <h3 class="font-bold text-[10px] uppercase tracking-widest mb-4" style="color:#b8ccea">Diagnóstico da Implementação 📱</h3>
                     <p id="resumo-text" class="text-xl md:text-2xl font-bold leading-tight mb-8"></p>
                     <div class="flex gap-4">
-                        <div class="p-4 bg-white/10 rounded-2xl border border-white/20 flex-1">
-                            <span class="text-[9px] font-black text-blue-300 uppercase block mb-1 tracking-widest italic">Saúde do Cliente:</span>
+                        <div class="p-4 rounded-2xl border border-white/20 flex-1" style="background:rgba(255,255,255,0.1)">
+                            <span class="text-[9px] font-black uppercase block mb-1 tracking-widest italic" style="color:#b8ccea">💡 Saúde do Cliente:</span>
                             <p id="saude-text" class="text-base font-bold text-white"></p>
                         </div>
-                        <div class="p-4 bg-red-500/20 rounded-2xl border border-red-400/30 flex-1">
-                            <span class="text-[9px] font-black text-red-300 uppercase block mb-1 tracking-widest italic">Risco de Churn:</span>
+                        <div class="p-4 rounded-2xl border border-red-400/30 flex-1" style="background:rgba(220,38,38,0.2)">
+                            <span class="text-[9px] font-black text-red-300 uppercase block mb-1 tracking-widest italic">⚠️ Risco de Churn:</span>
                             <p id="churn-text" class="text-base font-bold text-white"></p>
                         </div>
                     </div>
@@ -195,7 +206,7 @@
                     </div>
                     <div class="glass-card p-8">
                         <h3 class="font-bold text-slate-800 text-[14px] mb-6 flex items-center gap-3">
-                            <i data-lucide="list-checks" class="text-blue-600 w-5 h-5"></i>Checklist de Onboarding
+                            <i data-lucide="list-checks" class="w-5 h-5" style="color:#6431e2"></i>✅ Checklist de Onboarding
                         </h3>
                         <div id="checklist-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                     </div>
@@ -217,10 +228,10 @@
                 </div>
             </div>
 
-            <div class="glass-card p-12 md:p-16 shadow-2xl border-t-[10px] border-[#002d72] flex justify-between items-start">
+            <div class="glass-card p-12 md:p-16 shadow-2xl flex justify-between items-start" style="border-top:10px solid #6431e2">
                 <div class="flex-1">
-                    <h3 class="text-xl font-extrabold text-[#002d72] uppercase tracking-widest mb-10 border-b pb-6 flex items-center gap-4">
-                        <i data-lucide="scroll-text"></i>Relatório de Auditoria de CS
+                    <h3 class="text-xl font-extrabold uppercase tracking-widest mb-10 border-b pb-6 flex items-center gap-4" style="color:#002d72;font-family:'Roca','Poppins',sans-serif">
+                        <i data-lucide="scroll-text"></i>📊 Relatório de Auditoria de CS
                     </h3>
                     <div id="markdown-body" class="markdown-content"></div>
                 </div>
@@ -520,19 +531,19 @@ function renderDashboard(data){
     ).join('');
 
     const status=document.getElementById('status-tag');
-    if(media>=4.5){status.textContent='Elite CS';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg';}
-    else if(media>=3.5){status.textContent='Alta Performance';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-700';}
-    else{status.textContent='Acompanhamento';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700';}
+    if(media>=4.5){status.textContent='🏆 Elite CS';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg';}
+    else if(media>=3.5){status.textContent='🚀 Alta Performance';status.className='';status.style.cssText='background:#ede9ff;color:#5229c5;padding:0.5rem 1.25rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;';}
+    else{status.textContent='📈 Acompanhamento';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-700';}
 
     const grid=document.getElementById('notas-grid');
     grid.innerHTML=fields.map(f=>{
         const raw=data[`nota_${f.k}`],hasScore=raw!==null&&raw!==undefined,n=hasScore?raw:null;
         const p=data[`porque_${f.k}`]||(hasScore?'Sem justificativa.':'Sem evidência na transcrição.');
         const m=data[`melhoria_${f.k}`]||'Critério de excelência atingido.';
-        const c=!hasScore?'text-slate-300':n>=4?'text-emerald-500':n>=3?'text-blue-600':'text-red-500';
+        const c=!hasScore?'text-slate-300':n>=4?'text-emerald-500':n>=3?'text-[#0072ce]':'text-red-500';
         pillarStore[f.k]={label:f.l,score:n,hasScore,colorClass:c,porque:p,melhoria:m};
-        return `<div data-pillar="${f.k}" class="pillar-card glass-card p-3 flex flex-col items-center text-center justify-center ${hasScore?'cursor-pointer hover:-translate-y-1 hover:border-blue-300':'opacity-50 cursor-default'} transition-all group relative">
-            ${hasScore?'<i data-lucide="zoom-in" class="absolute top-2 right-2 w-3 h-3 text-slate-300 group-hover:text-blue-500 transition-colors"></i>':'<i data-lucide="minus" class="absolute top-2 right-2 w-3 h-3 text-slate-300"></i>'}
+        return `<div data-pillar="${f.k}" class="pillar-card glass-card p-3 flex flex-col items-center text-center justify-center ${hasScore?'cursor-pointer hover:-translate-y-1':'opacity-50 cursor-default'} transition-all group relative" style="${hasScore?'':''}">
+            ${hasScore?'<i data-lucide="zoom-in" class="absolute top-2 right-2 w-3 h-3 text-slate-300 transition-colors" style=""></i>':'<i data-lucide="minus" class="absolute top-2 right-2 w-3 h-3 text-slate-300"></i>'}
             <span class="text-[7.5px] font-black text-slate-400 uppercase mb-1 tracking-widest leading-tight mt-1">${f.l}</span>
             <div class="text-xl font-black ${c} mb-1 leading-none">${hasScore?n:'—'}</div>
             <p class="text-[7.5px] text-slate-500 italic leading-tight font-medium max-w-[95%] truncate">${p}</p>
@@ -549,8 +560,8 @@ function renderDashboard(data){
 
     const tCS=parseFloat(data.tempo_fala_cs||0),tCli=parseFloat(data.tempo_fala_cliente||0);
     document.getElementById('talk-time-container').innerHTML=`
-        <div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Analista CS</span><span class="text-blue-600">${data.tempo_fala_cs||'0%'}</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-600" style="width:${tCS}%"></div></div></div>
-        <div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente</span><span class="text-emerald-500">${data.tempo_fala_cliente||'0%'}</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500" style="width:${tCli}%"></div></div></div>`;
+        <div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Analista CS 🎯</span><span style="color:#6431e2">${data.tempo_fala_cs||'0%'}</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${tCS}%;background:linear-gradient(90deg,#6431e2,#0072ce)"></div></div></div>
+        <div><div class="flex justify-between text-[11px] font-bold mb-2"><span>Cliente 🤝</span><span class="text-emerald-500">${data.tempo_fala_cliente||'0%'}</span></div><div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:${tCli}%"></div></div></div>`;
 
     const ck=data.checklist_cs||{};
     const ckLabels={definiu_prazo_implementacao:'Prazo de Implantação',alinhou_dever_de_casa:'Dever de Casa Alinhado',validou_certificado_digital:'Certificado A1 / Acesso',agendou_proximo_passo:'Próxima Reunião Agendada',conectou_com_dor_vendas:'Retomou Dor de Vendas',explicou_canal_suporte:'Explicou Canal de Suporte'};
@@ -573,7 +584,7 @@ function renderRadar(data){
     if(radarChartInstance) radarChartInstance.destroy();
     radarChartInstance=new Chart(ctx,{
         type:'radar',
-        data:{labels:fields.map(f=>f.l),datasets:[{label:'Nota de CS',data:fields.map(f=>data[`nota_${f.k}`]??0),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#1e3a8a'}]},
+        data:{labels:fields.map(f=>f.l),datasets:[{label:'Nota de CS',data:fields.map(f=>data[`nota_${f.k}`]??0),backgroundColor:'rgba(100,49,226,0.13)',borderColor:'#6431e2',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#002d72'}]},
         options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}
     });
 }
