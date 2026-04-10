@@ -329,6 +329,63 @@ async function getTextsB(transcript, numbers) {
     return safeParse(res.text, 'getTextsB');
 }
 
+async function getDesalinhamentos(transcript) {
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: transcript,
+        config: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 2048,
+            systemInstruction:
+                'Auditor de CS do Nibo. Detecte desalinhamentos de venda na transcrição: ' +
+                'momentos em que o cliente expressa que algo prometido na venda não corresponde ao que recebeu. ' +
+                'Frases típicas que indicam desalinhamento: ' +
+                '"o vendedor me disse", "me falaram que", "achei que ia ter", "me prometeram", ' +
+                '"estava incluso", "constava na proposta", "não era isso que eu entendi", ' +
+                '"me venderam diferente", "esperava que", "no momento da venda", ' +
+                '"me enganaram", "foi prometido", "entrei pensando que". ' +
+                'Para cada desalinhamento encontrado preencha: ' +
+                'expectativa = o que o cliente esperava ter/receber; ' +
+                'realidade = o que existe de fato (se mencionado na transcrição, senão vazio); ' +
+                'frase_cliente = trecho exato ou próximo do que o cliente disse; ' +
+                'severidade: "alta" = funcionalidade core inexistente ou plano/preço errado, ' +
+                '"media" = funcionalidade existe mas diferente do esperado, ' +
+                '"baixa" = mal-entendido de processo ou prazo; ' +
+                'como_tratado: "explicou" = analista esclareceu a situação, ' +
+                '"escalou" = analista prometeu acionar outro time, ' +
+                '"registrou" = analista anotou como feedback, ' +
+                '"ignorou" = não abordou o ponto, ' +
+                '"nao_identificado" = não ficou claro como tratou. ' +
+                'Se não houver nenhum desalinhamento retorne tem_desalinhamento false e array vazio.',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    tem_desalinhamento: { type: Type.BOOLEAN },
+                    desalinhamentos: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                expectativa:   { type: Type.STRING },
+                                realidade:     { type: Type.STRING },
+                                frase_cliente: { type: Type.STRING },
+                                severidade:    { type: Type.STRING },
+                                como_tratado:  { type: Type.STRING },
+                            },
+                            required: ['expectativa', 'frase_cliente', 'severidade', 'como_tratado'],
+                        },
+                    },
+                },
+                required: ['tem_desalinhamento', 'desalinhamentos'],
+            },
+        },
+    });
+    const parsed = safeParse(res.text, 'getDesalinhamentos');
+    parsed.desalinhamentos = parsed.desalinhamentos || [];
+    parsed.tem_desalinhamento = parsed.desalinhamentos.length > 0;
+    return parsed;
+}
+
 async function getRelatorio(numbers, meta, texts, coordinator) {
     const linhas = ALL_PILLARS.map(function(p) {
         const k = p[0], nota = numbers['nota_' + k];
@@ -395,9 +452,12 @@ export default async function handler(req, res) {
         numbers.analista_nome = numbers.analista_nome || 'Não identificado';
         numbers.coordinator   = coordinator || numbers.coordinator || null;
 
-        const meta   = await withRetry(() => getMeta(prompt, numbers),   'getMeta');
-        const textsA = await withRetry(() => getTextsA(prompt, numbers), 'getTextsA');
-        const textsB = await withRetry(() => getTextsB(prompt, numbers), 'getTextsB');
+        const [meta, textsA, textsB, desalin] = await Promise.all([
+            withRetry(() => getMeta(prompt, numbers),         'getMeta'),
+            withRetry(() => getTextsA(prompt, numbers),       'getTextsA'),
+            withRetry(() => getTextsB(prompt, numbers),       'getTextsB'),
+            withRetry(() => getDesalinhamentos(prompt),       'getDesalinhamentos'),
+        ]);
         const texts = Object.assign({}, textsA, textsB);
 
         ALL_PILLARS.forEach(function(p) {
@@ -430,6 +490,8 @@ export default async function handler(req, res) {
                 analista_nome: numbers.analista_nome,
                 data_reuniao: numbers.data_reuniao || null,
                 nome_cliente: meta.nome_cliente,
+                tem_desalinhamento:  desalin.tem_desalinhamento,
+                desalinhamentos:     desalin.desalinhamentos,
             })
         );
 

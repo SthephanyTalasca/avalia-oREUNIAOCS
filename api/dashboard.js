@@ -177,6 +177,35 @@ for (const r of reunioes) {
         ckRates[k] = +(avg(vals) * 100).toFixed(0);
     });
 
+    // ── Desalinhamentos de Venda ─────────────────────────────────────────
+    const desalinStats = { total: 0, com_desalinhamento: 0, alta: 0, media: 0, baixa: 0 };
+    const desalinFreq = {};
+    const desalinTratamento = { explicou: 0, escalou: 0, registrou: 0, ignorou: 0, nao_identificado: 0 };
+
+    for (const r of reunioes) {
+        const items = r.analise_json?.desalinhamentos || [];
+        if (items.length > 0) desalinStats.com_desalinhamento++;
+        for (const d of items) {
+            desalinStats.total++;
+            if (d.severidade === 'alta')  desalinStats.alta++;
+            else if (d.severidade === 'media') desalinStats.media++;
+            else if (d.severidade === 'baixa') desalinStats.baixa++;
+
+            const key = (d.expectativa || '').slice(0, 60).trim();
+            if (key) desalinFreq[key] = (desalinFreq[key] || 0) + 1;
+
+            const ct = d.como_tratado || 'nao_identificado';
+            if (ct in desalinTratamento) desalinTratamento[ct]++;
+        }
+    }
+
+    desalinStats.topExpectativas = Object.entries(desalinFreq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([expectativa, count]) => ({ expectativa, count }));
+
+    desalinStats.tratamento = desalinTratamento;
+
     return {
         total,
         media_geral: +avg(medias).toFixed(1),
@@ -186,6 +215,7 @@ for (const r of reunioes) {
         evolucao,
         churnStats,
         saudeStats,
-        ckRates
+        ckRates,
+        desalinStats,
     };
 }
