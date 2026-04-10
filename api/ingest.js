@@ -4,7 +4,7 @@
 //
 // ⚡ Gemini foi movido para o Apps Script — sem timeout no Vercel
 
-import { db, FieldValue } from './_firebase.js';
+import { db, FieldValue } from '../lib/firebase.js';
 import { getConfig } from './config.js';
 
 export const maxDuration = 30;

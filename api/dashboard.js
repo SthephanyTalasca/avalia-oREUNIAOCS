@@ -1,5 +1,5 @@
 // api/dashboard.js — CS Auditor
-import { db, docsToArray } from './_firebase.js';
+import { db, docsToArray } from '../lib/firebase.js';
 
 function getSession(req) {
     const m = (req.headers.cookie || '').match(/nibo_cs_session=([^;]+)/);

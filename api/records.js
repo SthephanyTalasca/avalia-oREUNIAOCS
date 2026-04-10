@@ -1,5 +1,5 @@
 // api/records.js — CS Auditor
-import { db } from './_firebase.js';
+import { db } from '../lib/firebase.js';
 
 const ADMIN_EMAIL  = 'sthephany.talasca@nibo.com.br';
 const BATCH_EMAILS = ['sthephany.talasca@nibo.com.br'];

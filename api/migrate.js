@@ -3,7 +3,7 @@
 // Normaliza analista_nome e coordenador de todos os registros via cs_membros.
 // Apenas admin pode executar.
 
-import { db, docsToArray } from './_firebase.js';
+import { db, docsToArray } from '../lib/firebase.js';
 import { getConfig } from './config.js';
 
 const ADMIN_EMAIL = 'sthephany.talasca@nibo.com.br';

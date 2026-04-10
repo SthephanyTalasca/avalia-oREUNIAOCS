@@ -1,5 +1,5 @@
 // api/save.js
-import { db, FieldValue } from './_firebase.js';
+import { db, FieldValue } from '../lib/firebase.js';
 
 function getSession(req) {
     const m = (req.headers.cookie || '').match(/nibo_cs_session=([^;]+)/);
