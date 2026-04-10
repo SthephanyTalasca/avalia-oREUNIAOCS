@@ -6,7 +6,7 @@ export const config = { api: { bodyParser: { sizeLimit: '20mb' } } };
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const ALL_PILLARS = [
+const CS_PILLARS = [
     ['consultividade',    'Consultividade'],
     ['escuta_ativa',      'Escuta Ativa'],
     ['jornada_cliente',   'Jornada do Cliente'],
@@ -218,12 +218,12 @@ async function getNumbers(transcript) {
 
     const parsed = safeParse(res.text, 'getNumbers');
 
-    ALL_PILLARS.forEach(function(p) {
+    CS_PILLARS.forEach(function(p) {
         const val = parsed['nota_' + p[0]];
         if (val === -1 || val === 0 || val == null) parsed['nota_' + p[0]] = null;
     });
 
-    const notasValidas = ALL_PILLARS
+    const notasValidas = CS_PILLARS
         .map(p => parsed['nota_' + p[0]])
         .filter(v => v !== null && v > 0 && v <= 5);
     parsed.media_final = notasValidas.length
@@ -247,7 +247,7 @@ async function getNumbers(transcript) {
 }
 
 async function getMeta(transcript, numbers) {
-    const notasStr = ALL_PILLARS
+    const notasStr = CS_PILLARS
         .filter(p => numbers['nota_' + p[0]] !== null)
         .map(p    => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
         .join(', ');
@@ -292,7 +292,7 @@ async function getMeta(transcript, numbers) {
 }
 
 async function getTextsA(transcript, numbers) {
-    const group = ALL_PILLARS.slice(0, 9);
+    const group = CS_PILLARS.slice(0, 9);
     const notasStr = group
         .filter(p => numbers['nota_' + p[0]] !== null)
         .map(p    => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
@@ -311,7 +311,7 @@ async function getTextsA(transcript, numbers) {
 }
 
 async function getTextsB(transcript, numbers) {
-    const group = ALL_PILLARS.slice(9);
+    const group = CS_PILLARS.slice(9);
     const notasStr = group
         .filter(p => numbers['nota_' + p[0]] !== null)
         .map(p    => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
@@ -387,7 +387,7 @@ async function getDesalinhamentos(transcript) {
 }
 
 async function getRelatorio(numbers, meta, texts, coordinator) {
-    const linhas = ALL_PILLARS.map(function(p) {
+    const linhas = CS_PILLARS.map(function(p) {
         const k = p[0], nota = numbers['nota_' + k];
         if (nota === null) return null;
         const pq = texts['porque_'   + k] || '';
@@ -460,7 +460,7 @@ export default async function handler(req, res) {
         ]);
         const texts = Object.assign({}, textsA, textsB);
 
-        ALL_PILLARS.forEach(function(p) {
+        CS_PILLARS.forEach(function(p) {
             const k = p[0];
             if (numbers['nota_' + k] === null) {
                 texts['porque_'   + k] = 'Sem evidência na transcrição.';
