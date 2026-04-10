@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         /* ── Nibo Design Tokens ─────────────────────────────────────────────────── */
@@ -846,7 +847,35 @@ function closeModal(){
 
 document.getElementById('justification-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
 analyzeBtn.addEventListener('click',handleAnalysis);
-document.getElementById('export-pdf-btn').addEventListener('click',()=>{alert('Use Ctrl+P para imprimir como PDF.');});
+document.getElementById('export-pdf-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('export-pdf-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4"></i><span class="hidden md:inline">Gerando...</span>';
+    lucide.createIcons();
+
+    const element = document.getElementById('analysis-content');
+    const nomeCliente = (document.getElementById('cliente-nome-display').textContent || 'cliente').trim();
+    const analista   = (document.getElementById('analista-nome-resultado').textContent || 'analista').trim();
+    const filename   = `Auditoria_CS_${nomeCliente}_${analista}.pdf`.replace(/[\s/\\:*?"<>|]+/g,'_');
+
+    try {
+        await html2pdf().set({
+            margin:     [8, 8, 8, 8],
+            filename,
+            image:      { type: 'jpeg', quality: 0.92 },
+            html2canvas:{ scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+            jsPDF:      { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:  { mode: ['avoid-all', 'css', 'legacy'] },
+        }).from(element).save();
+        showToast('✅ PDF gerado com sucesso!', 'bg-emerald-600');
+    } catch(e) {
+        showToast('⚠️ Erro ao gerar PDF: ' + e.message, 'bg-red-600');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="file-pdf" class="w-4 h-4"></i><span class="hidden md:inline">PDF</span>';
+        lucide.createIcons();
+    }
+});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 </script>
 </body>
