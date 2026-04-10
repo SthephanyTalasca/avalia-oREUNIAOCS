@@ -170,6 +170,27 @@
                 </a>
             </div>
 
+            <!-- Cliente Avaliado -->
+            <div id="cliente-card" class="hidden glass-card p-6 flex flex-col md:flex-row items-start md:items-center gap-5" style="border-left:6px solid #41b6e6">
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#e6f3ff,#ede9ff)">
+                    <i data-lucide="building-2" class="w-6 h-6" style="color:#0072ce"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Cliente Avaliado 🏢</p>
+                    <p id="cliente-nome-display" class="text-2xl font-extrabold truncate" style="color:#002d72">—</p>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div id="churn-badge" class="flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">
+                        <span id="churn-badge-dot" class="w-2 h-2 rounded-full inline-block"></span>
+                        <span id="churn-badge-label">Churn —</span>
+                    </div>
+                    <div id="saude-badge" class="flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest" style="background:#dcfce7;color:#166534">
+                        <i data-lucide="heart-pulse" class="w-3 h-3"></i>
+                        <span id="saude-badge-label">Saúde —</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center text-center" style="border-bottom:10px solid #6431e2">
                     <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Média de CS (Máx 5) 🏆</span>
@@ -194,6 +215,15 @@
             </div>
 
             <div id="notas-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-4"></div>
+
+            <!-- Sistemas / Ferramentas do Cliente -->
+            <div id="sistemas-section" class="hidden glass-card p-8">
+                <h3 class="font-bold text-slate-800 text-[14px] mb-6 flex items-center gap-3">
+                    <i data-lucide="cpu" class="w-5 h-5" style="color:#41b6e6"></i>
+                    🔗 Sistemas e Ferramentas Citados pelo Cliente
+                </h3>
+                <div id="sistemas-grid" class="flex flex-wrap gap-3"></div>
+            </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="glass-card p-8 min-h-[400px] flex items-center justify-center">
@@ -226,6 +256,16 @@
                     </h4>
                     <ul id="lista-atencao" class="space-y-3 text-[12px] font-bold text-amber-900"></ul>
                 </div>
+            </div>
+
+            <!-- Desalinhamentos de Venda -->
+            <div id="desalinhamentos-section" class="hidden glass-card p-8" style="border-left:6px solid #ef4444">
+                <h3 class="font-bold text-red-700 text-[14px] mb-2 flex items-center gap-3">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i>
+                    ⚠️ Desalinhamentos de Venda Detectados
+                </h3>
+                <p class="text-[11px] text-slate-500 mb-6">Momentos em que o cliente relatou discrepância entre o que foi prometido na venda e o que recebeu.</p>
+                <div id="desalinhamentos-grid" class="space-y-4"></div>
             </div>
 
             <div class="glass-card p-12 md:p-16 shadow-2xl flex justify-between items-start" style="border-top:10px solid #6431e2">
@@ -526,9 +566,58 @@ function renderDashboard(data){
     document.getElementById('resumo-text').textContent=data.resumo_executivo||'—';
     document.getElementById('saude-text').textContent=data.saude_cliente||'N/A';
     document.getElementById('churn-text').textContent=data.risco_churn||'N/A';
-    document.getElementById('concorrentes-tags').innerHTML=(data.sistemas_citados||[]).map(c=>
-        `<span class="px-3 py-1 bg-slate-800 text-blue-200 text-[9px] font-black rounded-lg shadow uppercase tracking-widest flex items-center gap-1.5"><i data-lucide="cpu" class="w-3 h-3"></i> ${c}</span>`
-    ).join('');
+    document.getElementById('concorrentes-tags').innerHTML='';
+
+    // ── Cliente card ─────────────────────────────────────────────────────
+    const nomeCliente=data.nome_cliente||'Não identificado';
+    document.getElementById('cliente-card').classList.remove('hidden');
+    document.getElementById('cliente-nome-display').textContent=nomeCliente;
+
+    // Churn badge (cor por palavra-chave)
+    const churnTxt=(data.risco_churn||'').toLowerCase();
+    const churnBadge=document.getElementById('churn-badge');
+    const churnDot=document.getElementById('churn-badge-dot');
+    const churnLabel=document.getElementById('churn-badge-label');
+    if(/alto|cr[ií]tico|iminente|elevado/.test(churnTxt)){
+        churnBadge.style.cssText='background:#fee2e2;color:#991b1b;padding:0.5rem 1rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;';
+        churnDot.style.background='#ef4444'; churnLabel.textContent='Churn Alto';
+    } else if(/m[eé]dio|moderado|aten[çc][aã]o|risco/.test(churnTxt)){
+        churnBadge.style.cssText='background:#fef3c7;color:#92400e;padding:0.5rem 1rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;';
+        churnDot.style.background='#f59e0b'; churnLabel.textContent='Churn Médio';
+    } else {
+        churnBadge.style.cssText='background:#dcfce7;color:#166534;padding:0.5rem 1rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;';
+        churnDot.style.background='#22c55e'; churnLabel.textContent='Churn Baixo';
+    }
+
+    // Saúde badge
+    const saudeTxt=(data.saude_cliente||'').toLowerCase();
+    const saudeBadge=document.getElementById('saude-badge');
+    const saudeLabel=document.getElementById('saude-badge-label');
+    if(/ruim|cr[ií]tico|insatisfeito|negativo|problema/.test(saudeTxt)){
+        saudeBadge.style.cssText='background:#fee2e2;color:#991b1b;padding:0.5rem 1rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;';
+        saudeLabel.textContent='Saúde Crítica';
+    } else if(/regular|aten[çc][aã]o|mediano|neutro/.test(saudeTxt)){
+        saudeBadge.style.cssText='background:#fef3c7;color:#92400e;padding:0.5rem 1rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;';
+        saudeLabel.textContent='Saúde Regular';
+    } else {
+        saudeBadge.style.cssText='background:#dcfce7;color:#166534;padding:0.5rem 1rem;border-radius:9999px;font-size:10px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;';
+        saudeLabel.textContent='Saúde Boa';
+    }
+
+    // ── Sistemas do cliente ───────────────────────────────────────────────
+    const sistemas=data.sistemas_citados||[];
+    const sistemasSection=document.getElementById('sistemas-section');
+    if(sistemas.length){
+        sistemasSection.classList.remove('hidden');
+        document.getElementById('sistemas-grid').innerHTML=sistemas.map(s=>
+            `<div class="flex items-center gap-2 px-4 py-3 rounded-2xl border text-sm font-bold" style="background:#f0f9ff;border-color:#bae6fd;color:#0369a1">
+                <i data-lucide="monitor" class="w-4 h-4 flex-shrink-0" style="color:#41b6e6"></i>
+                <span>${s}</span>
+            </div>`
+        ).join('');
+    } else {
+        sistemasSection.classList.add('hidden');
+    }
 
     const status=document.getElementById('status-tag');
     if(media>=4.5){status.textContent='🏆 Elite CS';status.className='px-5 py-2 rounded-full text-[10px] font-black uppercase bg-emerald-500 text-white shadow-lg';}
@@ -572,6 +661,35 @@ function renderDashboard(data){
     document.getElementById('lista-fortes').innerHTML=(data.pontos_fortes||[]).map(i=>`<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
     document.getElementById('lista-atencao').innerHTML=(data.pontos_atencao||[]).map(i=>`<li class="flex items-start gap-2"><span>▶</span> ${i}</li>`).join('');
     document.getElementById('markdown-body').innerHTML=marked.parse(data.justificativa_detalhada||'');
+
+    // ── Desalinhamentos de Venda ──────────────────────────────────────────
+    const desalins=data.desalinhamentos||[];
+    const desalinSection=document.getElementById('desalinhamentos-section');
+    if(data.tem_desalinhamento && desalins.length){
+        desalinSection.classList.remove('hidden');
+        const sevColor={alta:'border-red-300 bg-red-50',media:'border-amber-300 bg-amber-50',baixa:'border-yellow-200 bg-yellow-50'};
+        const sevLabel={alta:'Alta',media:'Média',baixa:'Baixa'};
+        const tratadoIcon={explicou:'check-circle',escalou:'arrow-up-right',registrou:'clipboard-list',ignorou:'x-circle',nao_identificado:'help-circle'};
+        const tratadoLabel={explicou:'Explicou',escalou:'Escalou',registrou:'Registrou',ignorou:'Ignorou',nao_identificado:'Não identificado'};
+        document.getElementById('desalinhamentos-grid').innerHTML=desalins.map(d=>{
+            const sev=d.severidade||'baixa';
+            const trat=d.como_tratado||'nao_identificado';
+            const cardCls=sevColor[sev]||sevColor.baixa;
+            const icon=tratadoIcon[trat]||'help-circle';
+            const tratLbl=tratadoLabel[trat]||trat;
+            return `<div class="p-5 rounded-2xl border ${cardCls}">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                    <span class="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${sev==='alta'?'bg-red-200 text-red-800':sev==='media'?'bg-amber-200 text-amber-800':'bg-yellow-100 text-yellow-800'}">Severidade ${sevLabel[sev]||sev}</span>
+                    <span class="flex items-center gap-1.5 text-[9px] font-bold text-slate-500"><i data-lucide="${icon}" class="w-3 h-3"></i>${tratLbl}</span>
+                </div>
+                <p class="text-[11px] font-black text-slate-700 mb-1">Expectativa: <span class="font-bold text-slate-600">${d.expectativa||'—'}</span></p>
+                ${d.realidade?`<p class="text-[11px] font-black text-slate-700 mb-1">Realidade: <span class="font-bold text-slate-600">${d.realidade}</span></p>`:''}
+                <p class="text-[10px] italic text-slate-500 border-t border-slate-200 mt-2 pt-2">"${d.frase_cliente||'—'}"</p>
+            </div>`;
+        }).join('');
+    } else {
+        desalinSection.classList.add('hidden');
+    }
 
     renderRadar(data);
     lucide.createIcons();
