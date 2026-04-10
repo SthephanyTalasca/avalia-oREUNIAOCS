@@ -53,14 +53,17 @@ export default async function handler(req, res) {
             return res.redirect(`/?auth_error=dominio_invalido&email=${encodeURIComponent(user.email)}`);
         }
 
+        const role = ADMIN_EMAILS.includes(user.email.toLowerCase()) ? 'admin' : 'viewer';
+
         const session = Buffer.from(JSON.stringify({
             email:   user.email,
             name:    user.name,
             picture: user.picture,
+            role,
             exp:     Date.now() + 24 * 60 * 60 * 1000
         })).toString('base64');
 
-        // ✅ Cookie correto: nibo_cs_session (igual ao me.js e logout.js)
+        // ✅ Cookie correto: nibo_cs_session (igual ao me.js)
         res.setHeader('Set-Cookie',
             `nibo_cs_session=${session}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`
         );
