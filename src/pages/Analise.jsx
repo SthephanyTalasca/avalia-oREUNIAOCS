@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { firebaseAuth } from '../lib/firebaseClient.js';
 import { marked } from 'marked';
 
 // ── Constantes ─────────────────────────────────────────────────────────────
@@ -179,9 +180,6 @@ function loadScript(src) {
 
 // ── Página principal ────────────────────────────────────────────────────────
 export default function Analise() {
-  const { user }                        = useOutletContext() || {};
-  const googleClientId                  = user?.googleClientId || null;
-
   const [transcript, setTranscript]     = useState('');
   const [coordinator, setCoordinator]   = useState('');
   const [coordinators, setCoordinators] = useState([]);
@@ -202,24 +200,29 @@ export default function Analise() {
     setToast({ msg, color });
   }, []);
 
-  // Pré-carrega os scripts do Google quando o clientId estiver disponível
+  // Pré-carrega o script do Google Picker
   useEffect(() => {
-    if (!googleClientId) return;
-    Promise.all([
-      loadScript('https://apis.google.com/js/api.js'),
-      loadScript('https://accounts.google.com/gsi/client'),
-    ])
+    loadScript('https://apis.google.com/js/api.js')
       .then(() => new Promise(resolve => window.gapi.load('picker', resolve)))
       .then(() => setDriveReady(true))
       .catch(() => {}); // falha silenciosa — botão fica desabilitado
-  }, [googleClientId]);
+  }, []);
 
-  // ── Abre o Drive Picker ──────────────────────────────────────────────────
-  function handleDrivePicker() {
-    if (!driveReady || !googleClientId) return;
+  // ── Abre o Drive Picker via Firebase Auth ───────────────────────────────
+  async function handleDrivePicker() {
+    if (!driveReady) return;
+    setDriveLoading(true);
+    try {
+      let token = driveTokenRef.current;
+      if (!token) {
+        const provider = new GoogleAuthProvider();
+        provider.addScope('https://www.googleapis.com/auth/drive.readonly');
+        const result = await signInWithPopup(firebaseAuth, provider);
+        token = GoogleAuthProvider.credentialFromResult(result)?.accessToken;
+        if (!token) throw new Error('Não foi possível obter o token do Drive.');
+        driveTokenRef.current = token;
+      }
 
-    const openPicker = (token) => {
-      driveTokenRef.current = token;
       const view = new window.google.picker.DocsView()
         .setIncludeFolders(false)
         .setMimeTypes('application/vnd.google-apps.document,text/plain');
@@ -251,25 +254,13 @@ export default function Analise() {
         })
         .build()
         .setVisible(true);
-    };
-
-    // Reutiliza token em memória se ainda válido
-    if (driveTokenRef.current) {
-      openPicker(driveTokenRef.current);
-      return;
+    } catch (e) {
+      if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+        showToast('❌ ' + (e.message || 'Erro ao acessar o Drive'), '#ef4444');
+      }
+    } finally {
+      setDriveLoading(false);
     }
-
-    window.google.accounts.oauth2.initTokenClient({
-      client_id: googleClientId,
-      scope: 'https://www.googleapis.com/auth/drive.readonly',
-      callback: (resp) => {
-        if (resp.error) {
-          showToast('❌ Acesso ao Drive negado.', '#ef4444');
-          return;
-        }
-        openPicker(resp.access_token);
-      },
-    }).requestAccessToken();
   }
 
   // Carrega coordenadores
