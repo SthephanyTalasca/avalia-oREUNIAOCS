@@ -259,9 +259,6 @@
                 <input id="eq-novo-nome" type="text" placeholder="Nome completo do analista" class="flex-1 p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white" />
                 <select id="eq-novo-coord" class="p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white min-w-[160px]">
                     <option value="">Coordenador...</option>
-                    <option value="Tayanara">Tayanara</option>
-                    <option value="Sayuri">Sayuri</option>
-                    <option value="Michel">Michel</option>
                 </select>
                 <button onclick="adicionarAnalista()" class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar</button>
             </div>
@@ -271,9 +268,6 @@
             <i data-lucide="filter" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
             <select id="eq-filter-coord" onchange="renderEquipeList()" class="p-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300 bg-white">
                 <option value="">Todos os coordenadores</option>
-                <option value="Tayanara">Tayanara</option>
-                <option value="Sayuri">Sayuri</option>
-                <option value="Michel">Michel</option>
             </select>
             <span id="eq-badge" class="text-xs text-slate-400 font-semibold ml-auto">— analistas</span>
         </div>
@@ -304,9 +298,6 @@
                 <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Coordenador</label>
                 <select id="eq-edit-coord" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300">
                     <option value="">Sem coordenador</option>
-                    <option value="Tayanara">Tayanara</option>
-                    <option value="Sayuri">Sayuri</option>
-                    <option value="Michel">Michel</option>
                 </select>
             </div>
         </div>
@@ -338,9 +329,6 @@
             <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest block">Novo coordenador</label>
             <select id="bm-coord-select" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 ring-blue-300">
                 <option value="">Sem coordenador</option>
-                <option value="Tayanara">Tayanara</option>
-                <option value="Sayuri">Sayuri</option>
-                <option value="Michel">Michel</option>
             </select>
         </div>
         <!-- Editar data -->
@@ -1306,8 +1294,20 @@ function closeModal(){document.getElementById('modal-overlay').classList.remove(
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closePerfil();closeEdicao();closeEquipe();closeEqEdit();closeBatchModal();}});
 
 // ── MODAL DE EQUIPE ───────────────────────────────────────────────────────
-function openEquipe(){document.getElementById('equipe-overlay').classList.add('open');document.getElementById('equipe-overlay').scrollTop=0;carregarEquipe(false);}
+function openEquipe(){document.getElementById('equipe-overlay').classList.add('open');document.getElementById('equipe-overlay').scrollTop=0;populateCoordSelects();carregarEquipe(false);}
 function closeEquipe(){document.getElementById('equipe-overlay').classList.remove('open');mostrandoInativos=false;}
+async function populateCoordSelects() {
+    try {
+        const res = await fetch('/api/coordinators');
+        if (!res.ok) return;
+        const coords = await res.json();
+        const options = coords.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+        document.getElementById('eq-novo-coord').innerHTML = '<option value="">Coordenador...</option>' + options;
+        document.getElementById('eq-filter-coord').innerHTML = '<option value="">Todos os coordenadores</option>' + options;
+        document.getElementById('eq-edit-coord').innerHTML = '<option value="">Sem coordenador</option>' + options;
+        document.getElementById('bm-coord-select').innerHTML = '<option value="">Sem coordenador</option>' + options;
+    } catch(e) { console.warn('Não foi possível carregar coordenadores:', e.message); }
+}
 async function carregarEquipe(incluirInativos){
     mostrandoInativos=!!incluirInativos;
     document.getElementById('eq-loading').classList.remove('hidden');
@@ -1334,12 +1334,15 @@ function renderEquipeList(){
     document.getElementById('eq-list').classList.remove('hidden');
     const grupos={};
     for(const a of lista){const coord=a.coordenador||'Sem Coordenador';if(!grupos[coord]) grupos[coord]=[];grupos[coord].push(a);}
-    const coordColors={'Tayanara':'#2563eb','Sayuri':'#7c3aed','Michel':'#059669','Sem Coordenador':'#94a3b8'};
+    const palette = ['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0891b2'];
+    const coordNames = [...new Set(lista.map(a => a.coordenador || 'Sem Coordenador'))];
+    const coordColors = {};
+    coordNames.forEach((c, i) => coordColors[c] = c === 'Sem Coordenador' ? '#94a3b8' : palette[i % palette.length]);
     document.getElementById('eq-list').innerHTML=Object.entries(grupos).map(([coord,analistas])=>{
         const cor=coordColors[coord]||'#64748b';
         const rows=analistas.map(a=>{
             const inatBadge=!a.ativo?'<span style="font-size:0.6rem;font-weight:700;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.4rem">Inativo</span>':'';
-            return `<div class="eq-row"><div class="w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white flex-shrink-0" style="background:${cor}22;color:${cor}">${a.nome.trim()[0].toUpperCase()}</div><div class="flex-1 min-w-0"><p class="font-bold text-slate-800 text-sm truncate">${a.nome}${inatBadge}</p><p class="text-xs text-slate-400">${a.coordenador||'—'}</p></div><div class="flex gap-1.5 flex-shrink-0"><button onclick="abrirEqEdit(${a.id})" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all" title="Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>${a.ativo?`<button onclick="desativarAnalista(${a.id},'${a.nome.replace(/'/g,"\\\'")}')" class="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-all" title="Remover"><i data-lucide="user-minus" class="w-3.5 h-3.5"></i></button>`:`<button onclick="reativarAnalista(${a.id})" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-all" title="Reativar"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i></button>`}</div></div>`;
+            return `<div class="eq-row"><div class="w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white flex-shrink-0" style="background:${cor}22;color:${cor}">${a.nome_completo.trim()[0].toUpperCase()}</div><div class="flex-1 min-w-0"><p class="font-bold text-slate-800 text-sm truncate">${a.nome_completo}${inatBadge}</p><p class="text-xs text-slate-400">${a.coordenador||'—'}</p></div><div class="flex gap-1.5 flex-shrink-0"><button onclick="abrirEqEdit(${a.id})" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all" title="Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>${a.ativo?`<button onclick="desativarAnalista(${a.id},'${a.nome_completo.replace(/'/g,"\\\'")}')" class="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-all" title="Remover"><i data-lucide="user-minus" class="w-3.5 h-3.5"></i></button>`:`<button onclick="reativarAnalista(${a.id})" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-all" title="Reativar"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i></button>`}</div></div>`;
         }).join('');
         return `<div><div class="px-8 py-2 bg-slate-50 border-y border-slate-100 flex items-center gap-2"><div class="w-2 h-2 rounded-full flex-shrink-0" style="background:${cor}"></div><span class="text-[10px] font-black uppercase tracking-widest" style="color:${cor}">${coord}</span><span class="ml-auto text-[10px] text-slate-400 font-semibold">${analistas.length} analista${analistas.length!==1?'s':''}</span></div>${rows}</div>`;
     }).join('');
@@ -1368,7 +1371,7 @@ async function desativarAnalista(id,nome){
 async function reativarAnalista(id){
     const analista=equipeData.find(a=>a.id===id);if(!analista) return;
     try{
-        const res=await fetch('/api/team',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:analista.nome,coordenador:analista.coordenador})});
+        const res=await fetch('/api/team',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:analista.nome_completo,coordenador:analista.coordenador})});
         if(!res.ok) throw new Error((await res.json()).error);
         mostrarMsgEquipe('✅ Analista reativado!','ok');await carregarEquipe(mostrandoInativos);
     }catch(e){alert('Erro: '+e.message);}
@@ -1381,14 +1384,14 @@ function mostrarMsgEquipe(texto,tipo){
 function abrirEqEdit(id){
     const a=equipeData.find(x=>x.id===id);if(!a) return;
     document.getElementById('eq-edit-id').value=id;
-    document.getElementById('eq-edit-nome').value=a.nome;
+    document.getElementById('eq-edit-nome').value=a.nome_completo;
     document.getElementById('eq-edit-coord').value=a.coordenador||'';
     document.getElementById('eq-edit-overlay').style.display='flex';
     lucide.createIcons();
 }
 function closeEqEdit(){document.getElementById('eq-edit-overlay').style.display='none';}
 async function salvarEqEdit(){
-    const id=parseInt(document.getElementById('eq-edit-id').value);
+    const id=document.getElementById('eq-edit-id').value;
     const nome=document.getElementById('eq-edit-nome').value.trim();
     const coord=document.getElementById('eq-edit-coord').value;
     if(!nome){alert('Nome é obrigatório.');return;}
