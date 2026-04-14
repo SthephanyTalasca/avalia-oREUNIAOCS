@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,6 +14,8 @@
   --nibo-bg:       #eef2f8;
   --nibo-text:     #0d1b3e;
   --nibo-muted:    #4a5773;
+  --border:        #d8e2f0;
+  --radius:        0.75rem;
 }
 
 body {
@@ -20,6 +24,20 @@ body {
   color: var(--nibo-text);
 }
 
+/* ── Card ──────────────────────────────────────────────────────────────── */
+.nibo-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0,45,114,0.06), 0 1px 2px rgba(0,45,114,0.04);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.nibo-card-hover:hover {
+  box-shadow: 0 8px 24px rgba(100,49,226,0.10);
+  transform: translateY(-1px);
+}
+
+/* Backward compat */
 .glass-card {
   background: white;
   border: 1px solid #d8e2f0;
@@ -27,12 +45,48 @@ body {
   box-shadow: 0 10px 15px -3px rgba(0, 45, 114, 0.06);
   transition: all 0.3s ease;
 }
-
 .glass-card:hover {
   box-shadow: 0 20px 25px -5px rgba(100, 49, 226, 0.12);
 }
 
-/* Scrollbar fina */
+/* ── Gradient text ─────────────────────────────────────────────────────── */
+.text-nibo-gradient {
+  background: linear-gradient(135deg, #6431e2 0%, #41b6e6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+.progress-track {
+  background: #e8edf5;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.8s ease;
+}
+
+/* ── Badges ────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.125rem 0.625rem;
+  border: 1px solid transparent;
+}
+.badge-emerald { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.badge-amber   { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.badge-red     { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.badge-purple  { background: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
+.badge-blue    { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+.badge-gray    { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+
+/* ── Scrollbar fina ────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d8e2f0; border-radius: 2px; }

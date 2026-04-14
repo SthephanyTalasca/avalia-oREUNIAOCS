@@ -1,5 +1,5 @@
-// KpiCards — 4 cards de topo com sparkline de tendência
-function Sparkline({ data, color, w = 80, h = 28 }) {
+// KpiCards V2 — Light theme com sparkline de tendência
+function Sparkline({ data, color, w = 72, h = 28 }) {
   const vals = (data || []).map(d => d.media).filter(v => v > 0);
   if (vals.length < 2) return <div style={{ width: w, height: h }} />;
   const min = Math.min(...vals);
@@ -17,7 +17,8 @@ function Sparkline({ data, color, w = 80, h = 28 }) {
   const ly = +(h - 4 - ((lv - min) / range) * (h - 8)).toFixed(1);
   return (
     <svg width={w} height={h} style={{ overflow: 'visible' }}>
-      <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" points={pts} />
+      <polyline fill="none" stroke={color} strokeWidth="1.5"
+        strokeLinecap="round" strokeLinejoin="round" points={pts} opacity="0.6" />
       <circle cx={lx} cy={ly} r="2.5" fill={color} />
     </svg>
   );
@@ -35,9 +36,9 @@ function scoreColor(v) {
 export default function KpiCards({ stats }) {
   const { total = 0, media_geral, churnStats = {}, saudeStats = {}, evolucao = [] } = stats;
 
-  const churnRate   = total > 0 ? Math.round(((churnStats.alto || 0) / total) * 100) : 0;
-  const saudeRate   = total > 0 ? Math.round(((saudeStats.saudavel || 0) / total) * 100) : 0;
-  const mhsColor    = scoreColor(media_geral);
+  const churnRate = total > 0 ? Math.round(((churnStats.alto || 0) / total) * 100) : 0;
+  const saudeRate = total > 0 ? Math.round(((saudeStats.saudavel || 0) / total) * 100) : 0;
+  const mhsColor  = scoreColor(media_geral);
 
   const trend = evolucao.length >= 2
     ? +((evolucao[evolucao.length - 1]?.media ?? 0) - (evolucao[evolucao.length - 2]?.media ?? 0)).toFixed(1)
@@ -48,46 +49,42 @@ export default function KpiCards({ stats }) {
 
   const cards = [
     {
-      label:  'Reuniões Analisadas',
-      value:  total,
-      unit:   '',
-      sub:    'total no período',
-      color:  '#6366f1',
-      bg:     'rgba(99,102,241,0.12)',
-      spark:  null,
-      icon:   <IconVideo />,
+      label: 'Reuniões Analisadas',
+      value: total,
+      unit:  '',
+      sub:   'total no período',
+      color: '#6431e2',
+      spark: null,
+      icon:  <IconVideo />,
     },
     {
-      label:  'Meeting Health Score',
-      value:  media_geral ? media_geral.toFixed(1) : '—',
-      unit:   '/5',
-      sub:    trend !== null
+      label: 'Meeting Health Score',
+      value: media_geral ? media_geral.toFixed(1) : '—',
+      unit:  '/5',
+      sub:   trend !== null
         ? (trend >= 0 ? `↑ +${trend} vs semana anterior` : `↓ ${trend} vs semana anterior`)
         : 'média geral das notas de IA',
-      color:  mhsColor,
-      bg:     `${mhsColor}22`,
-      spark:  evolucao,
-      icon:   <IconStar />,
+      color: mhsColor,
+      spark: evolucao,
+      icon:  <IconStar />,
     },
     {
-      label:  'Risco de Churn',
-      value:  `${churnRate}%`,
-      unit:   '',
-      sub:    `${churnStats.alto || 0} reun. com alerta alto`,
-      color:  churnColor,
-      bg:     `${churnColor}22`,
-      spark:  null,
-      icon:   <IconAlert />,
+      label: 'Risco de Churn',
+      value: `${churnRate}%`,
+      unit:  '',
+      sub:   `${churnStats.alto || 0} reuniões com alerta alto`,
+      color: churnColor,
+      spark: null,
+      icon:  <IconAlert />,
     },
     {
-      label:  'Clientes Saudáveis',
-      value:  `${saudeRate}%`,
-      unit:   '',
-      sub:    `${saudeStats.saudavel || 0} de ${total} reuniões`,
-      color:  saudeColor,
-      bg:     `${saudeColor}22`,
-      spark:  null,
-      icon:   <IconHeart />,
+      label: 'Clientes Saudáveis',
+      value: `${saudeRate}%`,
+      unit:  '',
+      sub:   `${saudeStats.saudavel || 0} de ${total} reuniões`,
+      color: saudeColor,
+      spark: null,
+      icon:  <IconHeart />,
     },
   ];
 
@@ -96,40 +93,42 @@ export default function KpiCards({ stats }) {
       {cards.map((c, i) => (
         <div
           key={i}
-          className="relative overflow-hidden rounded-2xl border border-white/10 p-5
-                     transition-all duration-300 hover:border-white/20 hover:-translate-y-0.5 hover:shadow-2xl"
-          style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(16px)' }}
+          className="nibo-card nibo-card-hover relative overflow-hidden rounded-xl p-5 cursor-default"
         >
-          {/* Glow blob */}
+          {/* Barra de acento colorida no topo */}
           <div
-            className="absolute top-0 right-0 w-28 h-28 rounded-full blur-3xl pointer-events-none opacity-25"
-            style={{ background: c.color, transform: 'translate(40%,-40%)' }}
+            className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl"
+            style={{ background: `linear-gradient(90deg, ${c.color}, ${c.color}30)` }}
           />
 
-          {/* Icon + sparkline */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                 style={{ background: c.bg }}>
+          {/* Ícone + sparkline */}
+          <div className="flex items-start justify-between mb-4 mt-1">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `${c.color}18` }}
+            >
               <span style={{ color: c.color }}>{c.icon}</span>
             </div>
             {c.spark && <Sparkline data={c.spark} color={c.color} />}
           </div>
 
           {/* Label */}
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-nibo-muted mb-1">
             {c.label}
           </p>
 
-          {/* Value */}
+          {/* Valor */}
           <p className="text-3xl font-black leading-none" style={{ color: c.color }}>
             {c.value}
             {c.unit && (
-              <span className="text-base font-semibold text-slate-500 ml-1">{c.unit}</span>
+              <span className="text-sm font-semibold text-nibo-muted ml-1">{c.unit}</span>
             )}
           </p>
 
           {/* Sub */}
-          {c.sub && <p className="text-[11px] text-slate-500 mt-1.5">{c.sub}</p>}
+          {c.sub && (
+            <p className="text-[11px] text-nibo-muted mt-1.5 leading-snug">{c.sub}</p>
+          )}
         </div>
       ))}
     </div>
