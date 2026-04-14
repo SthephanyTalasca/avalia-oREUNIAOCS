@@ -86,7 +86,7 @@ function avg(arr) {
 
 function calcStats(reunioes) {
     const total  = reunioes.length;
-    const medias = reunioes.filter(r => !r.problema_produto).map(r => r.media_final).filter(v => v != null && v > 0);
+    const medias = reunioes.map(r => r.media_final).filter(v => v != null && v > 0);
 
     // ── Por coordenador ──────────────────────────────────────────────────
     const porCoordenador = {};
@@ -95,7 +95,7 @@ function calcStats(reunioes) {
             porCoordenador[r.coordenador] = { total:0, medias:[], _alto:0 };
         const c = porCoordenador[r.coordenador];
         c.total++;
-        if (r.media_final && r.media_final > 0 && !r.problema_produto) c.medias.push(r.media_final);
+        if (r.media_final && r.media_final > 0) c.medias.push(r.media_final);
         if ((r.risco_churn || '').toLowerCase().includes('alto') ||
             (r.risco_churn || '').toLowerCase().includes('crítico')) c.churn_alto++;
     }
@@ -110,19 +110,17 @@ function calcStats(reunioes) {
             porAnalista[r.analista_nome] = { nome: r.analista_nome, coordenador: r.coordenador, total:0, medias:{} };
         const a = porAnalista[r.analista_nome];
         a.total++;
-        if (r.media_final && r.media_final > 0 && !r.problema_produto) {
+        if (r.media_final && r.media_final > 0) {
             a.medias._all = a.medias._all || [];
             a.medias._all.push(r.media_final);
         }
-        if (!r.problema_produto) {
-            PILLARS.forEach(p => {
-                const val = r['nota_' + p];
-                if (val != null && val > 0) {
-                    a.medias[p] = a.medias[p] || [];
-                    a.medias[p].push(val);
-                }
-            });
-        }
+        PILLARS.forEach(p => {
+            const val = r['nota_' + p];
+            if (val != null && val > 0) {
+                a.medias[p] = a.medias[p] || [];
+                a.medias[p].push(val);
+            }
+        });
     }
     const ranking = Object.values(porAnalista).map(a => {
         const res = { ...a, media: +avg(a.medias._all || []).toFixed(1) };
@@ -134,7 +132,7 @@ function calcStats(reunioes) {
     // ── Médias por pilar ─────────────────────────────────────────────────
     const pilaresTime = {};
     PILLARS.forEach(p => {
-        const vals = reunioes.filter(r => !r.problema_produto).map(r => r['nota_' + p]).filter(v => v != null && v > 0);
+        const vals = reunioes.map(r => r['nota_' + p]).filter(v => v != null && v > 0);
         pilaresTime[p] = +avg(vals).toFixed(1);
     });
 
@@ -146,7 +144,7 @@ function calcStats(reunioes) {
         const key = mon.toISOString().split('T')[0];
         if (!porSemana[key]) porSemana[key] = { semana:key, medias:[], total:0 };
         porSemana[key].total++;
-        if (r.media_final && r.media_final > 0 && !r.problema_produto) porSemana[key].medias.push(r.media_final);
+        if (r.media_final && r.media_final > 0) porSemana[key].medias.push(r.media_final);
     }
     const evolucao = Object.values(porSemana)
         .map(s => ({ semana:s.semana, media: +avg(s.medias).toFixed(1), total:s.total }))

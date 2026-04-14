@@ -16,20 +16,6 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
     if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
 
-    // ── Rota: feedback (era feedback.js) ────────────────────────────────────
-    if (req.query._route === 'feedback') {
-        const { tipo_original, item } = req.body || {};
-        if (!tipo_original || (!item?.descricao && !item?.expectativa))
-            return res.status(400).json({ error: 'tipo_original e item obrigatórios' });
-        await db.collection('cs_feedbacks').add({
-            tipo_original,
-            descricao: item.descricao || item.expectativa || '',
-            item,
-            created_at: FieldValue.serverTimestamp(),
-        });
-        return res.status(200).json({ ok: true });
-    }
-
     const { analise, coordenador } = req.body;
     if (!analise) return res.status(400).json({ error: 'Análise obrigatória' });
 
@@ -83,9 +69,8 @@ export default async function handler(req, res) {
             nota_universo_contabil: analise.nota_universo_contabil ?? null,
 
             // ── Produto e Melhorias ────────────────────────────────────
-            produto_reuniao:  analise.produto_reuniao  || null,
-            tem_melhorias:    analise.tem_melhorias    || false,
-            problema_produto: analise.problema_produto || false,
+            produto_reuniao: analise.produto_reuniao || null,
+            tem_melhorias:   analise.tem_melhorias   || false,
 
             // ── Desalinhamentos de venda ───────────────────────────────
             tem_desalinhamento: analise.tem_desalinhamento || false,
