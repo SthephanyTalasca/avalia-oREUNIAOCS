@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Layout from './components/Layout.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Analise from './pages/Analise.jsx';
+import ClientDetail from './pages/ClientDetail.jsx';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -34,6 +35,7 @@ function App() {
         <Route element={<Layout user={user} />}>
           <Route index element={<Dashboard />} />
           <Route path="/analise" element={<Analise />} />
+          <Route path="/cliente/:id" element={<ClientDetail />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
