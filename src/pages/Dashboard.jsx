@@ -1,11 +1,13 @@
-// Dashboard V2 — Light Premium · dados reais da API
+// Dashboard V3 — Novo design + dados reais da API (critérios de avaliação preservados)
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import KpiCards      from '../components/dashboard/KpiCards.jsx';
-import RiskRadar     from '../components/dashboard/RiskRadar.jsx';
-import CsLeaderboard from '../components/dashboard/CsLeaderboard.jsx';
-import ActionFeed    from '../components/dashboard/ActionFeed.jsx';
+import { Users, TrendingUp, Award, Calendar, ArrowUpRight } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Cell,
+} from 'recharts';
 
+// ── Constantes ─────────────────────────────────────────────────────────────
 const PERIODS = [
   { label: '7d',   value: '7' },
   { label: '30d',  value: '30' },
@@ -13,49 +15,85 @@ const PERIODS = [
   { label: 'Tudo', value: 'todos' },
 ];
 
-const TABS = [
-  {
-    key: 'risco',
-    label: 'Riscos & Oportunidades',
-    icon: (
-      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-      </svg>
-    ),
-  },
-  {
-    key: 'ranking',
-    label: 'Ranking CS',
-    icon: (
-      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
-  },
-  {
-    key: 'feed',
-    label: 'Feed de Ações',
-    icon: (
-      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    ),
-  },
+const PILLARS = [
+  'consultividade','escuta_ativa','jornada_cliente','encantamento','objecoes',
+  'rapport','autoridade','postura','gestao_tempo','contextualizacao',
+  'clareza','objetividade','flexibilidade','dominio_produto','dominio_negocio',
+  'ecossistema_nibo','universo_contabil',
 ];
+
+const PT = {
+  consultividade:   'Consultividade',
+  escuta_ativa:     'Escuta Ativa',
+  jornada_cliente:  'Jornada',
+  encantamento:     'Encantamento',
+  objecoes:         'Objeções',
+  rapport:          'Rapport',
+  autoridade:       'Autoridade',
+  postura:          'Postura',
+  gestao_tempo:     'Gestão Tempo',
+  contextualizacao: 'Contextualização',
+  clareza:          'Clareza',
+  objetividade:     'Objetividade',
+  flexibilidade:    'Flexibilidade',
+  dominio_produto:  'Dom. Produto',
+  dominio_negocio:  'Dom. Negócio',
+  ecossistema_nibo: 'Ecossistema',
+  universo_contabil:'Univ. Contábil',
+};
+
+function mapHealth(saude) {
+  if (!saude) return 'Atenção';
+  const s = saude.toLowerCase();
+  if (/saud[aá]vel|ótim|otim|positiv|excelen/.test(s)) return 'Saudável';
+  if (/cr[ií]tico|ruim|negativ|péssim/.test(s)) return 'Crítico';
+  return 'Atenção';
+}
+
+function fmtDate(str) {
+  if (!str) return '—';
+  return new Date(str).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: '2-digit',
+  });
+}
 
 // ── Skeleton ───────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
     <div className="space-y-6 animate-pulse">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-36 rounded-xl bg-white border border-nibo-ice" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-28 rounded-2xl bg-white border border-nibo-ice" />
         ))}
       </div>
-      <div className="h-10 rounded-xl bg-white border border-nibo-ice" />
-      <div className="h-72 rounded-xl bg-white border border-nibo-ice" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="h-72 rounded-2xl bg-white border border-nibo-ice" />
+        <div className="h-72 rounded-2xl bg-white border border-nibo-ice" />
+      </div>
+      <div className="h-64 rounded-2xl bg-white border border-nibo-ice" />
+    </div>
+  );
+}
+
+// ── HighlightCard ──────────────────────────────────────────────────────────
+const HIGHLIGHT_STYLES = {
+  purple: { background: 'rgba(100,49,226,0.08)', borderColor: 'rgba(100,49,226,0.20)', color: '#6431e2' },
+  pink:   { background: 'rgba(255,64,179,0.08)', borderColor: 'rgba(255,64,179,0.20)', color: '#ff40b3' },
+  blue:   { background: 'rgba(0,114,206,0.08)',  borderColor: 'rgba(0,114,206,0.20)',  color: '#0072ce' },
+};
+
+function HighlightCard({ title, value, subtitle, icon: Icon, color }) {
+  const s = HIGHLIGHT_STYLES[color];
+  return (
+    <div className="bg-white p-6 rounded-2xl border border-[#d8e2f0] shadow-[0_4px_20px_-2px_rgba(0,45,114,0.08)] flex items-start gap-4 transition-transform duration-200 hover:-translate-y-1 cursor-default">
+      <div className="p-3 rounded-xl border flex-shrink-0" style={s}>
+        <Icon className="w-6 h-6" style={{ color: s.color }} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{title}</p>
+        <p className="text-xl font-bold text-nibo-petroleo mb-1 truncate">{value}</p>
+        <p className="text-xs text-slate-500">{subtitle}</p>
+      </div>
     </div>
   );
 }
@@ -67,7 +105,6 @@ export default function Dashboard() {
   const [error,       setError]       = useState(null);
   const [period,      setPeriod]      = useState('30');
   const [coordinator, setCoordinator] = useState('todos');
-  const [activeTab,   setActiveTab]   = useState('risco');
 
   useEffect(() => {
     setLoading(true);
@@ -80,6 +117,7 @@ export default function Dashboard() {
       .catch(e => { setError(String(e)); setLoading(false); });
   }, [period, coordinator]);
 
+  // Enriquece ranking com avg_talk_cs (preservado do V2)
   const data = useMemo(() => {
     if (!raw?.stats?.ranking || !raw?.reunioes) return raw;
     const ranking = raw.stats.ranking.map(a => {
@@ -93,26 +131,81 @@ export default function Dashboard() {
     return { ...raw, stats: { ...raw.stats, ranking } };
   }, [raw]);
 
+  // Coordenadores disponíveis para filtro
   const coordinators = useMemo(() => {
-    const keys = Object.keys(raw?.stats?.porCoordenador || {}).filter(k => k && k !== 'null' && k !== 'undefined');
+    const keys = Object.keys(raw?.stats?.porCoordenador || {})
+      .filter(k => k && k !== 'null' && k !== 'undefined');
     return keys.sort();
   }, [raw]);
 
-  const hasData = !loading && !error && data?.stats;
+  // Contagem de risco churn alto por analista
+  const churnByCS = useMemo(() => {
+    if (!data?.reunioes) return {};
+    const map = {};
+    for (const r of data.reunioes) {
+      const key = r.analista_nome;
+      if (!key) continue;
+      if (/\balto\b|\bcr[ií]tico\b/i.test(r.risco_churn || '')) {
+        map[key] = (map[key] || 0) + 1;
+      }
+    }
+    return map;
+  }, [data]);
+
+  // Média por categoria (agrupada do ranking)
+  const teamStats = useMemo(() => {
+    if (!data?.stats?.ranking?.length) return [];
+    return PILLARS
+      .map(p => {
+        const vals = data.stats.ranking
+          .map(a => a[`avg_${p}`] || 0)
+          .filter(v => v > 0);
+        return {
+          category: PT[p],
+          score: vals.length
+            ? +(vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(2)
+            : 0,
+        };
+      })
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score);
+  }, [data]);
+
+  // Destaques
+  const topByScore  = useMemo(() =>
+    [...(data?.stats?.ranking || [])].sort((a, b) => b.media - a.media)[0],
+  [data]);
+  const topByVolume = useMemo(() =>
+    [...(data?.stats?.ranking || [])].sort((a, b) => b.total - a.total)[0],
+  [data]);
+
+  // Últimas 5 reuniões
+  const recentMeetings = useMemo(() => {
+    if (!data?.reunioes?.length) return [];
+    return [...data.reunioes]
+      .sort((a, b) =>
+        new Date(b.data_reuniao || b.created_at || 0) -
+        new Date(a.data_reuniao || a.created_at || 0)
+      )
+      .slice(0, 5);
+  }, [data]);
+
+  const hasData       = !loading && !error && data?.stats;
+  const bestCategory  = teamStats[0]?.category;
+  const worstCategory = teamStats[teamStats.length - 1]?.category;
 
   return (
     <div className="min-h-screen bg-nibo-bg">
-      <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-8">
 
         {/* ── Header ──────────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-nibo-text">
-              Dashboard{' '}
-              <span className="text-nibo-gradient">CS</span>
-            </h1>
+            <h2 className="text-2xl font-black tracking-tight text-nibo-text">
+              Dashboard de Performance
+            </h2>
             <p className="text-nibo-muted text-sm mt-0.5">
-              Performance em tempo real baseada nas reuniões avaliadas por IA
+              Visão geral da qualidade do atendimento do time de CS.
             </p>
           </div>
 
@@ -167,8 +260,10 @@ export default function Dashboard() {
 
         {/* ── Erro ─────────────────────────────────────────────────────── */}
         {error && (
-          <div className="nibo-card rounded-xl p-6 text-center"
-               style={{ borderColor: '#fca5a5', background: '#fff5f5' }}>
+          <div
+            className="nibo-card rounded-xl p-6 text-center"
+            style={{ borderColor: '#fca5a5', background: '#fff5f5' }}
+          >
             <p className="text-red-600 font-semibold text-sm">Erro ao carregar dados: {error}</p>
           </div>
         )}
@@ -187,31 +282,239 @@ export default function Dashboard() {
         {/* ── Conteúdo ─────────────────────────────────────────────────── */}
         {hasData && (
           <>
-            {/* KPI Cards */}
-            <KpiCards stats={data.stats} />
-
-            {/* Abas */}
-            <div className="flex gap-0 border-b border-nibo-ice">
-              {TABS.map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors -mb-px ${
-                    activeTab === tab.key
-                      ? 'border-nibo-purple text-nibo-purple'
-                      : 'border-transparent text-nibo-muted hover:text-nibo-text'
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
+            {/* Highlights */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <HighlightCard
+                title="Média Geral do Time"
+                value={data.stats.media_geral ? `${data.stats.media_geral.toFixed(1)}/5` : '—'}
+                subtitle={`${data.stats.total || 0} reuniões no período`}
+                icon={TrendingUp}
+                color="purple"
+              />
+              <HighlightCard
+                title="Destaque em Nota"
+                value={topByScore?.nome?.split(' ')[0] || '—'}
+                subtitle={topByScore?.media > 0 ? `Nota: ${topByScore.media.toFixed(1)}` : '—'}
+                icon={Award}
+                color="pink"
+              />
+              <HighlightCard
+                title="Destaque em Volume"
+                value={topByVolume?.nome?.split(' ')[0] || '—'}
+                subtitle={topByVolume ? `${topByVolume.total} reuniões realizadas` : '—'}
+                icon={Users}
+                color="blue"
+              />
             </div>
 
-            {/* Conteúdo de cada aba */}
-            {activeTab === 'risco'   && <RiskRadar    reunioes={data.reunioes} />}
-            {activeTab === 'ranking' && <CsLeaderboard ranking={data.stats.ranking} />}
-            {activeTab === 'feed'    && <ActionFeed   reunioes={data.reunioes} stats={data.stats} />}
+            {/* Grid 2 colunas */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+              {/* CS Ranking */}
+              <section className="bg-white rounded-2xl border border-[#d8e2f0] shadow-[0_4px_20px_-2px_rgba(0,45,114,0.08)] overflow-hidden">
+                <div className="p-6 border-b border-[#d8e2f0]/60 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-nibo-blue" />
+                  <h3 className="font-bold text-nibo-petroleo">Ranking de CSs</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-nibo-bg/40">
+                        {['CS', 'Nota', 'Reuniões', 'Risco Churn'].map(h => (
+                          <th
+                            key={h}
+                            className={`px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider ${
+                              h !== 'CS' ? 'text-center' : ''
+                            }`}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#d8e2f0]/40">
+                      {data.stats.ranking.map((cs) => {
+                        const churnCount = churnByCS[cs.nome] || 0;
+                        return (
+                          <tr key={cs.nome} className="hover:bg-nibo-bg/30 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="font-semibold text-nibo-text">{cs.nome}</div>
+                              {cs.coordenador && (
+                                <div className="text-[11px] text-nibo-muted">{cs.coordenador}</div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                                cs.media >= 4.5 ? 'bg-emerald-100 text-emerald-700' :
+                                cs.media >= 4.0 ? 'bg-blue-50 text-nibo-blue' :
+                                cs.media >= 3.0 ? 'bg-amber-50 text-amber-700' :
+                                'bg-red-50 text-red-600'
+                              }`}>
+                                {cs.media > 0 ? cs.media.toFixed(1) : '—'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center text-sm text-slate-600">
+                              {cs.total}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                                churnCount > 5 ? 'bg-red-50 text-red-600' :
+                                churnCount > 0 ? 'bg-amber-50 text-amber-700' :
+                                'bg-slate-100 text-slate-500'
+                              }`}>
+                                {churnCount}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              {/* Pontuação por Categoria */}
+              <section className="bg-white rounded-2xl border border-[#d8e2f0] shadow-[0_4px_20px_-2px_rgba(0,45,114,0.08)] p-6">
+                <h3 className="font-bold text-nibo-petroleo mb-6 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-nibo-blue" />
+                  Pontuação Geral do Time por Categoria
+                </h3>
+                {teamStats.length > 0 ? (
+                  <>
+                    <div className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={teamStats} layout="vertical" margin={{ left: 20, right: 30 }}>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            horizontal={false}
+                            vertical={true}
+                            stroke="#f1f5f9"
+                          />
+                          <XAxis type="number" domain={[0, 5]} hide />
+                          <YAxis
+                            dataKey="category"
+                            type="category"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 11, fontWeight: 600, fill: '#64748b' }}
+                            width={115}
+                          />
+                          <Tooltip
+                            cursor={{ fill: '#f8fafc' }}
+                            contentStyle={{
+                              borderRadius: '12px',
+                              border: 'none',
+                              boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                            }}
+                            formatter={v => [v.toFixed(2), 'Média']}
+                          />
+                          <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={18}>
+                            {teamStats.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={entry.score >= 4.5 ? '#0072ce' : '#6431e2'}
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {bestCategory && worstCategory && bestCategory !== worstCategory && (
+                      <div className="mt-4 p-4 bg-nibo-bg/50 rounded-xl border border-[#d8e2f0]/40">
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          <span className="font-bold text-nibo-text">Insight:</span> O time performa melhor em{' '}
+                          <span className="font-bold" style={{ color: '#6431e2' }}>{bestCategory}</span> e precisa de melhoria em{' '}
+                          <span className="font-bold" style={{ color: '#6431e2' }}>{worstCategory}</span>.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center text-nibo-muted text-sm">
+                    Dados de categorias insuficientes
+                  </div>
+                )}
+              </section>
+            </div>
+
+            {/* Reuniões Recentes */}
+            <section className="bg-white rounded-2xl border border-[#d8e2f0] shadow-[0_4px_20px_-2px_rgba(0,45,114,0.08)] overflow-hidden">
+              <div className="p-6 border-b border-[#d8e2f0]/60 flex justify-between items-center">
+                <h3 className="font-bold text-nibo-petroleo flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-nibo-blue" />
+                  Histórico de Reuniões Recentes
+                </h3>
+                <Link
+                  to="/history"
+                  className="text-xs font-bold hover:underline flex items-center gap-1"
+                  style={{ color: '#6431e2' }}
+                >
+                  Ver todas <ArrowUpRight className="w-3 h-3" />
+                </Link>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-nibo-bg/40">
+                      {['Cliente', 'CS', 'Data', 'Nota', 'Saúde'].map(h => (
+                        <th
+                          key={h}
+                          className={`px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider ${
+                            ['Nota', 'Saúde'].includes(h) ? 'text-center' : ''
+                          }`}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#d8e2f0]/40">
+                    {recentMeetings.map((r) => {
+                      const health = mapHealth(r.saude_cliente);
+                      return (
+                        <tr
+                          key={r.id || r.reuniao_id || r.created_at}
+                          className="hover:bg-nibo-bg/30 transition-colors cursor-pointer"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="font-semibold text-nibo-text">
+                              {r.nome_cliente || 'Cliente não identificado'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-600">
+                            {(r.analista_nome || '—').split(' ')[0]}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-500">
+                            {fmtDate(r.data_reuniao || r.created_at)}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="font-bold text-nibo-text">
+                              {r.media_final > 0 ? r.media_final.toFixed(1) : '—'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                              health === 'Saudável' ? 'bg-emerald-100 text-emerald-700' :
+                              health === 'Atenção'  ? 'bg-amber-50 text-amber-700' :
+                                                     'bg-red-50 text-red-600'
+                            }`}>
+                              {health}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {recentMeetings.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-10 text-center text-nibo-muted text-sm">
+                          Nenhuma reunião encontrada
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </>
         )}
       </div>
