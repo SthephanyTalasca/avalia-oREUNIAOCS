@@ -72,7 +72,7 @@
                     class="pl-10 pr-5 py-2 rounded-xl text-white text-sm focus:outline-none transition-all cursor-pointer" style="background:rgba(100,49,226,0.35);border:1px solid rgba(65,182,230,0.3)">
                     <option value="">Coordenador (opcional)</option>
                     <option value="Sayuri">Sayuri</option>
-                    <option value="Tayanara">Tayanara</option>
+                    <option value="Taynara">Taynara</option>
                     <option value="Túlio">Túlio</option>
                     <option value="Michel">Michel</option>
                     <option value="Jéssica">Jéssica</option>
@@ -109,7 +109,15 @@
                     <input type="file" id="pdf-upload" accept=".pdf" class="hidden" />
                 </label>
             </div>
-            <div class="flex justify-end">
+            <div class="flex items-center justify-between">
+                <!-- Toggle: problema de produto / imprevisto -->
+                <label class="flex items-center gap-3 cursor-pointer select-none group" title="A nota desta reunião não será contabilizada na média do analista">
+                    <input type="checkbox" id="chk-problema-produto" class="hidden" onchange="toggleProblema(this)">
+                    <div id="toggle-problema-track" class="w-11 h-6 rounded-full flex items-center px-0.5 transition-all duration-200" style="background:#e2e8f0">
+                        <div id="toggle-problema-thumb" class="w-5 h-5 rounded-full bg-white shadow transition-all duration-200"></div>
+                    </div>
+                    <span class="text-xs font-bold" style="color:#64748b" id="toggle-problema-label">Problema de produto / imprevisto</span>
+                </label>
                 <button id="analyze-btn"
                     class="flex items-center gap-3 text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" style="background:#6431e2;font-family:'Poppins',sans-serif;font-weight:600" onmouseover="this.style.background='#002d72'" onmouseout="this.style.background='#6431e2'">
                     <span id="btn-text">Analisar Sucesso do Cliente 🚀</span>
@@ -388,12 +396,12 @@ const CS_TO_COORDINATOR = {
   'brayan santos':'Sayuri','brayan':'Sayuri','camille vaz':'Sayuri','camille':'Sayuri',
   'carolina miranda':'Sayuri','carolina':'Sayuri','isaque silva':'Sayuri','isaque':'Sayuri',
   'larissa mota':'Sayuri','nat vieira':'Sayuri','nat':'Sayuri','vinícius oliveira':'Sayuri','vinicius':'Sayuri',
-  'ana de battisti':'Tayanara','ana battisti':'Tayanara',
-  'denis silva':'Tayanara','denis':'Tayanara','larissa teixeira':'Tayanara',
-  'lorrayne moreira':'Tayanara','lorrayne':'Tayanara','micaelle martins':'Tayanara','micaelle':'Tayanara',
-  'sthephany talasca':'Tayanara','sthephany':'Tayanara','sthe':'Tayanara',
-  'thais silva':'Tayanara','thais':'Tayanara','willian martins':'Tayanara','willian':'Tayanara',
-  'yuri santos':'Tayanara','yuri':'Tayanara',
+  'ana de battisti':'Taynara','ana battisti':'Taynara',
+  'denis silva':'Taynara','denis':'Taynara','larissa teixeira':'Taynara',
+  'lorrayne moreira':'Taynara','lorrayne':'Taynara','micaelle martins':'Taynara','micaelle':'Taynara',
+  'sthephany talasca':'Taynara','sthephany':'Taynara','sthe':'Taynara',
+  'thais silva':'Taynara','thais':'Taynara','willian martins':'Taynara','willian':'Taynara',
+  'yuri santos':'Taynara','yuri':'Taynara',
   'aline almeida':'Michel','aline':'Michel','bianca kim':'Michel','bianca':'Michel',
   'jéssica barreiro':'Michel','jessica barreiro':'Michel','jessica':'Michel',
   'julia rodrigues':'Michel','julia':'Michel','maria fernanda costa':'Michel','mafê':'Michel',
@@ -516,6 +524,23 @@ function animateTo(barId,pctId,target,durationMs){
             if(pct)pct.textContent=Math.round(cur)+'%';if(++i>=steps){clearInterval(t);resolve();}},delay);
     });
 }
+function toggleProblema(chk){
+    const track=document.getElementById('toggle-problema-track');
+    const thumb=document.getElementById('toggle-problema-thumb');
+    const label=document.getElementById('toggle-problema-label');
+    if(chk.checked){
+        track.style.background='#f97316';
+        thumb.style.transform='translateX(20px)';
+        label.style.color='#ea580c';
+        label.textContent='Problema de produto / imprevisto — nota excluída da média';
+    } else {
+        track.style.background='#e2e8f0';
+        thumb.style.transform='translateX(0)';
+        label.style.color='#64748b';
+        label.textContent='Problema de produto / imprevisto';
+    }
+}
+
 function markDone(iconId){
     const el=document.getElementById(iconId);
     if(el)el.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-4 h-4 text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -576,7 +601,7 @@ async function handleAnalysis(){
             const saveRes=await fetch('/api/save',{
                 method:'POST',headers:{'Content-Type':'application/json'},
                 body:JSON.stringify({
-                    analise:{...data,analista_nome:analistaNome},
+                    analise:{...data,analista_nome:analistaNome,problema_produto:document.getElementById('chk-problema-produto').checked},
                     coordenador:coordinator||null
                 })
             });
@@ -756,18 +781,19 @@ function renderDashboard(data){
     // ── Bugs / Erros do Sistema ───────────────────────────────────────────
     const bugs=data.bugs||[];
     const bugsSection=document.getElementById('bugs-section');
+    _currentBugs = bugs;
     if(data.tem_bugs && bugs.length){
         bugsSection.classList.remove('hidden');
         const impColor={alto:'border-red-200 bg-red-50',medio:'border-orange-200 bg-orange-50',baixo:'border-yellow-100 bg-yellow-50'};
         const statusIcon={resolvido:'check-circle',escalado_suporte:'life-buoy',em_aberto:'circle-dot',aguardando_cliente:'clock'};
         const statusLabel={resolvido:'Resolvido',escalado_suporte:'Suporte Acionado',em_aberto:'Em Aberto',aguardando_cliente:'Aguardando Cliente'};
-        document.getElementById('bugs-grid').innerHTML=bugs.map(b=>{
+        document.getElementById('bugs-grid').innerHTML=bugs.map((b,idx)=>{
             const imp=b.impacto||'baixo';
             const st=b.status||'em_aberto';
             const cardCls=impColor[imp]||impColor.baixo;
             const icon=statusIcon[st]||'help-circle';
             const stLbl=statusLabel[st]||st;
-            return `<div class="p-5 rounded-2xl border ${cardCls}">
+            return `<div class="p-5 rounded-2xl border ${cardCls}" data-bug-idx="${idx}">
                 <div class="flex items-start justify-between gap-3 mb-3">
                     <span class="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${imp==='alto'?'bg-red-200 text-red-800':imp==='medio'?'bg-orange-200 text-orange-800':'bg-yellow-100 text-yellow-800'}">Impacto ${imp==='alto'?'Alto':imp==='medio'?'Médio':'Baixo'}</span>
                     <span class="flex items-center gap-1.5 text-[9px] font-bold text-slate-500"><i data-lucide="${icon}" class="w-3 h-3"></i>${stLbl}</span>
@@ -775,6 +801,9 @@ function renderDashboard(data){
                 <p class="text-[12px] font-black text-slate-800 mb-1">${b.descricao||'—'}</p>
                 ${b.contexto?`<p class="text-[11px] text-slate-600 mb-1"><span class="font-bold">Contexto:</span> ${b.contexto}</p>`:''}
                 ${b.frase_cliente?`<p class="text-[10px] italic text-slate-500 border-t border-slate-200 mt-2 pt-2">"${b.frase_cliente}"</p>`:''}
+                <div class="mt-3 pt-3 border-t border-slate-200">
+                    <button onclick="marcarNaoEBug(${idx},this)" class="text-[10px] font-bold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-500 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-all">Não é bug</button>
+                </div>
             </div>`;
         }).join('');
     } else {
@@ -784,19 +813,20 @@ function renderDashboard(data){
     // ── Desalinhamentos de Venda ──────────────────────────────────────────
     const desalins=data.desalinhamentos||[];
     const desalinSection=document.getElementById('desalinhamentos-section');
+    _currentDesalins = desalins;
     if(data.tem_desalinhamento && desalins.length){
         desalinSection.classList.remove('hidden');
         const sevColor={alta:'border-red-300 bg-red-50',media:'border-amber-300 bg-amber-50',baixa:'border-yellow-200 bg-yellow-50'};
         const sevLabel={alta:'Alta',media:'Média',baixa:'Baixa'};
         const tratadoIcon={explicou:'check-circle',escalou:'arrow-up-right',registrou:'clipboard-list',ignorou:'x-circle',nao_identificado:'help-circle'};
         const tratadoLabel={explicou:'Explicou',escalou:'Escalou',registrou:'Registrou',ignorou:'Ignorou',nao_identificado:'Não identificado'};
-        document.getElementById('desalinhamentos-grid').innerHTML=desalins.map(d=>{
+        document.getElementById('desalinhamentos-grid').innerHTML=desalins.map((d,idx)=>{
             const sev=d.severidade||'baixa';
             const trat=d.como_tratado||'nao_identificado';
             const cardCls=sevColor[sev]||sevColor.baixa;
             const icon=tratadoIcon[trat]||'help-circle';
             const tratLbl=tratadoLabel[trat]||trat;
-            return `<div class="p-5 rounded-2xl border ${cardCls}">
+            return `<div class="p-5 rounded-2xl border ${cardCls}" data-desalin-idx="${idx}">
                 <div class="flex items-start justify-between gap-3 mb-3">
                     <span class="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${sev==='alta'?'bg-red-200 text-red-800':sev==='media'?'bg-amber-200 text-amber-800':'bg-yellow-100 text-yellow-800'}">Severidade ${sevLabel[sev]||sev}</span>
                     <span class="flex items-center gap-1.5 text-[9px] font-bold text-slate-500"><i data-lucide="${icon}" class="w-3 h-3"></i>${tratLbl}</span>
@@ -804,6 +834,9 @@ function renderDashboard(data){
                 <p class="text-[11px] font-black text-slate-700 mb-1">Expectativa: <span class="font-bold text-slate-600">${d.expectativa||'—'}</span></p>
                 ${d.realidade?`<p class="text-[11px] font-black text-slate-700 mb-1">Realidade: <span class="font-bold text-slate-600">${d.realidade}</span></p>`:''}
                 <p class="text-[10px] italic text-slate-500 border-t border-slate-200 mt-2 pt-2">"${d.frase_cliente||'—'}"</p>
+                <div class="mt-3 pt-3 border-t border-slate-200">
+                    <button onclick="marcarNaoEDesalinhamento(${idx},this)" class="text-[10px] font-bold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-500 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-all">Não é desalinhamento</button>
+                </div>
             </div>`;
         }).join('');
     } else {
@@ -910,6 +943,42 @@ function closeModal(){
 }
 
 document.getElementById('justification-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+// ── Feedback "Não é bug / Não é desalinhamento" ───────────────────────────
+let _currentBugs = [];
+let _currentDesalins = [];
+
+async function _enviarFeedback(tipo_original, item, btn) {
+    btn.disabled = true;
+    const textoOriginal = btn.textContent;
+    btn.textContent = 'Salvando...';
+    try {
+        const r = await fetch('/api/feedback', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ tipo_original, item }),
+        });
+        if (!r.ok) throw new Error('status ' + r.status);
+        const card = btn.closest('[data-bug-idx],[data-desalin-idx]');
+        if (card) { card.style.opacity = '0.35'; card.style.pointerEvents = 'none'; }
+        btn.textContent = '✓ Salvo';
+        showToast('✅ Feedback salvo — o sistema vai aprender com isso!', 'bg-emerald-600');
+    } catch(e) {
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
+        showToast('❌ Erro ao salvar feedback', 'bg-red-500');
+    }
+}
+
+function marcarNaoEBug(idx, btn) {
+    const item = _currentBugs[idx];
+    if (item) _enviarFeedback('bug', item, btn);
+}
+
+function marcarNaoEDesalinhamento(idx, btn) {
+    const item = _currentDesalins[idx];
+    if (item) _enviarFeedback('desalinhamento', item, btn);
+}
+
 analyzeBtn.addEventListener('click',handleAnalysis);
 document.getElementById('export-pdf-btn').addEventListener('click', async () => {
     const btn = document.getElementById('export-pdf-btn');
