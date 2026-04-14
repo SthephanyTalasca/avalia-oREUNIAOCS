@@ -552,6 +552,48 @@ async function getRelatorio(numbers, meta, texts, coordinator) {
     return res.text || '';
 }
 
+// ── Google Drive helpers ──────────────────────────────────────────────────
+function extractGoogleFileInfo(url) {
+    const docMatch = url.match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/);
+    if (docMatch) return { id: docMatch[1], type: 'doc' };
+
+    const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveMatch) return { id: driveMatch[1], type: 'file' };
+
+    const openMatch = url.match(/drive\.google\.com\/open\?(?:.*&)?id=([a-zA-Z0-9_-]+)/);
+    if (openMatch) return { id: openMatch[1], type: 'file' };
+
+    const idParam = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (idParam) return { id: idParam[1], type: 'file' };
+
+    return null;
+}
+
+async function fetchDriveContent(url) {
+    const info = extractGoogleFileInfo(url);
+    if (!info) throw new Error('URL inválida. Use um link de Google Doc ou arquivo do Drive compartilhado.');
+
+    const exportUrl = info.type === 'doc'
+        ? `https://docs.google.com/document/d/${info.id}/export?format=txt`
+        : `https://drive.google.com/uc?export=download&id=${info.id}`;
+
+    const resp = await fetch(exportUrl, { redirect: 'follow' });
+
+    if (!resp.ok) {
+        if (resp.status === 403 || resp.status === 401) {
+            throw new Error('Arquivo não acessível. Certifique-se de que está compartilhado como "Qualquer pessoa com o link pode ver".');
+        }
+        throw new Error(`Erro ao acessar arquivo (${resp.status}). Verifique o link e as permissões.`);
+    }
+
+    const text = await resp.text();
+    if (!text || text.trim().length < 30) {
+        throw new Error('Arquivo vazio ou sem conteúdo legível. Verifique as permissões de compartilhamento.');
+    }
+
+    return text.trim();
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
@@ -562,9 +604,23 @@ export default async function handler(req, res) {
     }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido.' });
 
-    const prompt      = req.body && req.body.prompt;
-    const coordinator = req.body && req.body.coordinator;
-    if (!prompt) return res.status(400).json({ error: 'Transcrição obrigatória.' });
+    const { prompt: rawPrompt, coordinator, driveUrl, fetchOnly } = req.body || {};
+
+    if (!rawPrompt && !driveUrl) return res.status(400).json({ error: 'Transcrição ou URL do Drive obrigatória.' });
+
+    let prompt = rawPrompt;
+    if (driveUrl) {
+        try {
+            prompt = await fetchDriveContent(driveUrl);
+        } catch (e) {
+            return res.status(422).json({ error: e.message });
+        }
+    }
+
+    // Modo somente busca: retorna o texto sem analisar (para popular a textarea)
+    if (fetchOnly) {
+        return res.status(200).json({ text: prompt });
+    }
 
     try {
         // ✅ Detecção dinâmica via Supabase

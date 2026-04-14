@@ -164,6 +164,109 @@ function FeedbackBtn({ label, onClick }) {
   );
 }
 
+// ── Modal de importação do Google Drive ─────────────────────────────────────
+function DriveModal({ onClose, onImport }) {
+  const [url, setUrl]         = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+
+  async function handleImport() {
+    const trimmed = url.trim();
+    if (!trimmed) { setError('Cole o link do documento.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driveUrl: trimmed, fetchOnly: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao acessar arquivo.');
+      onImport(data.text);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+               style={{ background: '#e8f0fe' }}>
+            <svg className="w-5 h-5" viewBox="0 0 87.3 78" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0a15.92 15.92 0 006.6 13.85z" fill="#0066da"/>
+              <path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L0 51.6h27.5a15.92 15.92 0 0116.15-26.6z" fill="#00ac47"/>
+              <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c1.05-1.8 1.6-3.85 1.6-5.9H60.5L73.55 76.8z" fill="#ea4335"/>
+              <path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.85 0H34.45c-1.65 0-3.2.4-4.55 1.2L43.65 25z" fill="#00832d"/>
+              <path d="M60.5 51.6H27.5L13.75 75.4c1.35.8 2.9 1.2 4.55 1.2h50.7c1.65 0 3.2-.4 4.55-1.2L60.5 51.6z" fill="#2684fc"/>
+              <path d="M73.4 26.4c-1.35-.8-2.9-1.2-4.55-1.2H52.85c1.65 0 3.2.4 4.55 1.2l13.75 23.8L87.3 16.95c-3.1-3.05-7.3-4.95-11.95-4.95-3.9 0-7.5 1.2-10.45 3.25L73.4 26.4z" fill="#ffba00"/>
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-bold text-nibo-petroleo text-base">Importar do Google Drive</h3>
+            <p className="text-[11px] text-slate-500">Cole o link de um Google Doc compartilhado</p>
+          </div>
+        </div>
+
+        {/* Instrução */}
+        <div className="rounded-xl p-3 text-xs text-slate-600 space-y-1"
+             style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+          <p className="font-semibold text-slate-700">Como compartilhar:</p>
+          <p>No Google Docs → <strong>Compartilhar</strong> → "Qualquer pessoa com o link" → <strong>Copiar link</strong></p>
+        </div>
+
+        {/* Input */}
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+            Link do documento
+          </label>
+          <input
+            type="url"
+            value={url}
+            onChange={e => { setUrl(e.target.value); setError(''); }}
+            placeholder="https://docs.google.com/document/d/..."
+            className="w-full px-3 py-2.5 rounded-xl border text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            style={{ borderColor: error ? '#fca5a5' : '#e2e8f0' }}
+            onKeyDown={e => e.key === 'Enter' && !loading && handleImport()}
+          />
+          {error && <p className="text-xs text-red-500 mt-1.5 font-medium">{error}</p>}
+        </div>
+
+        {/* Botões */}
+        <div className="flex gap-2 justify-end pt-1">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleImport}
+            disabled={loading || !url.trim()}
+            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white transition disabled:opacity-50"
+            style={{ background: loading ? '#94a3b8' : 'linear-gradient(135deg,#6431e2,#0072ce)' }}
+          >
+            {loading ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Importando...
+              </>
+            ) : 'Importar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Página principal ────────────────────────────────────────────────────────
 export default function Analise() {
   const [transcript, setTranscript]     = useState('');
@@ -175,6 +278,7 @@ export default function Analise() {
   const [savedId, setSavedId]           = useState(null);
   const [toast, setToast]               = useState(null);
   const [activePilar, setActivePilar]   = useState(null);
+  const [driveModal, setDriveModal]     = useState(false);
   const resultRef                       = useRef(null);
   const fileRef                         = useRef(null);
   const stepTimer                       = useRef(null);
@@ -311,6 +415,16 @@ export default function Analise() {
       {activePilar && (
         <PillarModal pilar={activePilar} onClose={() => setActivePilar(null)} />
       )}
+      {driveModal && (
+        <DriveModal
+          onClose={() => setDriveModal(false)}
+          onImport={text => {
+            setTranscript(text);
+            setDriveModal(false);
+            showToast('✅ Documento importado do Drive!');
+          }}
+        />
+      )}
 
       <div className="max-w-4xl mx-auto space-y-6">
 
@@ -340,8 +454,9 @@ export default function Analise() {
               </select>
             </div>
 
-            {/* Upload PDF */}
-            <div className="flex items-end">
+            {/* Botões de importação */}
+            <div className="flex items-end gap-2 flex-wrap">
+              {/* Upload PDF */}
               <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdfUpload} />
               <button
                 onClick={() => fileRef.current?.click()}
@@ -351,7 +466,23 @@ export default function Analise() {
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
-                Carregar PDF
+                PDF
+              </button>
+
+              {/* Importar do Drive */}
+              <button
+                onClick={() => setDriveModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 hover:border-blue-300 hover:text-blue-600 transition"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0a15.92 15.92 0 006.6 13.85z" fill="#0066da"/>
+                  <path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L0 51.6h27.5a15.92 15.92 0 0116.15-26.6z" fill="#00ac47"/>
+                  <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c1.05-1.8 1.6-3.85 1.6-5.9H60.5L73.55 76.8z" fill="#ea4335"/>
+                  <path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.85 0H34.45c-1.65 0-3.2.4-4.55 1.2L43.65 25z" fill="#00832d"/>
+                  <path d="M60.5 51.6H27.5L13.75 75.4c1.35.8 2.9 1.2 4.55 1.2h50.7c1.65 0 3.2-.4 4.55-1.2L60.5 51.6z" fill="#2684fc"/>
+                  <path d="M73.4 26.4c-1.35-.8-2.9-1.2-4.55-1.2H52.85c1.65 0 3.2.4 4.55 1.2l13.75 23.8 16.2-28.65c-3.1-3.05-7.3-4.95-11.95-4.95-3.9 0-7.5 1.2-10.45 3.25L73.4 26.4z" fill="#ffba00"/>
+                </svg>
+                Drive
               </button>
             </div>
           </div>
