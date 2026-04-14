@@ -16,6 +16,20 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
     if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
 
+    // ── Rota: feedback (era feedback.js) ────────────────────────────────────
+    if (req.query._route === 'feedback') {
+        const { tipo_original, item } = req.body || {};
+        if (!tipo_original || (!item?.descricao && !item?.expectativa))
+            return res.status(400).json({ error: 'tipo_original e item obrigatórios' });
+        await db.collection('cs_feedbacks').add({
+            tipo_original,
+            descricao: item.descricao || item.expectativa || '',
+            item,
+            created_at: FieldValue.serverTimestamp(),
+        });
+        return res.status(200).json({ ok: true });
+    }
+
     const { analise, coordenador } = req.body;
     if (!analise) return res.status(400).json({ error: 'Análise obrigatória' });
 
