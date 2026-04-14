@@ -66,18 +66,7 @@
                 <i data-lucide="user-check" class="w-4 h-4"></i>
                 <span id="analista-badge-nome">—</span>
             </div>
-            <div class="relative">
-                <i data-lucide="shield" class="absolute left-3 top-2.5 w-4 h-4" style="color:#b8ccea"></i>
-                <select id="coordinator-select"
-                    class="pl-10 pr-5 py-2 rounded-xl text-white text-sm focus:outline-none transition-all cursor-pointer" style="background:rgba(100,49,226,0.35);border:1px solid rgba(65,182,230,0.3)">
-                    <option value="">Coordenador (opcional)</option>
-                    <option value="Sayuri">Sayuri</option>
-                    <option value="Tayanara">Tayanara</option>
-                    <option value="Túlio">Túlio</option>
-                    <option value="Michel">Michel</option>
-                    <option value="Jéssica">Jéssica</option>
-                </select>
-            </div>
+            <input type="hidden" id="coordinator-select" value="">
             <a href="/" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-sm font-bold transition-all shadow" style="color:#002d72" onmouseover="this.style.background='#ede9ff'" onmouseout="this.style.background='white'">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
                 ← Dashboard 📊
@@ -98,6 +87,38 @@
                 <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color:#6431e2"></i>
                 <p class="text-xs font-medium" style="color:#5229c5">💡 O nome do analista será detectado automaticamente pela IA a partir da transcrição. O coordenador é opcional.</p>
             </div>
+
+            <div class="mb-6">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Selecionar Coordenador</p>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="coordinator-cards">
+                    <button type="button" class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer" data-value="Sayuri" onclick="selectCoordinator(this)">
+                        <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
+                        <span class="font-bold text-sm text-slate-800">Sayuri</span>
+                        <span class="text-xs text-slate-400">Coordenadora</span>
+                    </button>
+                    <button type="button" class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer" data-value="Tayanara" onclick="selectCoordinator(this)">
+                        <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
+                        <span class="font-bold text-sm text-slate-800">Tayanara</span>
+                        <span class="text-xs text-slate-400">Coordenadora</span>
+                    </button>
+                    <button type="button" class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer" data-value="Michel" onclick="selectCoordinator(this)">
+                        <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
+                        <span class="font-bold text-sm text-slate-800">Michel</span>
+                        <span class="text-xs text-slate-400">Coordenador</span>
+                    </button>
+                    <button type="button" class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer" data-value="Túlio" onclick="selectCoordinator(this)">
+                        <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
+                        <span class="font-bold text-sm text-slate-800">Túlio</span>
+                        <span class="text-xs text-slate-400">Coordenador</span>
+                    </button>
+                    <button type="button" class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer" data-value="Jéssica" onclick="selectCoordinator(this)">
+                        <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
+                        <span class="font-bold text-sm text-slate-800">Jéssica</span>
+                        <span class="text-xs text-slate-400">Coordenadora</span>
+                    </button>
+                </div>
+            </div>
+
             <textarea id="transcript-input" rows="6"
                 class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:outline-none transition-all text-sm resize-none"
                 placeholder="Cole aqui o diálogo da reunião de Onboarding..."></textarea>
@@ -383,6 +404,18 @@
 <script>
 lucide.createIcons();
 
+function selectCoordinator(btn) {
+    document.querySelectorAll('.coordinator-card').forEach(c => {
+        c.style.borderColor = '';
+        c.style.background = '';
+        c.querySelector('i').style.color = '';
+    });
+    btn.style.borderColor = '#6431e2';
+    btn.style.background = '#ede9ff';
+    btn.querySelector('i').style.color = '#6431e2';
+    document.getElementById('coordinator-select').value = btn.dataset.value;
+}
+
 // ── Mapeamento CS → Coordenador ─────────────────────────────────────────
 const CS_TO_COORDINATOR = {
   'brayan santos':'Sayuri','brayan':'Sayuri','camille vaz':'Sayuri','camille':'Sayuri',
@@ -415,7 +448,11 @@ document.getElementById('transcript-input').addEventListener('paste',function(){
         const detected=detectLocalCS(this.value);
         if(detected){
             const sel=document.getElementById('coordinator-select');
-            if(!sel.value) sel.value=detected.coordinator;
+            if(!sel.value){
+                sel.value=detected.coordinator;
+                const card=document.querySelector(`.coordinator-card[data-value="${detected.coordinator}"]`);
+                if(card) selectCoordinator(card);
+            }
             showToast('✅ Coordenador detectado: '+detected.coordinator);
         }
     },100);
