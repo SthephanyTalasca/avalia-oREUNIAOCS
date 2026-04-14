@@ -21,7 +21,7 @@ export default function handler(req, res) {
             res.setHeader('Set-Cookie', 'nibo_cs_session=; Max-Age=0; Path=/');
             return res.status(403).json({ error: 'Acesso negado.' });
         }
-        return res.status(200).json({ email: session.email, name: session.name, picture: session.picture, role: session.role });
+        return res.status(200).json({ email: session.email, name: session.name, picture: session.picture, role: session.role, googleClientId: process.env.GOOGLE_CLIENT_ID || null });
     } catch {
         return res.status(401).json({ error: 'Sessão inválida' });
     }
