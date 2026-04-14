@@ -231,20 +231,32 @@ async function seed() {
 
   // ── cs_analistas ────────────────────────────────────────────────────────
   const analistas = [
-    { nome:'Sabrina Silva',      coordenador:'Taynara', ativo:true },
-    { nome:'Isaque Ramos',       coordenador:'Sayuri',  ativo:true },
+    // Sayuri
     { nome:'Brayan Santos',      coordenador:'Sayuri',  ativo:true },
-    { nome:'Nataly Vieira',      coordenador:'Sayuri',  ativo:true },
-    { nome:'Debora Rezende',     coordenador:'Sayuri',  ativo:true },
-    { nome:'Sthephany Talasca',  coordenador:'Taynara', ativo:true },
-    { nome:'Rafaele Oliveira',   coordenador:'Michel',  ativo:true },
-    { nome:'Julia Rodrigues',    coordenador:'Michel',  ativo:true },
-    { nome:'Aline Almeida',      coordenador:'Michel',  ativo:true },
-    { nome:'Maria Fernanda',     coordenador:'Michel',  ativo:true },
+    { nome:'Camille Vaz',        coordenador:'Sayuri',  ativo:true },
+    { nome:'Carolina Miranda',   coordenador:'Sayuri',  ativo:true },
+    { nome:'Isaque Silva',       coordenador:'Sayuri',  ativo:true },
+    { nome:'Larissa Mota',       coordenador:'Sayuri',  ativo:true },
+    { nome:'Nat Vieira',         coordenador:'Sayuri',  ativo:true },
+    { nome:'Vinícius Oliveira',  coordenador:'Sayuri',  ativo:true },
+    // Taynara
     { nome:'Denis Silva',        coordenador:'Taynara', ativo:true },
-    { nome:'Lorrayne Moreira',   coordenador:'Taynara', ativo:true },
-    { nome:'Thais Silva',        coordenador:'Taynara', ativo:true },
     { nome:'Larissa Teixeira',   coordenador:'Taynara', ativo:true },
+    { nome:'Lorrayne Moreira',   coordenador:'Taynara', ativo:true },
+    { nome:'Micaelle Martins',   coordenador:'Taynara', ativo:true },
+    { nome:'Sthephany Talasca',  coordenador:'Taynara', ativo:true },
+    { nome:'Thais Silva',        coordenador:'Taynara', ativo:true },
+    { nome:'Willian Martins',    coordenador:'Taynara', ativo:true },
+    { nome:'Yuri Santos',        coordenador:'Taynara', ativo:true },
+    // Michel
+    { nome:'Aline Almeida',      coordenador:'Michel',  ativo:true },
+    { nome:'Bianca Kim',         coordenador:'Michel',  ativo:true },
+    { nome:'Jéssica Barreiro',   coordenador:'Michel',  ativo:true },
+    { nome:'Julia Rodrigues',    coordenador:'Michel',  ativo:true },
+    { nome:'Maria Fernanda Costa', coordenador:'Michel', ativo:true },
+    { nome:'Maryana Alves',      coordenador:'Michel',  ativo:true },
+    { nome:'Rafaele Oliveira',   coordenador:'Michel',  ativo:true },
+    { nome:'Túlio Morgado',      coordenador:'Michel',  ativo:true },
   ];
   console.log('\n🧑‍💼 Inserindo cs_analistas...');
   for (const a of analistas) {
@@ -254,7 +266,7 @@ async function seed() {
   }
 
   // ── cs_coordenadores ────────────────────────────────────────────────────
-  const coordenadores = ['Taynara','Michel','Túlio','Jéssica','Sayuri'];
+  const coordenadores = ['Sayuri','Taynara','Michel'];
   console.log('\n👔 Inserindo cs_coordenadores...');
   for (const nome of coordenadores) {
     const docId = nome.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
