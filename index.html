@@ -1114,9 +1114,9 @@ function renderReunioes(){
             <td><span class="tag-${churnCls}">${churnLabel}</span></td>
             <td><span class="${isAuto?'tag-auto':'tag-manual'}">${isAuto?'Auto':'Manual'}</span></td>
             <td class="flex gap-1">
-                <button onclick="openModalId(${r.id})" class="text-slate-400 hover:text-blue-600 p-1" title="Ver"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                <button onclick="abrirEdicaoId(${r.id})" class="text-slate-400 hover:text-emerald-600 p-1" title="Editar"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                <button onclick="excluirRegistro(${r.id},'${analistaNome.replace(/'/g,"\\'")}')" class="text-slate-400 hover:text-red-600 p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <button onclick="openModalId('${r.id}')" class="text-slate-400 hover:text-blue-600 p-1" title="Ver"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                <button onclick="abrirEdicaoId('${r.id}')" class="text-slate-400 hover:text-emerald-600 p-1" title="Editar"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                <button onclick="excluirRegistro('${r.id}','${analistaNome.replace(/'/g,"\\'")}')" class="text-slate-400 hover:text-red-600 p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </td>
         </tr>`;
     }).join('');
@@ -1164,7 +1164,7 @@ function abrirPerfil(nome) {
         const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';
         const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
         const dataStr=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
-        return `<tr onclick="openModalId(${r.id})" style="cursor:pointer"><td class="text-slate-500 font-semibold">${dataStr}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td></tr>`;
+        return `<tr onclick="openModalId('${r.id}')" style="cursor:pointer"><td class="text-slate-500 font-semibold">${dataStr}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td></tr>`;
     }).join('');
     document.getElementById('perfil-overlay').classList.add('open');
     document.getElementById('perfil-overlay').scrollTop=0;
@@ -1342,7 +1342,7 @@ function renderEquipeList(){
         const cor=coordColors[coord]||'#64748b';
         const rows=analistas.map(a=>{
             const inatBadge=!a.ativo?'<span style="font-size:0.6rem;font-weight:700;background:#fee2e2;color:#dc2626;padding:0.1rem 0.4rem;border-radius:999px;margin-left:0.4rem">Inativo</span>':'';
-            return `<div class="eq-row"><div class="w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white flex-shrink-0" style="background:${cor}22;color:${cor}">${a.nome_completo.trim()[0].toUpperCase()}</div><div class="flex-1 min-w-0"><p class="font-bold text-slate-800 text-sm truncate">${a.nome_completo}${inatBadge}</p><p class="text-xs text-slate-400">${a.coordenador||'—'}</p></div><div class="flex gap-1.5 flex-shrink-0"><button onclick="abrirEqEdit(${a.id})" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all" title="Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>${a.ativo?`<button onclick="desativarAnalista(${a.id},'${a.nome_completo.replace(/'/g,"\\\'")}')" class="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-all" title="Remover"><i data-lucide="user-minus" class="w-3.5 h-3.5"></i></button>`:`<button onclick="reativarAnalista(${a.id})" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-all" title="Reativar"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i></button>`}</div></div>`;
+            return `<div class="eq-row"><div class="w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white flex-shrink-0" style="background:${cor}22;color:${cor}">${a.nome_completo.trim()[0].toUpperCase()}</div><div class="flex-1 min-w-0"><p class="font-bold text-slate-800 text-sm truncate">${a.nome_completo}${inatBadge}</p><p class="text-xs text-slate-400">${a.coordenador||'—'}</p></div><div class="flex gap-1.5 flex-shrink-0"><button onclick="abrirEqEdit('${a.id}')" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all" title="Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>${a.ativo?`<button onclick="desativarAnalista('${a.id}','${a.nome_completo.replace(/'/g,"\\\'")}')" class="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-all" title="Remover"><i data-lucide="user-minus" class="w-3.5 h-3.5"></i></button>`:`<button onclick="reativarAnalista('${a.id}')" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-all" title="Reativar"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i></button>`}</div></div>`;
         }).join('');
         return `<div><div class="px-8 py-2 bg-slate-50 border-y border-slate-100 flex items-center gap-2"><div class="w-2 h-2 rounded-full flex-shrink-0" style="background:${cor}"></div><span class="text-[10px] font-black uppercase tracking-widest" style="color:${cor}">${coord}</span><span class="ml-auto text-[10px] text-slate-400 font-semibold">${analistas.length} analista${analistas.length!==1?'s':''}</span></div>${rows}</div>`;
     }).join('');
