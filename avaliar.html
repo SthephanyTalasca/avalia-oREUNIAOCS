@@ -392,30 +392,28 @@ function selectCoordinator(btn) {
     document.getElementById('coordinator-select').value = btn.dataset.value;
 }
 
-// ── Mapeamento CS → Coordenador (carregado do Firebase) ──────────────────
+// ── Mapeamento CS → Coordenador (carregado do Firebase via cs_membros) ───
 let CS_TO_COORDINATOR = {};
 
 async function loadTeamData() {
     try {
-        const [teamRes, coordRes] = await Promise.all([
-            fetch('/api/team'),
+        const [configRes, coordRes] = await Promise.all([
+            fetch('/api/config'),
             fetch('/api/coordinators'),
         ]);
-        if (!teamRes.ok || !coordRes.ok) throw new Error('Falha ao carregar dados');
+        if (!configRes.ok || !coordRes.ok) throw new Error('Falha ao carregar dados');
 
-        const analistas = await teamRes.json();
+        const { membros } = await configRes.json();
         const coordenadores = await coordRes.json();
 
-        // Monta o mapa nome → coordenador a partir do Firebase
+        // Monta o mapa alias → coordenador usando cs_membros (já tem todos os aliases)
         CS_TO_COORDINATOR = {};
-        for (const a of analistas) {
-            if (!a.nome || !a.coordenador) continue;
-            const nomeNorm = a.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            CS_TO_COORDINATOR[a.nome.toLowerCase()] = a.coordenador;
-            if (nomeNorm !== a.nome.toLowerCase()) CS_TO_COORDINATOR[nomeNorm] = a.coordenador;
-            // Adiciona o primeiro nome também
-            const primeiro = a.nome.split(' ')[0].toLowerCase();
-            if (primeiro.length > 2) CS_TO_COORDINATOR[primeiro] = a.coordenador;
+        for (const m of membros) {
+            if (!m.coordenador) continue;
+            for (const alias of (m.alias || [])) {
+                CS_TO_COORDINATOR[alias.toLowerCase()] = m.coordenador;
+            }
+            CS_TO_COORDINATOR[m.nome_completo.toLowerCase()] = m.coordenador;
         }
 
         // Renderiza os cards de coordenador
