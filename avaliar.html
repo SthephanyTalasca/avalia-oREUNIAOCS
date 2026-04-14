@@ -91,31 +91,7 @@
             <div class="mb-6">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Selecionar Coordenador</p>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="coordinator-cards">
-                    <button type="button" class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer" data-value="Sayuri" onclick="selectCoordinator(this)">
-                        <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
-                        <span class="font-bold text-sm text-slate-800">Sayuri</span>
-                        <span class="text-xs text-slate-400">Coordenadora</span>
-                    </button>
-                    <button type="button" class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer" data-value="Tayanara" onclick="selectCoordinator(this)">
-                        <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
-                        <span class="font-bold text-sm text-slate-800">Tayanara</span>
-                        <span class="text-xs text-slate-400">Coordenadora</span>
-                    </button>
-                    <button type="button" class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer" data-value="Michel" onclick="selectCoordinator(this)">
-                        <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
-                        <span class="font-bold text-sm text-slate-800">Michel</span>
-                        <span class="text-xs text-slate-400">Coordenador</span>
-                    </button>
-                    <button type="button" class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer" data-value="Túlio" onclick="selectCoordinator(this)">
-                        <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
-                        <span class="font-bold text-sm text-slate-800">Túlio</span>
-                        <span class="text-xs text-slate-400">Coordenador</span>
-                    </button>
-                    <button type="button" class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer" data-value="Jéssica" onclick="selectCoordinator(this)">
-                        <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
-                        <span class="font-bold text-sm text-slate-800">Jéssica</span>
-                        <span class="text-xs text-slate-400">Coordenadora</span>
-                    </button>
+                    <span class="text-xs text-slate-400 col-span-3">Carregando...</span>
                 </div>
             </div>
 
@@ -416,23 +392,53 @@ function selectCoordinator(btn) {
     document.getElementById('coordinator-select').value = btn.dataset.value;
 }
 
-// ── Mapeamento CS → Coordenador ─────────────────────────────────────────
-const CS_TO_COORDINATOR = {
-  'brayan santos':'Sayuri','brayan':'Sayuri','camille vaz':'Sayuri','camille':'Sayuri',
-  'carolina miranda':'Sayuri','carolina':'Sayuri','isaque silva':'Sayuri','isaque':'Sayuri',
-  'larissa mota':'Sayuri','nat vieira':'Sayuri','nat':'Sayuri','vinícius oliveira':'Sayuri','vinicius':'Sayuri',
-  'ana de battisti':'Tayanara','ana battisti':'Tayanara',
-  'denis silva':'Tayanara','denis':'Tayanara','larissa teixeira':'Tayanara',
-  'lorrayne moreira':'Tayanara','lorrayne':'Tayanara','micaelle martins':'Tayanara','micaelle':'Tayanara',
-  'sthephany talasca':'Tayanara','sthephany':'Tayanara','sthe':'Tayanara',
-  'thais silva':'Tayanara','thais':'Tayanara','willian martins':'Tayanara','willian':'Tayanara',
-  'yuri santos':'Tayanara','yuri':'Tayanara',
-  'aline almeida':'Michel','aline':'Michel','bianca kim':'Michel','bianca':'Michel',
-  'jéssica barreiro':'Michel','jessica barreiro':'Michel','jessica':'Michel',
-  'julia rodrigues':'Michel','julia':'Michel','maria fernanda costa':'Michel','mafê':'Michel',
-  'maryana alves':'Michel','maryana':'Michel','rafaele oliveira':'Michel','rafaele':'Michel',
-  'túlio morgado':'Michel','túlio':'Michel','tulio':'Michel',
-};
+// ── Mapeamento CS → Coordenador (carregado do Firebase) ──────────────────
+let CS_TO_COORDINATOR = {};
+
+async function loadTeamData() {
+    try {
+        const [teamRes, coordRes] = await Promise.all([
+            fetch('/api/team'),
+            fetch('/api/coordinators'),
+        ]);
+        if (!teamRes.ok || !coordRes.ok) throw new Error('Falha ao carregar dados');
+
+        const analistas = await teamRes.json();
+        const coordenadores = await coordRes.json();
+
+        // Monta o mapa nome → coordenador a partir do Firebase
+        CS_TO_COORDINATOR = {};
+        for (const a of analistas) {
+            if (!a.nome || !a.coordenador) continue;
+            const nomeNorm = a.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            CS_TO_COORDINATOR[a.nome.toLowerCase()] = a.coordenador;
+            if (nomeNorm !== a.nome.toLowerCase()) CS_TO_COORDINATOR[nomeNorm] = a.coordenador;
+            // Adiciona o primeiro nome também
+            const primeiro = a.nome.split(' ')[0].toLowerCase();
+            if (primeiro.length > 2) CS_TO_COORDINATOR[primeiro] = a.coordenador;
+        }
+
+        // Renderiza os cards de coordenador
+        const container = document.getElementById('coordinator-cards');
+        if (coordenadores.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-400 col-span-3">Nenhum coordenador cadastrado.</span>';
+        } else {
+            container.innerHTML = coordenadores.map(c => `
+                <button type="button"
+                    class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer"
+                    data-value="${c.nome}"
+                    onclick="selectCoordinator(this)">
+                    <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
+                    <span class="font-bold text-sm text-slate-800">${c.nome}</span>
+                    <span class="text-xs text-slate-400">Coordenador(a)</span>
+                </button>`).join('');
+            lucide.createIcons();
+        }
+    } catch(e) {
+        document.getElementById('coordinator-cards').innerHTML =
+            '<span class="text-xs text-red-400 col-span-3">Erro ao carregar coordenadores.</span>';
+    }
+}
 
 function detectLocalCS(transcript) {
     if(!transcript) return null;
@@ -442,6 +448,8 @@ function detectLocalCS(transcript) {
     }
     return null;
 }
+
+loadTeamData();
 
 document.getElementById('transcript-input').addEventListener('paste',function(){
     setTimeout(()=>{
