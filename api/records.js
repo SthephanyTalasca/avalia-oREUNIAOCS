@@ -1,5 +1,7 @@
 // api/records.js — CS Auditor
+// Inclui lógica de migrate (normalize_names) — POST { action: 'normalize_names' } sem ids
 import { db } from '../lib/firebase.js';
+import { getConfig } from './config.js';
 
 const ADMIN_EMAIL  = 'sthephany.talasca@nibo.com.br';
 const BATCH_EMAILS = ['sthephany.talasca@nibo.com.br'];
@@ -59,8 +61,62 @@ export default async function handler(req, res) {
             return res.status(403).json({ error: 'Sem permissão para edição em lote.' });
 
         const { action, ids, payload } = req.body || {};
-        if (!action || !Array.isArray(ids) || ids.length === 0)
-            return res.status(400).json({ error: 'action e ids são obrigatórios.' });
+        if (!action) return res.status(400).json({ error: 'action obrigatória.' });
+
+        // ── normalize_names: migração de nomes via cs_membros (admin only) ──
+        if (action === 'normalize_names') {
+            if (email !== ADMIN_EMAIL)
+                return res.status(403).json({ error: 'Apenas admin pode executar migrações.' });
+            try {
+                const { CS_TO_COORDINATOR, CS_NOME_LOOKUP } = await getConfig();
+                const sorted = Object.keys(CS_TO_COORDINATOR).sort((a, b) => b.length - a.length);
+
+                function resolveNome(raw) {
+                    if (!raw) return null;
+                    const lower = raw.toLowerCase().trim();
+                    if (CS_TO_COORDINATOR[lower])
+                        return { nome: CS_NOME_LOOKUP[lower] || raw, coordenador: CS_TO_COORDINATOR[lower] };
+                    for (const key of sorted) {
+                        if (lower.includes(key) || key.includes(lower))
+                            return { nome: CS_NOME_LOOKUP[key] || raw, coordenador: CS_TO_COORDINATOR[key] };
+                    }
+                    return null;
+                }
+
+                let allRecs = [], lastDoc = null;
+                while (true) {
+                    let q = db.collection('cs_reunioes').select('analista_nome', 'coordenador').orderBy('__name__').limit(1000);
+                    if (lastDoc) q = q.startAfter(lastDoc);
+                    const snap = await q.get();
+                    if (snap.empty) break;
+                    snap.docs.forEach(d => allRecs.push({ id: d.id, ...d.data() }));
+                    lastDoc = snap.docs[snap.docs.length - 1];
+                    if (snap.docs.length < 1000) break;
+                }
+
+                const toUpdate = allRecs.reduce((acc, rec) => {
+                    const r = resolveNome(rec.analista_nome);
+                    if (r && (rec.analista_nome !== r.nome || rec.coordenador !== r.coordenador))
+                        acc.push({ id: rec.id, analista_nome: r.nome, coordenador: r.coordenador });
+                    return acc;
+                }, []);
+
+                for (let i = 0; i < toUpdate.length; i += 500) {
+                    const batch = db.batch();
+                    toUpdate.slice(i, i + 500).forEach(r =>
+                        batch.update(db.collection('cs_reunioes').doc(r.id), { analista_nome: r.analista_nome, coordenador: r.coordenador })
+                    );
+                    await batch.commit();
+                }
+
+                return res.status(200).json({ ok: true, total: allRecs.length, updated: toUpdate.length });
+            } catch (err) {
+                return res.status(500).json({ error: err.message });
+            }
+        }
+
+        if (!Array.isArray(ids) || ids.length === 0)
+            return res.status(400).json({ error: 'ids obrigatórios.' });
 
         if (action === 'delete' && email !== ADMIN_EMAIL)
             return res.status(403).json({ error: 'Apenas admin pode excluir em lote.' });
