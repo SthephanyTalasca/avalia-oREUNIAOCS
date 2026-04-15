@@ -860,7 +860,7 @@ function renderDashboard(data){
     const prodLabel = document.getElementById('produto-badge-label');
     if (data.produto_reuniao && data.produto_reuniao !== 'Não identificado') {
         const PROD_COLORS = {
-            'Nibo':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706'
+            'Nibo':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706','Emissor':'#0891b2'
         };
         const prodKey = Object.keys(PROD_COLORS).find(k => data.produto_reuniao.includes(k));
         const prodColor = PROD_COLORS[prodKey] || '#6431e2';
@@ -883,7 +883,7 @@ function renderDashboard(data){
             outro:          { label:'Outro',          bg:'#f1f5f9', color:'#475569' },
         };
         const PROD_COLORS2 = {
-            'Nibo':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706','Outro':'#64748b'
+            'Nibo':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706','Emissor':'#0891b2','WhatsApp':'#25D366','Outro':'#64748b'
         };
         document.getElementById('melhorias-grid').innerHTML = melhorias.map(m => {
             const tipo = TIPO_META[m.tipo] || TIPO_META.outro;

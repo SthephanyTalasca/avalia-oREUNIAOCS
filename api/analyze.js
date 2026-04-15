@@ -472,7 +472,8 @@ async function getMelhorias(transcript) {
                 'Os produtos Nibo são: Nibo (contabilidade/fiscal/escrita contábil), ' +
                 'Radar (fluxo de caixa/financeiro/DRE), ' +
                 'Conciliador (conciliação bancária/OFX), ' +
-                'BPO (serviços contábeis terceirizados/escritório), ' +
+                'BPO (serviços contábeis terceirizados/escritório contábil), ' +
+                'Emissor (emissão de notas fiscais NF-e/NFS-e/NFC-e/SPED/obrigações acessórias), ' +
                 'WhatsApp (chat/comunicação via WhatsApp Business/mensagens automáticas). ' +
                 'Retorne o nome exato de um dos produtos. Se dois produtos forem igualmente centrais, ' +
                 'retorne ambos separados por " + " (ex: "Nibo + Radar"). ' +
@@ -483,7 +484,7 @@ async function getMelhorias(transcript) {
                 'comparações com outros sistemas ("no outro sistema tinha X", "seria bom se tivesse Y"). ' +
                 'Para cada melhoria: ' +
                 'descricao = o que o cliente quer ou precisa (objetiva, 1 frase); ' +
-                'produto = qual produto Nibo se aplica (Nibo, Radar, Conciliador, BPO, WhatsApp, Outro); ' +
+                'produto = qual produto Nibo se aplica (Nibo, Radar, Conciliador, BPO, Emissor, WhatsApp, Outro); ' +
                 'tipo = "funcionalidade" (feature nova pedida), "usabilidade" (interface/UX difícil), ' +
                 '"integracao" (conexão com outro sistema), "processo" (fluxo confuso ou demorado), ' +
                 '"relatorio" (relatório ou exportação desejada), "outro"; ' +

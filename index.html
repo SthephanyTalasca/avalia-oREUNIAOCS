@@ -1237,7 +1237,7 @@ function toggleMelhoriasGrupo(prod) {
 }
 
 function toggleExpandirTodas() {
-    const PRODS = ['Nibo','Radar','Conciliador','BPO','WhatsApp','Outro'];
+    const PRODS = ['Nibo','Radar','Conciliador','BPO','Emissor','WhatsApp','Outro'];
     const allOpen = PRODS.every(p => _melhoriasExpanded.has(p));
     if (allOpen) _melhoriasExpanded.clear();
     else PRODS.forEach(p => _melhoriasExpanded.add(p));
@@ -1283,7 +1283,7 @@ async function gerarResumoIA() {
 }
 
 function renderMelhorias(){
-    const PROD_COLORS = {'Nibo':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706','WhatsApp':'#25D366','Outro':'#64748b'};
+    const PROD_COLORS = {'Nibo':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706','Emissor':'#0891b2','WhatsApp':'#25D366','Outro':'#64748b'};
     const TIPO_LABEL  = {funcionalidade:'Funcionalidade',usabilidade:'Usabilidade',integracao:'Integração',processo:'Processo',relatorio:'Relatório',outro:'Outro'};
     const filtroTipo = (document.getElementById('melhorias-filtro-tipo')?.value||'').toLowerCase();
 
@@ -1297,7 +1297,7 @@ function renderMelhorias(){
     }
 
     // Contagem por produto
-    const countProd = {Nibo:0,Radar:0,Conciliador:0,BPO:0,WhatsApp:0,Outro:0};
+    const countProd = {Nibo:0,Radar:0,Conciliador:0,BPO:0,Emissor:0,WhatsApp:0,Outro:0};
     for(const m of todasMelhorias){
         const prodKey = Object.keys(countProd).find(k=>(m.produto||'').includes(k));
         if(prodKey) countProd[prodKey]++;
@@ -1318,7 +1318,7 @@ function renderMelhorias(){
     document.getElementById('btn-expandir-todas').style.display = '';
 
     // Cards por produto — clicam para expandir/recolher o grupo
-    const PRODS_ORDER = ['Nibo','Radar','Conciliador','BPO','WhatsApp','Outro'];
+    const PRODS_ORDER = ['Nibo','Radar','Conciliador','BPO','Emissor','WhatsApp','Outro'];
     document.getElementById('melhorias-produtos-grid').innerHTML = PRODS_ORDER.map(prod=>{
         const cnt = countProd[prod]||0;
         const color = PROD_COLORS[prod]||'#64748b';
