@@ -454,7 +454,7 @@ async function getMelhorias(transcript) {
         contents: transcript,
         config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 4096,
+            maxOutputTokens: 8192,
             systemInstruction:
                 'Auditor de CS do Nibo. Sua tarefa tem duas partes:\n' +
                 '(1) Identifique o produto Nibo principal desta reunião. ' +
