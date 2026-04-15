@@ -645,6 +645,22 @@
         </div>
     </div>
 
+    <!-- CALENDÁRIO GERAL -->
+    <div class="glass-card overflow-hidden">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4 text-blue-500"></i>Calendário de Reuniões</h2>
+            <div class="flex items-center gap-1">
+                <button onclick="calGeralNav(-1)" class="p-2 hover:bg-slate-100 rounded-xl transition-all"><i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i></button>
+                <span id="cal-geral-label" class="text-sm font-bold text-slate-700 min-w-[140px] text-center">—</span>
+                <button onclick="calGeralNav(1)" class="p-2 hover:bg-slate-100 rounded-xl transition-all"><i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i></button>
+            </div>
+        </div>
+        <div class="p-6">
+            <div id="cal-geral-grid" class="grid grid-cols-7 gap-1 text-center"></div>
+            <div id="cal-geral-day-detail" class="hidden mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200"></div>
+        </div>
+    </div>
+
     <!-- TABELA COMPLETA -->
     <div class="glass-card overflow-hidden">
         <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
@@ -974,7 +990,7 @@ function populateFilters() {
     af.innerHTML='<option value="">Todos os analistas</option>'+analistas.map(a=>`<option value="${a}"${a===ca?' selected':''}>${a}</option>`).join('');
 }
 
-function renderAll(){renderKPIs();renderSaudeChurn();renderEvo();renderRanking();renderPilares();renderCoord();renderChecklist();renderMelhorias();renderBugs();renderDesalinhamentos();renderReunioes();lucide.createIcons();}
+function renderAll(){renderKPIs();renderSaudeChurn();renderEvo();renderRanking();renderPilares();renderCoord();renderChecklist();renderMelhorias();renderBugs();renderDesalinhamentos();renderCalGeral();renderReunioes();lucide.createIcons();}
 
 function renderKPIs(){
     const s=statsData;
@@ -1570,6 +1586,78 @@ function perfilCalNav(dir) {
     let m=perfilCalMonth+dir, y=perfilCalYear;
     if(m>11){m=0;y++;} if(m<0){m=11;y--;}
     renderPerfilCalendario(y,m);
+}
+
+// ── CALENDÁRIO GERAL ──────────────────────────────────────────────────────
+let calGeralYear = new Date().getFullYear(), calGeralMonth = new Date().getMonth();
+
+function renderCalGeral() {
+    renderCalGeralMes(calGeralYear, calGeralMonth);
+}
+
+function renderCalGeralMes(year, month) {
+    calGeralYear = year; calGeralMonth = month;
+    document.getElementById('cal-geral-label').textContent = `${MESES_CAL[month]} ${year}`;
+    const byDay = {};
+    allReunioes.forEach(r => {
+        const d = new Date(r.data_reuniao || r.created_at);
+        if (d.getFullYear() === year && d.getMonth() === month) {
+            const day = d.getDate();
+            if (!byDay[day]) byDay[day] = [];
+            byDay[day].push(r);
+        }
+    });
+    let html = DIAS_CAL.map(d => `<div class="text-[9px] font-black text-slate-400 uppercase tracking-widest py-2">${d}</div>`).join('');
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    for (let i = 0; i < firstDay; i++) html += '<div></div>';
+    for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+        const meetings = byDay[day];
+        const hasMeetings = meetings && meetings.length > 0;
+        const count = hasMeetings ? meetings.length : 0;
+        let cls = 'relative flex flex-col items-center justify-center py-2 rounded-xl text-xs font-semibold ';
+        if (isToday) cls += 'bg-blue-600 text-white ';
+        else if (hasMeetings) cls += 'bg-blue-50 text-blue-800 cursor-pointer hover:bg-blue-100 transition-all ';
+        else cls += 'text-slate-300 ';
+        const onclick = hasMeetings ? `onclick="showCalGeralDay(${day})"` : '';
+        const badge = hasMeetings ? `<span style="font-size:0.55rem;line-height:1;font-weight:800;background:${isToday ? 'rgba(255,255,255,0.3)' : '#bfdbfe'};color:${isToday ? '#fff' : '#1d4ed8'};border-radius:999px;padding:0.1rem 0.35rem;margin-top:1px">${count}</span>` : '';
+        html += `<div class="${cls}" ${onclick}><span>${day}</span>${badge}</div>`;
+    }
+    document.getElementById('cal-geral-grid').innerHTML = html;
+    document.getElementById('cal-geral-day-detail').classList.add('hidden');
+}
+
+function showCalGeralDay(day) {
+    const meetings = allReunioes.filter(r => {
+        const d = new Date(r.data_reuniao || r.created_at);
+        return d.getFullYear() === calGeralYear && d.getMonth() === calGeralMonth && d.getDate() === day;
+    });
+    const dateStr = `${day} de ${MESES_CAL[calGeralMonth]} de ${calGeralYear}`;
+    const label = meetings.length === 1 ? '1 reunião' : `${meetings.length} reuniões`;
+    let html = `<p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">${dateStr} · ${label}</p>`;
+    html += meetings.map(r => {
+        const media = r.media_final ?? 0;
+        const pillCls = media >= 4 ? 'score-high' : media >= 3 ? 'score-mid' : 'score-low';
+        return `<div onclick="openModalId('${r.id}')" class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-sm cursor-pointer transition-all mb-2 last:mb-0">
+            <div>
+                <p class="text-xs font-bold text-slate-700">${r.analista_nome || '—'}</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">${r.saude_cliente || '—'}</p>
+            </div>
+            <span class="score-pill ${pillCls}">${media.toFixed(1)}</span>
+        </div>`;
+    }).join('');
+    const detail = document.getElementById('cal-geral-day-detail');
+    detail.innerHTML = html;
+    detail.classList.remove('hidden');
+}
+
+function calGeralNav(dir) {
+    let m = calGeralMonth + dir, y = calGeralYear;
+    if (m > 11) { m = 0; y++; }
+    if (m < 0)  { m = 11; y--; }
+    renderCalGeralMes(y, m);
 }
 
 // ── EDITAR REGISTRO INDIVIDUAL ────────────────────────────────────────────
