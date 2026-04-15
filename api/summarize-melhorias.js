@@ -32,10 +32,10 @@ export default async function handler(req, res) {
                 `Você é um analista de produto sênior do Nibo. ` +
                 `Abaixo estão ${melhorias.length} sugestões de melhoria ${contexto}, coletadas em reuniões de onboarding com clientes:\n\n` +
                 linhas +
-                `\n\nGere um diagnóstico executivo em 3 a 5 frases que sintetize as principais reclamações e pedidos. ` +
+                `\n\nGere um diagnóstico executivo que sintetize as principais reclamações e pedidos. ` +
                 `Destaque os problemas mais frequentes, cite exemplos concretos onde houver repetição, e indique padrões de impacto. ` +
-                `Seja direto e objetivo. Escreva em português.`,
-            config: { maxOutputTokens: 600 },
+                `Seja direto e objetivo. Termine sempre com uma frase completa. Escreva em português.`,
+            config: { maxOutputTokens: 2048 },
         });
         return res.status(200).json({ resumo: result.text });
     } catch (e) {
