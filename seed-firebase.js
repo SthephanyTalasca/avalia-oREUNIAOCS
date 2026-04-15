@@ -74,6 +74,11 @@ Arredonde para uma casa decimal. Não inclua pilares sem evidência (-1) no cál
 ❌ NÃO penalize por não saber algo na hora se buscou a resposta correta
    → Comprometer-se a verificar e retornar é conduta honesta e positiva
 
+❌ NÃO penalize Gestão de Tempo por reunião encerrada antes do prazo OU estendida por bug/erro/falha de plataforma
+   → Se a plataforma travou, caiu ou deu erro técnico e isso afetou o tempo da reunião, retorne -1 para nota_gestao_tempo
+   → Só penalize gestão de tempo se o problema foi causado pela conduta do próprio CS (dispersão, perda de foco, má organização da pauta)
+   → Se o cliente encerrou por escolha própria sem motivo técnico, avalie normalmente
+
 ✅ AVALIE APENAS a conduta, postura, conhecimento e comunicação DO CS`,
   },
   {

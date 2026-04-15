@@ -176,6 +176,10 @@ async function getNumbers(transcript) {
                 'Para cada pilar retorne nota 1-5. Sem evidência = -1. ' +
                 'media_final = média das notas diferentes de -1. ' +
                 'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100. ' +
+                'REGRA ESPECIAL — nota_gestao_tempo: ' +
+                'Se a reunião foi encerrada antes do tempo OU se passou do horário previsto POR CAUSA de bug, erro ou falha de plataforma (ex: sistema caiu, erro técnico, plataforma travou), retorne -1 — isso está fora do controle do CS e NÃO deve ser penalizado. ' +
+                'Só penalize gestão de tempo (nota 1-4) se o problema de tempo foi causado pela CONDUTA do próprio CS (ex: se perdeu em detalhes desnecessários, não cobriu a pauta, deixou a reunião se estender por dispersão própria). ' +
+                'Se o cliente encerrou a reunião por escolha própria sem motivo técnico, avalie normalmente. ' +
                 'data_reuniao: extraia a data E hora exata da reunião do cabeçalho da transcrição. ' +
                 'O cabeçalho do Gemini Notes tem o formato: "Reunião em DD de mmm. de AAAA às HH:MM GMT-03:00". ' +
                 'Exemplo: "Reunião em 25 de mar. de 2026 às 14:24 GMT-03:00" → retorne "2026-03-25 14:24:00". ' +
