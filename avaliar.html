@@ -384,11 +384,13 @@ function selectCoordinator(btn) {
     document.querySelectorAll('.coordinator-card').forEach(c => {
         c.style.borderColor = '';
         c.style.background = '';
-        c.querySelector('i').style.color = '';
+        const icon = c.querySelector('svg') || c.querySelector('i');
+        if (icon) { icon.style.color = ''; icon.style.stroke = ''; }
     });
     btn.style.borderColor = '#6431e2';
     btn.style.background = '#ede9ff';
-    btn.querySelector('i').style.color = '#6431e2';
+    const btnIcon = btn.querySelector('svg') || btn.querySelector('i');
+    if (btnIcon) { btnIcon.style.color = '#6431e2'; btnIcon.style.stroke = '#6431e2'; }
     document.getElementById('coordinator-select').value = btn.dataset.value;
 }
 
