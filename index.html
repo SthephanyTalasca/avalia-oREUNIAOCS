@@ -665,7 +665,7 @@ function toggleSelectAll(checked) {
     document.querySelectorAll('.batch-cb').forEach(cb => {
         cb.checked = checked;
         cb.closest('tr')?.classList.toggle('row-selected', checked);
-        const id = parseInt(cb.dataset.id);
+        const id = cb.dataset.id;
         if (checked) batchSelectedIds.add(id);
         else batchSelectedIds.delete(id);
     });
@@ -673,7 +673,7 @@ function toggleSelectAll(checked) {
 }
 
 function onRowCheckboxChange(cb) {
-    const id = parseInt(cb.dataset.id);
+    const id = cb.dataset.id;
     const row = cb.closest('tr');
     if (cb.checked) { batchSelectedIds.add(id); row?.classList.add('row-selected'); }
     else { batchSelectedIds.delete(id); row?.classList.remove('row-selected'); }
@@ -800,7 +800,7 @@ async function loadData() {
         if(origem) params.append('origem',origem);
         const [res, resTodas] = await Promise.all([
             fetch('/api/dashboard?'+params.toString()),
-            fetch('/api/dashboard?periodo=0').catch(()=>null)
+            fetch('/api/dashboard').catch(()=>null)
         ]);
         if(!res.ok) throw new Error('HTTP '+res.status);
         const data = await res.json();
@@ -1204,7 +1204,7 @@ function openModalId(id){
     const r=findReuniaoById(id);
     if(r){renderModal(r);}
     else{
-        fetch('/api/dashboard?periodo=0').then(r=>r.json()).then(data=>{
+        fetch('/api/dashboard').then(r=>r.json()).then(data=>{
             todasReunioes=data.reunioes||todasReunioes;
             const registro=todasReunioes.find(x=>x.id===id);
             if(registro) renderModal(registro);
