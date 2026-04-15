@@ -181,7 +181,14 @@ async function getNumbers(transcript) {
                 'Exemplo: "Reunião em 25 de mar. de 2026 às 14:24 GMT-03:00" → retorne "2026-03-25 14:24:00". ' +
                 'Exemplo: "Reunião em 5 de jan. de 2025 às 09:15 GMT-03:00" → retorne "2025-01-05 09:15:00". ' +
                 'OBRIGATÓRIO: retorne no formato "YYYY-MM-DD HH:MM:00" (sem T, sem GMT, sem timezone). ' +
-                'NUNCA retorne a data de hoje. Se não encontrar data no cabeçalho, retorne null.',
+                'NUNCA retorne a data de hoje. Se não encontrar data no cabeçalho, retorne null. ' +
+                'CHECKLIST — retorne true APENAS se houver evidência CLARA e EXPLÍCITA na transcrição. Na dúvida, retorne false. ' +
+                'ck_prazo: true somente se o analista mencionou um prazo, data ou cronograma de implementação junto ao cliente. ' +
+                'ck_dever_casa: true somente se o analista alinhou tarefas que o cliente precisa fazer antes da próxima reunião (dever de casa). ' +
+                'ck_certificado: true somente se o analista abordou ou validou o certificado digital com o cliente. ' +
+                'ck_proximo_passo: true somente se o analista agendou ou combinou explicitamente o próximo passo ou próxima reunião. ' +
+                'ck_dor_vendas: true somente se o analista conectou a conversa com oportunidade de venda, expansão ou dor do cliente ligada a vendas. ' +
+                'ck_suporte: true somente se o analista explicou ou mencionou o canal de suporte ao cliente.',
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -246,12 +253,12 @@ async function getNumbers(transcript) {
     parsed.data_reuniao = parseDataReuniao(parsed.data_reuniao) || null;
 
     parsed.checklist_cs = {
-        definiu_prazo_implementacao:  parsed.ck_prazo         || false,
-        alinhou_dever_de_casa:        parsed.ck_dever_casa    || false,
-        validou_certificado_digital:  parsed.ck_certificado   || false,
-        agendou_proximo_passo:        parsed.ck_proximo_passo || false,
-        conectou_com_dor_vendas:      parsed.ck_dor_vendas    || false,
-        explicou_canal_suporte:       parsed.ck_suporte       || false,
+        definiu_prazo_implementacao:  parsed.ck_prazo         === true,
+        alinhou_dever_de_casa:        parsed.ck_dever_casa    === true,
+        validou_certificado_digital:  parsed.ck_certificado   === true,
+        agendou_proximo_passo:        parsed.ck_proximo_passo === true,
+        conectou_com_dor_vendas:      parsed.ck_dor_vendas    === true,
+        explicou_canal_suporte:       parsed.ck_suporte       === true,
     };
 
     return parsed;
