@@ -1210,7 +1210,7 @@ function renderReunioes(){
         const media=r.media_final??0;
         const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
         const cv=(r.risco_churn||'').toLowerCase();
-        const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';
+        const churnCls=cv.includes('baixo')?'baixo':cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':'nd';
         const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
         const data=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
         const isAuto=r.analise_json?.origem==='drive_automatico';
@@ -1275,7 +1275,7 @@ function abrirPerfil(nome) {
         const media=r.media_final??0;
         const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
         const cv=(r.risco_churn||'').toLowerCase();
-        const churnCls=cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':cv.includes('baixo')?'baixo':'nd';
+        const churnCls=cv.includes('baixo')?'baixo':cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':'nd';
         const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
         const dataStr=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
         return `<tr onclick="openModalId('${r.id}')" style="cursor:pointer"><td class="text-slate-500 font-semibold">${dataStr}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td></tr>`;

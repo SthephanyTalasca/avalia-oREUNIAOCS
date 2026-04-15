@@ -96,8 +96,8 @@ function calcStats(reunioes) {
         const c = porCoordenador[r.coordenador];
         c.total++;
         if (r.media_final && r.media_final > 0) c.medias.push(r.media_final);
-        if ((r.risco_churn || '').toLowerCase().includes('alto') ||
-            (r.risco_churn || '').toLowerCase().includes('crítico')) c.churn_alto++;
+        const cv = (r.risco_churn || '').toLowerCase();
+        if (!/\bbaixo\b/.test(cv) && (/\balto\b/.test(cv) || /\bcrítico\b/.test(cv) || /\bcritico\b/.test(cv))) c.churn_alto++;
     }
     for (const k of Object.keys(porCoordenador)) {
         porCoordenador[k].media = +avg(porCoordenador[k].medias).toFixed(1);
@@ -168,13 +168,12 @@ function calcStats(reunioes) {
     const churnStats = { alto: 0, medio: 0, baixo: 0, indefinido: 0 };
     for (const r of reunioes) {
         const v = (r.risco_churn || '').toLowerCase();
-        const temNegacao = /\bnão\b|\bnao\b|\bsem\b|\bnenhum/.test(v);
-        if (!temNegacao && (/\balto\b/.test(v) || /\bcrítico\b/.test(v) || /\bcritico\b/.test(v)))
-            churnStats.alto++;
-        else if (/\bmédio\b/.test(v) || /\bmedio\b/.test(v) || /\bmoderando\b/.test(v))
-            churnStats.medio++;
-        else if (/\bbaixo\b/.test(v))
+        if (/\bbaixo\b/.test(v))
             churnStats.baixo++;
+        else if (/\balto\b/.test(v) || /\bcrítico\b/.test(v) || /\bcritico\b/.test(v))
+            churnStats.alto++;
+        else if (/\bmédio\b/.test(v) || /\bmedio\b/.test(v) || /\bmoderado\b/.test(v))
+            churnStats.medio++;
         else
             churnStats.indefinido++;
     }
