@@ -1059,19 +1059,25 @@ function setMelhoriasView(view) {
 }
 
 async function gerarResumoIA() {
-    const todasMelhorias = [];
+    const filtro = (document.getElementById('melhorias-filtro-produto')?.value||'').toLowerCase();
+    const filtroTipo = (document.getElementById('melhorias-filtro-tipo')?.value||'').toLowerCase();
+
+    let melhorias = [];
     for (const r of allReunioes) {
         const lista = r.analise_json?.melhorias || [];
         for (const m of lista) {
-            todasMelhorias.push({...m, _cliente: r.nome_cliente||'—'});
+            melhorias.push({...m, _cliente: r.nome_cliente||'—'});
         }
     }
-    if (!todasMelhorias.length) {
-        document.getElementById('melhorias-ia-texto').textContent = 'Nenhuma sugestão registrada para resumir.';
+    if (filtro) melhorias = melhorias.filter(m=>(m.produto||'').toLowerCase().includes(filtro));
+    if (filtroTipo) melhorias = melhorias.filter(m=>(m.tipo||'').toLowerCase() === filtroTipo);
+
+    const textoEl = document.getElementById('melhorias-ia-texto');
+    if (!melhorias.length) {
+        textoEl.textContent = 'Nenhuma sugestão encontrada para o filtro selecionado.';
         return;
     }
     const loadEl = document.getElementById('melhorias-ia-loading');
-    const textoEl = document.getElementById('melhorias-ia-texto');
     const btnEl = document.getElementById('btn-gerar-resumo');
     loadEl.style.display = 'inline-flex'; loadEl.classList.remove('hidden');
     textoEl.textContent = '';
@@ -1080,7 +1086,7 @@ async function gerarResumoIA() {
         const resp = await fetch('/api/summarize-melhorias', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ melhorias: todasMelhorias }),
+            body: JSON.stringify({ melhorias, produto: filtro || null }),
         });
         const data = await resp.json();
         textoEl.textContent = data.resumo || 'Não foi possível gerar o resumo.';

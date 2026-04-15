@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(204).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido.' });
 
-    const { melhorias } = req.body || {};
+    const { melhorias, produto } = req.body || {};
     if (!melhorias || !melhorias.length) {
         return res.status(400).json({ error: 'Nenhuma melhoria fornecida.' });
     }
@@ -21,15 +21,19 @@ export default async function handler(req, res) {
         return partes.join(' — ');
     }).join('\n');
 
+    const contexto = produto
+        ? `focado no produto ${produto}`
+        : `de todos os produtos`;
+
     try {
         const result = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents:
                 `Você é um analista de produto sênior do Nibo. ` +
-                `Abaixo estão ${melhorias.length} sugestões de melhoria coletadas em reuniões de onboarding com clientes:\n\n` +
+                `Abaixo estão ${melhorias.length} sugestões de melhoria ${contexto}, coletadas em reuniões de onboarding com clientes:\n\n` +
                 linhas +
-                `\n\nGere um diagnóstico executivo em 3 a 5 frases que sintetize os principais padrões. ` +
-                `Mencione os produtos e tipos de problema mais frequentes, cite exemplos concretos onde houver repetição. ` +
+                `\n\nGere um diagnóstico executivo em 3 a 5 frases que sintetize as principais reclamações e pedidos. ` +
+                `Destaque os problemas mais frequentes, cite exemplos concretos onde houver repetição, e indique padrões de impacto. ` +
                 `Seja direto e objetivo. Escreva em português.`,
             config: { maxOutputTokens: 600 },
         });
