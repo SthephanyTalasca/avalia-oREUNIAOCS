@@ -468,15 +468,41 @@ async function getMelhorias(transcript) {
             maxOutputTokens: 8192,
             systemInstruction:
                 'Auditor de CS do Nibo. Sua tarefa tem duas partes:\n' +
-                '(1) Identifique o produto Nibo principal desta reunião. ' +
-                'Os produtos Nibo são: Nibo (contabilidade/fiscal/escrita contábil), ' +
-                'Radar (fluxo de caixa/financeiro/DRE), ' +
-                'Conciliador (conciliação bancária/OFX), ' +
-                'BPO (serviços contábeis terceirizados/escritório contábil), ' +
-                'Emissor (emissão de nota fiscal de serviço/NFS-e exclusivamente), ' +
-                'WhatsApp (chat/comunicação via WhatsApp Business/mensagens automáticas). ' +
-                'Retorne o nome exato de um dos produtos. Se dois produtos forem igualmente centrais, ' +
-                'retorne ambos separados por " + " (ex: "Nibo + Radar"). ' +
+                '(1) Identifique o produto Nibo principal desta reunião.\n' +
+                'Os produtos Nibo são:\n' +
+                '- Obrigações (Nibo Obrigações Plus): gestão de obrigações fiscais e acessórias do escritório contábil, ' +
+                'calendário de vencimentos, lista de obrigações, tarefas e processos internos, documentos recebidos do cliente, ' +
+                'comunicados, atendimento/relacionamento com o cliente pelo portal (Nibo Empresa / app), ' +
+                'robôs e automações (FGTS Digital, eSocial, DAS, DARF, guias), relatórios de produtividade da equipe, ' +
+                'departamentos, responsáveis por cliente, grupos de clientes, onboarding contábil.\n' +
+                '- Radar e-CAC (Nibo Radar e-CAC): consulta centralizada ao e-CAC da Receita Federal, ' +
+                'caixa postal fiscal federal, situação fiscal, CND/certidão negativa de débitos federais, ' +
+                'parcelamentos (Simples Nacional, MEI, PERT, RELP, DAS, DARF parcelado), ' +
+                'pagamento verificado pela Receita, procuração eletrônica, certificado digital do escritório para e-CAC, ' +
+                'monitoramento de intimações e pendências fiscais federais.\n' +
+                '- Gestão Financeira (Nibo Gestão Financeira): fluxo de caixa, DRE/resultado operacional, ' +
+                'lançamentos financeiros, agendamentos de recebimento e pagamento, central de cobrança, ' +
+                'boletos bancários, cobranças automáticas, recorrências, open finance/automação bancária, ' +
+                'extrato bancário, conciliação bancária, importar OFX, categorias, plano de contas, ' +
+                'relatórios financeiros, IA financeira (leitura de PDF, categorias sugeridas), fechamento de mês, ' +
+                'centro de custo, rateio, CNAB, saldo de contas, contas e extratos.\n' +
+                '- Emissor (Nibo Emissor de NFS-e — EXCLUSIVO para serviços): emissão de Nota Fiscal de Serviço ' +
+                'Eletrônica (NFS-e), RPS (Recibo Provisório de Serviço), código de serviço, inscrição municipal, ' +
+                'certificado digital de emissão, autenticação com prefeitura, habilitar emissor para cliente, ' +
+                'perfil de serviço, alíquota, cancelamento de nota, data de competência, emissor nacional, ' +
+                'emissão para tomador no exterior, nota negada/processando/cancelada, ' +
+                'emissão automática de NFS-e em agendamentos, reforma tributária 2026 NFS-e. ' +
+                'ATENÇÃO: o Emissor cobre APENAS NFS-e (serviços); NÃO inclui NF-e (produto) nem NFC-e (consumidor).\n' +
+                '- BPO (Nibo BPO Financeiro): terceirização do financeiro do cliente pelo escritório contábil, ' +
+                'caixa de entrada BPO, lançamentos em nome do cliente, integração com Google Drive/Dropbox/OneDrive, ' +
+                'envio de documentos via WhatsApp para caixa de entrada, usuários e permissões BPO, ' +
+                'conectar/desvincular empresa ao BPO.\n' +
+                '- WhatsApp (Nibo WhatsApp Web/API): comunicação com o cliente via WhatsApp Business, ' +
+                'envio de lembretes de cobrança por WhatsApp, triagem e atendimento por mensagem, ' +
+                'envio de documentos pelo cliente via WhatsApp, WhatsApp API oficial.\n' +
+                '- Outro: funcionalidade, módulo ou contexto que não se encaixa nos produtos acima.\n' +
+                'Retorne o nome exato de um dos produtos listados. Se dois produtos forem igualmente centrais, ' +
+                'retorne ambos separados por " + " (ex: "Obrigações + Emissor"). ' +
                 'Se não identificar, retorne "Não identificado".\n' +
                 '(2) Identifique sugestões de melhoria de produto mencionadas pelo cliente: ' +
                 'funcionalidades pedidas, problemas de usabilidade relatados, integrações desejadas, ' +
@@ -484,7 +510,7 @@ async function getMelhorias(transcript) {
                 'comparações com outros sistemas ("no outro sistema tinha X", "seria bom se tivesse Y"). ' +
                 'Para cada melhoria: ' +
                 'descricao = o que o cliente quer ou precisa (objetiva, 1 frase); ' +
-                'produto = qual produto Nibo se aplica (Nibo, Radar, Conciliador, BPO, Emissor, WhatsApp, Outro); ' +
+                'produto = qual produto Nibo se aplica (Obrigações, Radar e-CAC, Gestão Financeira, Emissor, BPO, WhatsApp, Outro); ' +
                 'tipo = "funcionalidade" (feature nova pedida), "usabilidade" (interface/UX difícil), ' +
                 '"integracao" (conexão com outro sistema), "processo" (fluxo confuso ou demorado), ' +
                 '"relatorio" (relatório ou exportação desejada), "outro"; ' +
