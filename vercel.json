@@ -8,7 +8,8 @@
     "api/*.js":       { "maxDuration": 30 }
   },
   "rewrites": [
-    { "source": "/api/me",           "destination": "/api/auth?_route=me" },
-    { "source": "/api/coordinators", "destination": "/api/team?_route=coordinators" }
+    { "source": "/api/me",                    "destination": "/api/auth?_route=me" },
+    { "source": "/api/coordinators",          "destination": "/api/team?_route=coordinators" },
+    { "source": "/api/summarize-melhorias",   "destination": "/api/export?_route=summarize" }
   ]
 }
