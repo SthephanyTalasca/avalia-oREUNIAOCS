@@ -1199,7 +1199,7 @@ async function gerarTemas() {
     _temasLoading = true;
     listEl.innerHTML = '<div class="flex items-center justify-center gap-2 py-10 text-slate-500 text-sm"><span class="spinner" style="width:1rem;height:1rem;border-width:2px;margin:0;display:inline-block"></span>Agrupando por tema com IA...</div>';
     try {
-        const resp = await fetch('/api/cluster-melhorias',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({melhorias})});
+        const resp = await fetch('/api/melhorias-ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'cluster',melhorias})});
         const data = await resp.json();
         _temasCache = data.temas || [];
         renderTemasHtml();
@@ -1267,10 +1267,10 @@ async function gerarResumoIA() {
     textoEl.textContent = '';
     btnEl.disabled = true; btnEl.style.opacity = '0.5';
     try {
-        const resp = await fetch('/api/summarize-melhorias', {
+        const resp = await fetch('/api/melhorias-ai', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ melhorias, produto: null }),
+            body: JSON.stringify({ action: 'summarize', melhorias, produto: null }),
         });
         const data = await resp.json();
         textoEl.textContent = data.resumo || 'Não foi possível gerar o resumo.';
