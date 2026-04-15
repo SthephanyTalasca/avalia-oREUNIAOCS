@@ -12,67 +12,71 @@ function getSession(req) {
     } catch { return null; }
 }
 
+function gerarAlias(nomeCompleto) {
+    const lower = nomeCompleto.toLowerCase().trim();
+    const partes = lower.split(/\s+/);
+    const aliases = [lower];
+    if (partes[0]?.length > 2) aliases.push(partes[0]);
+    const semAcento = lower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (!aliases.includes(semAcento)) aliases.push(semAcento);
+    const primeiroSemAcento = partes[0]?.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (primeiroSemAcento && !aliases.includes(primeiroSemAcento)) aliases.push(primeiroSemAcento);
+    return [...new Set(aliases)];
+}
+
 export default async function handler(req, res) {
     if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
 
-    // GET — listar analistas
     if (req.method === 'GET') {
-        let query = db.collection('cs_analistas');
+        let query = db.collection('cs_membros');
         if (req.query.incluir_inativos !== '1') query = query.where('ativo', '==', true);
         const snap = await query.get();
-        const analistas = docsToArray(snap).sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
-        return res.status(200).json(analistas);
+        const membros = docsToArray(snap).sort((a, b) => (a.nome_completo || '').localeCompare(b.nome_completo || ''));
+        return res.status(200).json(membros);
     }
 
-    // POST — criar analista
     if (req.method === 'POST') {
         const { nome, coordenador } = req.body;
         if (!nome?.trim()) return res.status(400).json({ error: 'Nome obrigatório' });
 
-        // Verifica existente (case-insensitive via fetch all)
-        const snap = await db.collection('cs_analistas').get();
-        const existing = docsToArray(snap).find(a => a.nome?.toLowerCase() === nome.trim().toLowerCase());
+        const snap = await db.collection('cs_membros').get();
+        const existing = docsToArray(snap).find(m => m.nome_completo?.toLowerCase() === nome.trim().toLowerCase());
 
         if (existing) {
             if (existing.ativo) return res.status(409).json({ error: 'Analista já cadastrado.' });
-            // Reativar
-            const updates = { ativo: true, coordenador: coordenador || existing.coordenador || null };
-            await db.collection('cs_analistas').doc(existing.id).update(updates);
-            return res.status(200).json({ ok: true, reativado: true, analista: { ...existing, ...updates } });
+            await db.collection('cs_membros').doc(existing.id).update({ ativo: true, coordenador: coordenador || existing.coordenador || null });
+            return res.status(200).json({ ok: true, reativado: true });
         }
 
-        const docRef = await db.collection('cs_analistas').add({
-            nome: nome.trim(),
+        const docId = nome.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        await db.collection('cs_membros').doc(docId).set({
+            nome_completo: nome.trim(),
+            alias: gerarAlias(nome.trim()),
             coordenador: coordenador || null,
             ativo: true,
         });
-        return res.status(200).json({
-            ok: true,
-            reativado: false,
-            analista: { id: docRef.id, nome: nome.trim(), coordenador: coordenador || null, ativo: true },
-        });
+        return res.status(200).json({ ok: true, reativado: false });
     }
 
-    // PATCH — editar analista
     if (req.method === 'PATCH') {
         const { id, nome, coordenador } = req.body;
         if (!id) return res.status(400).json({ error: 'id obrigatório' });
 
         const updates = {};
-        if (nome !== undefined) updates.nome = nome.trim();
+        if (nome !== undefined) {
+            updates.nome_completo = nome.trim();
+            updates.alias = gerarAlias(nome.trim());
+        }
         if (coordenador !== undefined) updates.coordenador = coordenador || null;
 
-        const ref = db.collection('cs_analistas').doc(String(id));
-        await ref.update(updates);
-        const doc = await ref.get();
-        return res.status(200).json({ ok: true, analista: { id: doc.id, ...doc.data() } });
+        await db.collection('cs_membros').doc(String(id)).update(updates);
+        return res.status(200).json({ ok: true });
     }
 
-    // DELETE — desativar analista
     if (req.method === 'DELETE') {
         const { id } = req.body;
         if (!id) return res.status(400).json({ error: 'id obrigatório' });
-        await db.collection('cs_analistas').doc(String(id)).update({ ativo: false });
+        await db.collection('cs_membros').doc(String(id)).update({ ativo: false });
         return res.status(200).json({ ok: true });
     }
 

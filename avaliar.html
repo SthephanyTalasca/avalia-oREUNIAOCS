@@ -66,18 +66,7 @@
                 <i data-lucide="user-check" class="w-4 h-4"></i>
                 <span id="analista-badge-nome">—</span>
             </div>
-            <div class="relative">
-                <i data-lucide="shield" class="absolute left-3 top-2.5 w-4 h-4" style="color:#b8ccea"></i>
-                <select id="coordinator-select"
-                    class="pl-10 pr-5 py-2 rounded-xl text-white text-sm focus:outline-none transition-all cursor-pointer" style="background:rgba(100,49,226,0.35);border:1px solid rgba(65,182,230,0.3)">
-                    <option value="">Coordenador (opcional)</option>
-                    <option value="Sayuri">Sayuri</option>
-                    <option value="Taynara">Taynara</option>
-                    <option value="Túlio">Túlio</option>
-                    <option value="Michel">Michel</option>
-                    <option value="Jéssica">Jéssica</option>
-                </select>
-            </div>
+            <input type="hidden" id="coordinator-select" value="">
             <a href="/" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-sm font-bold transition-all shadow" style="color:#002d72" onmouseover="this.style.background='#ede9ff'" onmouseout="this.style.background='white'">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
                 ← Dashboard 📊
@@ -98,6 +87,14 @@
                 <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color:#6431e2"></i>
                 <p class="text-xs font-medium" style="color:#5229c5">💡 O nome do analista será detectado automaticamente pela IA a partir da transcrição. O coordenador é opcional.</p>
             </div>
+
+            <div class="mb-6">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Selecionar Coordenador</p>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="coordinator-cards">
+                    <span class="text-xs text-slate-400 col-span-3">Carregando...</span>
+                </div>
+            </div>
+
             <textarea id="transcript-input" rows="6"
                 class="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] focus:outline-none transition-all text-sm resize-none"
                 placeholder="Cole aqui o diálogo da reunião de Onboarding..."></textarea>
@@ -383,24 +380,63 @@
 <script>
 lucide.createIcons();
 
-// ── Mapeamento CS → Coordenador ─────────────────────────────────────────
-const CS_TO_COORDINATOR = {
-  'brayan santos':'Sayuri','brayan':'Sayuri','camille vaz':'Sayuri','camille':'Sayuri',
-  'carolina miranda':'Sayuri','carolina':'Sayuri','isaque silva':'Sayuri','isaque':'Sayuri',
-  'larissa mota':'Sayuri','nat vieira':'Sayuri','nat':'Sayuri','vinícius oliveira':'Sayuri','vinicius':'Sayuri',
-  
-  'denis silva':'Taynara','denis':'Taynara','larissa teixeira':'Taynara',
-  'lorrayne moreira':'Taynara','lorrayne':'Taynara','micaelle martins':'Taynara','micaelle':'Taynara',
-  'sthephany talasca':'Taynara','sthephany':'Taynara','sthe':'Taynara',
-  'thais silva':'Taynara','thais':'Taynara','willian martins':'Taynara','willian':'Taynara',
-  'yuri santos':'Taynara','yuri':'Taynara',
-    
-  'aline almeida':'Michel','aline':'Michel','bianca kim':'Michel','bianca':'Michel',
-  'jéssica barreiro':'Michel','jessica barreiro':'Michel','jessica':'Michel',
-  'julia rodrigues':'Michel','julia':'Michel','maria fernanda costa':'Michel','mafê':'Michel',
-  'maryana alves':'Michel','maryana':'Michel','rafaele oliveira':'Michel','rafaele':'Michel',
-  'túlio morgado':'Michel','túlio':'Michel','tulio':'Michel',
-};
+function selectCoordinator(btn) {
+    document.querySelectorAll('.coordinator-card').forEach(c => {
+        c.style.borderColor = '';
+        c.style.background = '';
+        c.querySelector('i').style.color = '';
+    });
+    btn.style.borderColor = '#6431e2';
+    btn.style.background = '#ede9ff';
+    btn.querySelector('i').style.color = '#6431e2';
+    document.getElementById('coordinator-select').value = btn.dataset.value;
+}
+
+// ── Mapeamento CS → Coordenador (carregado do Firebase via cs_membros) ───
+let CS_TO_COORDINATOR = {};
+
+async function loadTeamData() {
+    try {
+        const [configRes, coordRes] = await Promise.all([
+            fetch('/api/config'),
+            fetch('/api/coordinators'),
+        ]);
+        if (!configRes.ok || !coordRes.ok) throw new Error('Falha ao carregar dados');
+
+        const { membros } = await configRes.json();
+        const coordenadores = await coordRes.json();
+
+        // Monta o mapa alias → coordenador usando cs_membros (já tem todos os aliases)
+        CS_TO_COORDINATOR = {};
+        for (const m of membros) {
+            if (!m.coordenador) continue;
+            for (const alias of (m.alias || [])) {
+                CS_TO_COORDINATOR[alias.toLowerCase()] = m.coordenador;
+            }
+            CS_TO_COORDINATOR[m.nome_completo.toLowerCase()] = m.coordenador;
+        }
+
+        // Renderiza os cards de coordenador
+        const container = document.getElementById('coordinator-cards');
+        if (coordenadores.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-400 col-span-3">Nenhum coordenador cadastrado.</span>';
+        } else {
+            container.innerHTML = coordenadores.map(c => `
+                <button type="button"
+                    class="coordinator-card flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-violet-400 hover:shadow-md transition-all cursor-pointer"
+                    data-value="${c.nome}"
+                    onclick="selectCoordinator(this)">
+                    <i data-lucide="user-circle" class="w-7 h-7 text-slate-400"></i>
+                    <span class="font-bold text-sm text-slate-800">${c.nome}</span>
+                    <span class="text-xs text-slate-400">Coordenador(a)</span>
+                </button>`).join('');
+            lucide.createIcons();
+        }
+    } catch(e) {
+        document.getElementById('coordinator-cards').innerHTML =
+            '<span class="text-xs text-red-400 col-span-3">Erro ao carregar coordenadores.</span>';
+    }
+}
 
 function detectLocalCS(transcript) {
     if(!transcript) return null;
@@ -411,12 +447,18 @@ function detectLocalCS(transcript) {
     return null;
 }
 
+loadTeamData();
+
 document.getElementById('transcript-input').addEventListener('paste',function(){
     setTimeout(()=>{
         const detected=detectLocalCS(this.value);
         if(detected){
             const sel=document.getElementById('coordinator-select');
-            if(!sel.value) sel.value=detected.coordinator;
+            if(!sel.value){
+                sel.value=detected.coordinator;
+                const card=document.querySelector(`.coordinator-card[data-value="${detected.coordinator}"]`);
+                if(card) selectCoordinator(card);
+            }
             showToast('✅ Coordenador detectado: '+detected.coordinator);
         }
     },100);
