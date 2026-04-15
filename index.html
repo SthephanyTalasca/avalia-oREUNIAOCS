@@ -41,7 +41,7 @@
         .rtbl td { padding:0.85rem 1rem;font-size:0.8rem;border-bottom:1px solid #f1f5f9;vertical-align:middle; }
         .rtbl tr:last-child td { border-bottom:none; }
         .rtbl tr:hover td { background:#f8fafc;cursor:pointer; }
-        #modal-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.5);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem; }
+        #modal-overlay { position:fixed;inset:0;background:rgba(15,23,42,0.5);backdrop-filter:blur(4px);z-index:250;display:none;align-items:center;justify-content:center;padding:1rem; }
         #modal-overlay.open { display:flex; }
         .modal-box { background:white;border-radius:2.5rem;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,0.2); }
         .modal-box::-webkit-scrollbar { width:4px; }
@@ -94,6 +94,7 @@
             <div class="flex gap-2">
                 <button onclick="abrirEdicao()" class="bg-blue-50 hover:bg-blue-100 p-2.5 rounded-full transition-colors" title="Editar"><i data-lucide="pencil" class="w-4 h-4 text-blue-600"></i></button>
                 <button onclick="excluirRegistroModal()" class="bg-red-50 hover:bg-red-100 p-2.5 rounded-full transition-colors" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i></button>
+                <button onclick="gerarPdfAvaliacao()" id="btn-pdf-modal" class="p-2.5 rounded-full transition-colors" style="background:#f5f0ff;" title="Gerar PDF desta avaliação"><i data-lucide="file-text" class="w-4 h-4" style="color:#6431e2;"></i></button>
                 <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
             </div>
         </div>
@@ -222,6 +223,21 @@
             <div class="glass-card p-8">
                 <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>Média por Pilar</h3>
                 <div id="perfil-pilares" class="space-y-3"></div>
+            </div>
+        </div>
+        <!-- CALENDÁRIO DE REUNIÕES -->
+        <div class="glass-card overflow-hidden">
+            <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4 text-blue-500"></i>Calendário de Reuniões</h3>
+                <div class="flex items-center gap-1">
+                    <button onclick="perfilCalNav(-1)" class="p-2 hover:bg-slate-100 rounded-xl transition-all"><i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i></button>
+                    <span id="perfil-cal-label" class="text-sm font-bold text-slate-700 min-w-[130px] text-center">—</span>
+                    <button onclick="perfilCalNav(1)" class="p-2 hover:bg-slate-100 rounded-xl transition-all"><i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i></button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div id="perfil-cal-grid" class="grid grid-cols-7 gap-1 text-center"></div>
+                <div id="perfil-cal-day-detail" class="hidden mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200"></div>
             </div>
         </div>
         <div class="glass-card overflow-hidden">
@@ -627,9 +643,6 @@
                     <i data-lucide="check-square" class="w-3 h-3"></i>Selecione registros para editar em lote
                 </span>
                 <span class="text-xs text-slate-400 font-semibold" id="badge-total">—</span>
-                <button onclick="gerarPdfAvaliacoes()" id="btn-pdf-avaliacoes" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all" style="background:#f5f0ff;color:#6431e2;border-color:#ddd6fe;" title="Gerar relatório PDF das avaliações filtradas">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Gerar PDF
-                </button>
             </div>
         </div>
         <div class="overflow-x-auto">
@@ -674,6 +687,7 @@ const CK_LABELS = {
 let allReunioes=[], todasReunioes=[], statsData={}, chartEvo=null, chartCoord=null, perfilRadar=null;
 let destaquesMelhor=null, destaquesAtivo=null;
 let editandoId=null;
+let perfilReunioesAtual=[], perfilCalYear=new Date().getFullYear(), perfilCalMonth=new Date().getMonth();
 let equipeData=[];
 let mostrandoInativos=false;
 
@@ -1261,6 +1275,9 @@ function abrirPerfil(nome) {
     if(!reunioes.length){alert('Sem avaliações encontradas para '+nome);return;}
     reunioes=Object.values(Object.fromEntries(reunioes.map(r=>[r.id,r])));
     reunioes.sort((a,b)=>new Date(b.data_reuniao||b.created_at)-new Date(a.data_reuniao||a.created_at));
+    perfilReunioesAtual=reunioes;
+    const dataInicialCal=new Date(reunioes[0].data_reuniao||reunioes[0].created_at);
+    perfilCalYear=dataInicialCal.getFullYear(); perfilCalMonth=dataInicialCal.getMonth();
     document.getElementById('perfil-avatar').textContent=nome.trim()[0].toUpperCase();
     document.getElementById('perfil-nome').textContent=nome;
     document.getElementById('perfil-coord').textContent=reunioes[0]?.coordenador||'—';
@@ -1280,6 +1297,7 @@ function abrirPerfil(nome) {
     const ctx=document.getElementById('perfil-radar').getContext('2d');
     if(perfilRadar) perfilRadar.destroy();
     perfilRadar=new Chart(ctx,{type:'radar',data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Média',data:PILLARS.map(p=>{const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;}),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1e3a8a'}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}});
+    renderPerfilCalendario(perfilCalYear, perfilCalMonth);
     document.getElementById('perfil-badge-total').textContent=reunioes.length+' avaliações';
     document.getElementById('perfil-tbody').innerHTML=reunioes.map(r=>{
         const media=r.media_final??0;
@@ -1297,6 +1315,72 @@ function abrirPerfil(nome) {
 
 function closePerfil(){document.getElementById('perfil-overlay').classList.remove('open');}
 function abrirPerfilDestaque(tipo){const d=tipo==='melhor'?destaquesMelhor:destaquesAtivo;if(d) abrirPerfil(d.nome);}
+
+// ── CALENDÁRIO DO PERFIL ───────────────────────────────────────────────────
+const MESES_CAL=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DIAS_CAL=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+function renderPerfilCalendario(year, month) {
+    perfilCalYear=year; perfilCalMonth=month;
+    document.getElementById('perfil-cal-label').textContent=`${MESES_CAL[month]} ${year}`;
+    const byDay={};
+    perfilReunioesAtual.forEach(r=>{
+        const d=new Date(r.data_reuniao||r.created_at);
+        if(d.getFullYear()===year && d.getMonth()===month){
+            const day=d.getDate();
+            if(!byDay[day]) byDay[day]=[];
+            byDay[day].push(r);
+        }
+    });
+    let html=DIAS_CAL.map(d=>`<div class="text-[9px] font-black text-slate-400 uppercase tracking-widest py-2">${d}</div>`).join('');
+    const firstDay=new Date(year,month,1).getDay();
+    const daysInMonth=new Date(year,month+1,0).getDate();
+    const today=new Date();
+    for(let i=0;i<firstDay;i++) html+='<div></div>';
+    for(let day=1;day<=daysInMonth;day++){
+        const isToday=today.getFullYear()===year&&today.getMonth()===month&&today.getDate()===day;
+        const meetings=byDay[day];
+        const hasMeetings=meetings&&meetings.length>0;
+        const count=hasMeetings?meetings.length:0;
+        let cls='relative flex flex-col items-center justify-center py-2 rounded-xl text-xs font-semibold ';
+        if(isToday) cls+='bg-blue-600 text-white ';
+        else if(hasMeetings) cls+='bg-blue-50 text-blue-800 cursor-pointer hover:bg-blue-100 transition-all ';
+        else cls+='text-slate-300 ';
+        const onclick=hasMeetings?`onclick="showPerfilCalDay(${day})"` : '';
+        const badge=hasMeetings?`<span style="font-size:0.55rem;line-height:1;font-weight:800;background:${isToday?'rgba(255,255,255,0.3)':'#bfdbfe'};color:${isToday?'#fff':'#1d4ed8'};border-radius:999px;padding:0.1rem 0.35rem;margin-top:1px">${count}</span>`:'';
+        html+=`<div class="${cls}" ${onclick}><span>${day}</span>${badge}</div>`;
+    }
+    document.getElementById('perfil-cal-grid').innerHTML=html;
+    document.getElementById('perfil-cal-day-detail').classList.add('hidden');
+}
+
+function showPerfilCalDay(day) {
+    const meetings=perfilReunioesAtual.filter(r=>{
+        const d=new Date(r.data_reuniao||r.created_at);
+        return d.getFullYear()===perfilCalYear&&d.getMonth()===perfilCalMonth&&d.getDate()===day;
+    });
+    const dateStr=`${day} de ${MESES_CAL[perfilCalMonth]} de ${perfilCalYear}`;
+    const label=meetings.length===1?'1 reunião':`${meetings.length} reuniões`;
+    let html=`<p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">${dateStr} · ${label}</p>`;
+    html+=meetings.map(r=>{
+        const media=r.media_final??0;
+        const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
+        return `<div onclick="openModalId('${r.id}')" class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-sm cursor-pointer transition-all mb-2 last:mb-0">
+            <div><p class="text-xs font-bold text-slate-700">${r.saude_cliente||'—'}</p><p class="text-[10px] text-slate-400 mt-0.5">${r.analista_nome||'—'}</p></div>
+            <span class="score-pill ${pillCls}">${media.toFixed(1)}</span>
+        </div>`;
+    }).join('');
+    const detail=document.getElementById('perfil-cal-day-detail');
+    detail.innerHTML=html;
+    detail.classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function perfilCalNav(dir) {
+    let m=perfilCalMonth+dir, y=perfilCalYear;
+    if(m>11){m=0;y++;} if(m<0){m=11;y--;}
+    renderPerfilCalendario(y,m);
+}
 
 // ── EDITAR REGISTRO INDIVIDUAL ────────────────────────────────────────────
 function abrirEdicaoId(id){
@@ -1575,127 +1659,188 @@ async function reprocessarDados(){
     finally{btn.disabled=false;btn.innerHTML='<i data-lucide="refresh-ccw" class="w-4 h-4"></i>Reprocessar dados';lucide.createIcons();}
 }
 
-async function gerarPdfAvaliacoes() {
-    if (!allReunioes.length) { alert('Nenhuma avaliação para exportar.'); return; }
+async function gerarPdfAvaliacao() {
+    const r = findReuniaoById(editandoId);
+    if (!r) { alert('Avaliação não encontrada.'); return; }
 
-    const btn = document.getElementById('btn-pdf-avaliacoes');
+    const btn = document.getElementById('btn-pdf-modal');
     const origHtml = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span style="display:inline-block;width:12px;height:12px;border:2px solid #c4b5fd;border-top-color:#6431e2;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:4px"></span> Gerando...';
+    btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #c4b5fd;border-top-color:#6431e2;border-radius:50%;animation:spin 0.7s linear infinite;"></span>';
 
-    // Filtros ativos para mostrar no cabeçalho do PDF
-    const periodo = document.getElementById('f-periodo');
-    const coord   = document.getElementById('f-coordenador');
-    const analista = document.getElementById('f-analista');
-    const periodoLabel = periodo.options[periodo.selectedIndex]?.text || 'Todas as datas';
-    const coordLabel   = coord.value   ? coord.options[coord.selectedIndex].text     : 'Todos os coordenadores';
-    const analistaLabel = analista.value ? analista.options[analista.selectedIndex].text : 'Todos os analistas';
-
+    const aj = r.analise_json || {};
+    const media = r.media_final ?? 0;
+    const mediaColor = media >= 4 ? '#16a34a' : media >= 3 ? '#0072ce' : '#dc2626';
+    const mediaBg    = media >= 4 ? '#dcfce7' : media >= 3 ? '#dbeafe' : '#fee2e2';
+    const statusTag  = media >= 4.5 ? 'Elite CS' : media >= 3.5 ? 'Alta Performance' : 'Acompanhamento';
     const hoje = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+    const dataReuniao = new Date(r.data_reuniao || r.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
 
-    // Estatísticas gerais
-    const medias = allReunioes.map(r => r.media_final).filter(v => v != null);
-    const mediaGeral = medias.length ? (medias.reduce((a,b) => a+b, 0) / medias.length).toFixed(1) : '—';
-    const totalSaudavel = allReunioes.filter(r => (r.saude_cliente||'').toLowerCase().includes('saud')).length;
-    const totalAltoChurn = allReunioes.filter(r => { const v=(r.risco_churn||'').toLowerCase(); return v.includes('alto')||v.includes('crít'); }).length;
+    const tCS  = parseFloat(aj.tempo_fala_cs  || r.tempo_fala_cs  || '50') || 50;
+    const tCli = parseFloat(aj.tempo_fala_cliente || r.tempo_fala_cliente || '50') || 50;
 
-    // Linhas da tabela
-    const linhasTabela = allReunioes.map(r => {
-        const data = new Date(r.data_reuniao || r.created_at).toLocaleDateString('pt-BR');
-        const media = r.media_final ?? 0;
-        const mediaColor = media >= 4 ? '#16a34a' : media >= 3 ? '#0072ce' : '#dc2626';
-        const mediaBg    = media >= 4 ? '#dcfce7' : media >= 3 ? '#dbeafe' : '#fee2e2';
-        const cv = (r.risco_churn || '').toLowerCase();
-        const churnCls = cv.includes('baixo') ? {bg:'#dcfce7',c:'#15803d',l:'Baixo'} :
-                         cv.includes('alto')||cv.includes('crít') ? {bg:'#fee2e2',c:'#dc2626',l:'Alto'} :
-                         cv.includes('médio')||cv.includes('medio') ? {bg:'#fef9c3',c:'#92400e',l:'Médio'} :
-                         {bg:'#f1f5f9',c:'#64748b',l:'—'};
-        const saude = r.saude_cliente || '—';
-        return `<tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:7px 10px;font-size:12px;color:#64748b;white-space:nowrap;">${data}</td>
-            <td style="padding:7px 10px;font-size:12px;font-weight:600;color:#0f172a;">${r.analista_nome||'—'}</td>
-            <td style="padding:7px 10px;font-size:12px;color:#475569;">${r.coordenador||'—'}</td>
-            <td style="padding:7px 10px;text-align:center;">
-                <span style="display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:${mediaBg};color:${mediaColor};">${media.toFixed(1)}</span>
-            </td>
-            <td style="padding:7px 10px;font-size:11px;color:#475569;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${saude}</td>
-            <td style="padding:7px 10px;text-align:center;">
-                <span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:${churnCls.bg};color:${churnCls.c};">${churnCls.l}</span>
-            </td>
-        </tr>`;
+    const cv = (r.risco_churn || '').toLowerCase();
+    const churnCor = cv.includes('baixo') ? '#15803d' : cv.includes('alto') || cv.includes('crít') ? '#dc2626' : '#92400e';
+
+    // Pilares
+    const pilaresHtml = PILLARS.map(p => {
+        const val = r['nota_' + p.k];
+        if (val == null) return '';
+        const c = val >= 4 ? '#16a34a' : val >= 3 ? '#0072ce' : '#dc2626';
+        const bg = val >= 4 ? '#f0fdf4' : val >= 3 ? '#eff6ff' : '#fff1f2';
+        const pct = (val / 5) * 100;
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:10px;font-weight:700;color:#475569;min-width:130px;text-align:right;">${p.l}</span>
+            <div style="flex:1;height:5px;background:#f1f5f9;border-radius:999px;overflow:hidden;">
+                <div style="width:${pct}%;height:100%;background:${c};border-radius:999px;"></div>
+            </div>
+            <span style="font-size:11px;font-weight:800;color:${c};min-width:20px;text-align:right;">${val}</span>
+        </div>`;
     }).join('');
 
-    const html = `
-    <div style="font-family:'Plus Jakarta Sans',Poppins,Helvetica,sans-serif;background:#fff;color:#0f172a;padding:0;margin:0;">
+    // Pontos fortes e atenção
+    const fortesHtml = (aj.pontos_fortes || []).map(f =>
+        `<li style="font-size:11px;color:#166534;margin-bottom:4px;padding-left:12px;position:relative;">
+            <span style="position:absolute;left:0;color:#16a34a;">▶</span>${f}
+        </li>`
+    ).join('') || '<li style="font-size:11px;color:#94a3b8;">—</li>';
 
-        <!-- Cabeçalho com gradiente Nibo -->
-        <div style="background:linear-gradient(135deg,#002d72,#3a1fa8,#6431e2);padding:28px 36px;border-radius:0;">
+    const atencaoHtml = (aj.pontos_atencao || []).map(f =>
+        `<li style="font-size:11px;color:#92400e;margin-bottom:4px;padding-left:12px;position:relative;">
+            <span style="position:absolute;left:0;color:#f59e0b;">▶</span>${f}
+        </li>`
+    ).join('') || '<li style="font-size:11px;color:#94a3b8;">—</li>';
+
+    // Relatório detalhado
+    const relatorio = (aj.justificativa_detalhada || '')
+        .replace(/## (.+)/g, '<div style="font-size:12px;font-weight:800;color:#002d72;margin:12px 0 4px;">$1</div>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>')
+        || '<p style="color:#94a3b8;font-size:12px;">Relatório não disponível.</p>';
+
+    // Melhorias / Bugs / Desalinhamentos
+    const buildList = (items, cols) => {
+        if (!items || !items.length) return '<p style="font-size:11px;color:#94a3b8;margin:4px 0;">Nenhum registrado.</p>';
+        return items.map(it => {
+            const cells = cols.map(c => `<span style="font-size:10px;color:#475569;display:block;"><strong style="color:#0f172a;">${c.label}:</strong> ${it[c.key] || '—'}</span>`).join('');
+            return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 12px;margin-bottom:6px;">${cells}</div>`;
+        }).join('');
+    };
+
+    const melhoriasHtml = buildList(aj.melhorias, [
+        {key:'produto', label:'Produto'}, {key:'tipo', label:'Tipo'}, {key:'descricao', label:'Descrição'}, {key:'frase_cliente', label:'Frase'}
+    ]);
+    const bugsHtml = buildList(aj.bugs, [
+        {key:'descricao', label:'Descrição'}, {key:'impacto', label:'Impacto'}, {key:'frase_cliente', label:'Frase'}
+    ]);
+    const desalinhHtml = buildList(aj.desalinhamentos, [
+        {key:'expectativa', label:'Expectativa'}, {key:'realidade', label:'Realidade'}, {key:'severidade', label:'Severidade'}, {key:'como_tratado', label:'Como tratado'}
+    ]);
+
+    const html = `
+    <div style="font-family:'Plus Jakarta Sans',Poppins,Helvetica,sans-serif;background:#fff;color:#0f172a;padding:0;margin:0;width:794px;">
+
+        <!-- Cabeçalho -->
+        <div style="background:linear-gradient(135deg,#002d72,#3a1fa8,#6431e2);padding:24px 32px;">
             <div style="display:flex;align-items:center;justify-content:space-between;">
                 <div>
-                    <div style="font-size:10px;font-weight:800;letter-spacing:0.15em;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-bottom:4px;">Nibo CS Auditor</div>
-                    <div style="font-size:22px;font-weight:800;color:#fff;margin:0;">Relatório de Avaliações</div>
-                    <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:4px;">${hoje}</div>
+                    <div style="font-size:9px;font-weight:800;letter-spacing:0.15em;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-bottom:4px;">Nibo CS Auditor · Auditoria de Reunião</div>
+                    <div style="font-size:20px;font-weight:800;color:#fff;">${r.analista_nome || '—'}</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:3px;">${r.coordenador || '—'} · ${dataReuniao}</div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Filtros aplicados</div>
-                    <div style="font-size:11px;color:#fff;font-weight:500;">${periodoLabel}</div>
-                    <div style="font-size:11px;color:rgba(255,255,255,0.8);">${coordLabel}</div>
-                    <div style="font-size:11px;color:rgba(255,255,255,0.8);">${analistaLabel}</div>
+                <div style="text-align:center;">
+                    <div style="font-size:9px;font-weight:800;letter-spacing:0.1em;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-bottom:2px;">Média CS</div>
+                    <div style="font-size:48px;font-weight:900;color:#fff;line-height:1;">${media.toFixed(1)}</div>
+                    <div style="display:inline-block;margin-top:4px;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,0.2);font-size:9px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:0.08em;">${statusTag}</div>
                 </div>
             </div>
         </div>
 
-        <!-- KPIs resumo -->
-        <div style="display:flex;gap:16px;padding:20px 36px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
-            <div style="flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;text-align:center;">
-                <div style="font-size:24px;font-weight:800;color:#002d72;">${allReunioes.length}</div>
-                <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Avaliações</div>
+        <!-- Resumo + Saúde + Churn -->
+        <div style="padding:16px 32px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;gap:16px;">
+            <div style="flex:2;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;">
+                <div style="font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px;">Resumo Executivo</div>
+                <p style="font-size:11px;color:#334155;line-height:1.5;margin:0;">${aj.resumo_executivo || '—'}</p>
             </div>
-            <div style="flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;text-align:center;">
-                <div style="font-size:24px;font-weight:800;color:#0072ce;">${mediaGeral}</div>
-                <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Média Geral</div>
-            </div>
-            <div style="flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;text-align:center;">
-                <div style="font-size:24px;font-weight:800;color:#16a34a;">${totalSaudavel}</div>
-                <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Clientes Saudáveis</div>
-            </div>
-            <div style="flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;text-align:center;">
-                <div style="font-size:24px;font-weight:800;color:#dc2626;">${totalAltoChurn}</div>
-                <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">Churn Alto</div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+                <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
+                    <div style="font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;">Saúde do Cliente</div>
+                    <p style="font-size:11px;font-weight:600;color:#0f172a;margin:0;">${r.saude_cliente || '—'}</p>
+                </div>
+                <div style="background:#fff;border:1px solid #fee2e2;border-radius:12px;padding:10px 14px;">
+                    <div style="font-size:9px;font-weight:800;color:#fca5a5;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;">Risco de Churn</div>
+                    <p style="font-size:11px;font-weight:700;color:${churnCor};margin:0;">${r.risco_churn || '—'}</p>
+                </div>
+                <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
+                    <div style="font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px;">Tempo de Fala</div>
+                    <div style="height:8px;border-radius:999px;overflow:hidden;display:flex;">
+                        <div style="width:${tCS}%;background:#002d72;"></div>
+                        <div style="width:${tCli}%;background:#41b6e6;"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:3px;">
+                        <span style="font-size:9px;font-weight:700;color:#002d72;">CS ${tCS}%</span>
+                        <span style="font-size:9px;font-weight:700;color:#41b6e6;">Cliente ${tCli}%</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Tabela -->
-        <div style="padding:24px 36px;">
-            <table style="width:100%;border-collapse:collapse;">
-                <thead>
-                    <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
-                        <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;text-align:left;">Data</th>
-                        <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;text-align:left;">Analista</th>
-                        <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;text-align:left;">Coordenador</th>
-                        <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;text-align:center;">Média CS</th>
-                        <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;text-align:left;">Saúde do Cliente</th>
-                        <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;text-align:center;">Churn</th>
-                    </tr>
-                </thead>
-                <tbody>${linhasTabela}</tbody>
-            </table>
+        <!-- Pilares -->
+        <div style="padding:16px 32px;border-bottom:1px solid #f1f5f9;">
+            <div style="font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">Notas por Pilar</div>
+            <div style="columns:2;column-gap:32px;">${pilaresHtml}</div>
+        </div>
+
+        <!-- Pontos fortes e atenção -->
+        <div style="padding:16px 32px;border-bottom:1px solid #f1f5f9;display:flex;gap:16px;">
+            <div style="flex:1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 16px;">
+                <div style="font-size:9px;font-weight:800;color:#166534;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">▶ Pontos Fortes</div>
+                <ul style="margin:0;padding:0;list-style:none;">${fortesHtml}</ul>
+            </div>
+            <div style="flex:1;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 16px;">
+                <div style="font-size:9px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">▶ Oportunidades</div>
+                <ul style="margin:0;padding:0;list-style:none;">${atencaoHtml}</ul>
+            </div>
+        </div>
+
+        <!-- Melhorias / Bugs / Desalinhamentos -->
+        <div style="padding:16px 32px;border-bottom:1px solid #f1f5f9;">
+            <div style="font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Sugestões de Melhoria</div>
+            ${melhoriasHtml}
+        </div>
+        <div style="padding:16px 32px;border-bottom:1px solid #f1f5f9;display:flex;gap:16px;">
+            <div style="flex:1;">
+                <div style="font-size:9px;font-weight:800;color:#dc2626;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Bugs Reportados</div>
+                ${bugsHtml}
+            </div>
+            <div style="flex:1;">
+                <div style="font-size:9px;font-weight:800;color:#ea580c;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Desalinhamentos</div>
+                ${desalinhHtml}
+            </div>
+        </div>
+
+        <!-- Relatório detalhado -->
+        <div style="padding:16px 32px 24px;">
+            <div style="font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f1f5f9;">Relatório de Auditoria</div>
+            <div style="font-size:11px;color:#334155;line-height:1.6;">${relatorio}</div>
         </div>
 
         <!-- Rodapé -->
-        <div style="padding:12px 36px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:10px;color:#cbd5e1;font-weight:600;">Nibo CS Auditor · Gerado em ${hoje}</span>
-            <span style="font-size:10px;color:#cbd5e1;font-weight:600;">${allReunioes.length} registro${allReunioes.length !== 1 ? 's' : ''}</span>
+        <div style="padding:10px 32px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;background:#f8fafc;">
+            <span style="font-size:9px;color:#cbd5e1;font-weight:600;">Nibo CS Auditor · Gerado em ${hoje}</span>
+            <span style="font-size:9px;color:#cbd5e1;font-weight:600;">${r.analista_nome || ''} · ${dataReuniao}</span>
         </div>
     </div>`;
 
     const container = document.createElement('div');
-    container.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:900px;';
+    container.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:794px;';
     container.innerHTML = html;
     document.body.appendChild(container);
 
-    const dataStr = new Date().toISOString().slice(0, 10);
-    const filename = `Avaliacoes_CS_${dataStr}.pdf`;
+    const nomeSanitizado = (r.analista_nome || 'CS').replace(/[^a-z0-9]/gi, '_');
+    const dataArq = (r.data_reuniao || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+    const filename = `Auditoria_CS_${nomeSanitizado}_${dataArq}.pdf`;
 
     try {
         await html2pdf().set({
@@ -1703,7 +1848,7 @@ async function gerarPdfAvaliacoes() {
             filename,
             image: { type: 'jpeg', quality: 0.95 },
             html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'] },
         }).from(container).save();
     } finally {
