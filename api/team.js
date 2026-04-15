@@ -77,17 +77,28 @@ export default async function handler(req, res) {
 
         if (existing) {
             if (existing.ativo) return res.status(409).json({ error: 'Analista já cadastrado.' });
-            await db.collection('cs_membros').doc(existing.id).update({ ativo: true, coordenador: coordenador || existing.coordenador || null });
+            const coordAtualizado = coordenador || existing.coordenador || null;
+            await Promise.all([
+                db.collection('cs_membros').doc(existing.id).update({ ativo: true, coordenador: coordAtualizado }),
+                db.collection('cs_analistas').doc(existing.id).set({ nome: existing.nome_completo, coordenador: coordAtualizado, ativo: true }, { merge: true }),
+            ]);
             return res.status(200).json({ ok: true, reativado: true });
         }
 
         const docId = nome.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        await db.collection('cs_membros').doc(docId).set({
-            nome_completo: nome.trim(),
-            alias: gerarAlias(nome.trim()),
-            coordenador: coordenador || null,
-            ativo: true,
-        });
+        await Promise.all([
+            db.collection('cs_membros').doc(docId).set({
+                nome_completo: nome.trim(),
+                alias: gerarAlias(nome.trim()),
+                coordenador: coordenador || null,
+                ativo: true,
+            }),
+            db.collection('cs_analistas').doc(docId).set({
+                nome: nome.trim(),
+                coordenador: coordenador || null,
+                ativo: true,
+            }),
+        ]);
         return res.status(200).json({ ok: true, reativado: false });
     }
 
@@ -102,14 +113,24 @@ export default async function handler(req, res) {
         }
         if (coordenador !== undefined) updates.coordenador = coordenador || null;
 
-        await db.collection('cs_membros').doc(String(id)).update(updates);
+        const analistas_updates = {};
+        if (nome !== undefined) analistas_updates.nome = nome.trim();
+        if (coordenador !== undefined) analistas_updates.coordenador = coordenador || null;
+
+        await Promise.all([
+            db.collection('cs_membros').doc(String(id)).update(updates),
+            db.collection('cs_analistas').doc(String(id)).set(analistas_updates, { merge: true }),
+        ]);
         return res.status(200).json({ ok: true });
     }
 
     if (req.method === 'DELETE') {
         const { id } = req.body;
         if (!id) return res.status(400).json({ error: 'id obrigatório' });
-        await db.collection('cs_membros').doc(String(id)).update({ ativo: false });
+        await Promise.all([
+            db.collection('cs_membros').doc(String(id)).update({ ativo: false }),
+            db.collection('cs_analistas').doc(String(id)).set({ ativo: false }, { merge: true }),
+        ]);
         return res.status(200).json({ ok: true });
     }
 
