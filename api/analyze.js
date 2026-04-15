@@ -473,7 +473,7 @@ async function getMelhorias(transcript) {
                 'Radar (fluxo de caixa/financeiro/DRE), ' +
                 'Conciliador (conciliação bancária/OFX), ' +
                 'BPO (serviços contábeis terceirizados/escritório contábil), ' +
-                'Emissor (emissão de notas fiscais NF-e/NFS-e/NFC-e/SPED/obrigações acessórias), ' +
+                'Emissor (emissão de nota fiscal de serviço/NFS-e exclusivamente), ' +
                 'WhatsApp (chat/comunicação via WhatsApp Business/mensagens automáticas). ' +
                 'Retorne o nome exato de um dos produtos. Se dois produtos forem igualmente centrais, ' +
                 'retorne ambos separados por " + " (ex: "Nibo + Radar"). ' +
