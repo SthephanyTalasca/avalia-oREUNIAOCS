@@ -96,8 +96,10 @@ function parseDataReuniao(rawDate) {
 function repairJson(raw) {
     let s = (raw || '').trimEnd();
     s = s.replace(/,\s*$/, '');
-    s = s.replace(/"[^"]*$/, '');
-    s = s.replace(/:\s*$/, '');
+    // Remove unterminated string value (handles escape sequences correctly)
+    s = s.replace(/"(?:[^"\\]|\\.)*$/, '');
+    // Remove dangling key with no value: "key": or "key"
+    s = s.replace(/,?\s*"[^"]+"\s*(?::\s*)?$/, '');
     s = s.replace(/,\s*$/, '');
     let braces = 0, brackets = 0, inStr = false, esc = false;
     for (let i = 0; i < s.length; i++) {
@@ -344,7 +346,7 @@ async function getDesalinhamentos(transcript) {
         contents: transcript,
         config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 2048,
+            maxOutputTokens: 8192,
             systemInstruction:
                 'Auditor de CS do Nibo. Detecte desalinhamentos de venda na transcrição: ' +
                 'momentos em que o cliente expressa que algo prometido na venda não corresponde ao que recebeu. ' +
@@ -401,7 +403,7 @@ async function getBugs(transcript) {
         contents: transcript,
         config: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 2048,
+            maxOutputTokens: 8192,
             systemInstruction:
                 'Auditor de CS do Nibo. Identifique na transcrição situações de bugs, erros ou falhas do sistema: ' +
                 '(1) erros ou comportamentos inesperados no sistema/produto Nibo relatados pelo cliente ou detectados durante a reunião; ' +
