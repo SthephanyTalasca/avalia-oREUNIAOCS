@@ -35,7 +35,7 @@ export default async function handler(req, res) {
                 `\n\nGere um diagnóstico executivo que sintetize as principais reclamações e pedidos. ` +
                 `Destaque os problemas mais frequentes, cite exemplos concretos onde houver repetição, e indique padrões de impacto. ` +
                 `Seja direto e objetivo. Termine sempre com uma frase completa. Escreva em português.`,
-            config: { maxOutputTokens: 2048 },
+            config: { maxOutputTokens: 8000 },
         });
         return res.status(200).json({ resumo: result.text });
     } catch (e) {
