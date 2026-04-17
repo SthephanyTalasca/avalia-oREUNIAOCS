@@ -506,7 +506,7 @@ async function getMelhorias(transcript) {
                 'Se não identificar, retorne "Não identificado".\n' +
                 '(2) Identifique sugestões de melhoria de produto mencionadas pelo cliente: ' +
                 'funcionalidades pedidas, problemas de usabilidade relatados, integrações desejadas, ' +
-                'relatórios que o cliente sentiu falta, fluxos de processo que o cliente achou confusos ou lentos, ' +
+                'relatórios que o cliente sentiu falta, fluxos de processo confusos ou lentos, ' +
                 'comparações com outros sistemas ("no outro sistema tinha X", "seria bom se tivesse Y"). ' +
                 'Para cada melhoria: ' +
                 'descricao = o que o cliente quer ou precisa (objetiva, 1 frase); ' +
