@@ -1986,7 +1986,7 @@ function renderModal(r){
     });
     document.getElementById('modal-fortes').innerHTML=(aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
     document.getElementById('modal-atencao').innerHTML=(aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
-    const rel=aj.justificativa_detalhada||'';
+    const rel=(aj.justificativa_detalhada||'').replace(/##\s*plano de a[çc][aã]o[\s\S]*?(?=\n##\s|\s*$)/i,'').trim();
     document.getElementById('modal-relatorio').innerHTML=rel?rel.replace(/## (.+)/g,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>'):'<p class="text-slate-400">Relatório não disponível.</p>';
     document.getElementById('modal-overlay').classList.add('open');
     document.getElementById('modal-overlay').querySelector('.modal-box').scrollTop=0;
