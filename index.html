@@ -218,13 +218,17 @@
                 <div class="bg-red-500/20 rounded-2xl p-4 text-center border border-red-400/30"><div id="perfil-pior" class="text-3xl font-black text-red-300">—</div><div class="text-[9px] font-bold text-red-200 uppercase tracking-wide mt-1">Menor Nota</div></div>
             </div>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="glass-card p-8 flex items-center justify-center" style="min-height:320px"><canvas id="perfil-radar"></canvas></div>
-            <div class="glass-card p-8">
-                <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>Média por Pilar</h3>
-                <div id="perfil-pilares" class="space-y-3"></div>
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>Desempenho por Pilar vs Time</h3>
+                <div class="flex items-center gap-4 text-[11px] font-bold text-slate-500">
+                    <span class="flex items-center gap-1.5"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2563eb"></span>Analista</span>
+                    <span class="flex items-center gap-1.5"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#94a3b8"></span>Time</span>
+                </div>
             </div>
+            <div style="position:relative;width:100%;height:380px"><canvas id="perfil-radar"></canvas></div>
         </div>
+        <div id="perfil-pilares" class="hidden"></div>
         <!-- CALENDÁRIO DE REUNIÕES -->
         <div class="glass-card overflow-hidden">
             <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between">
@@ -1685,7 +1689,9 @@ function abrirPerfil(nome) {
     }).join('');
     const ctx=document.getElementById('perfil-radar').getContext('2d');
     if(perfilRadar) perfilRadar.destroy();
-    perfilRadar=new Chart(ctx,{type:'radar',data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Média',data:PILLARS.map(p=>{const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;}),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1e3a8a'}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}});
+    const analystVals=PILLARS.map(p=>{const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;});
+    const teamVals=PILLARS.map(p=>{const v=allReunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;});
+    perfilRadar=new Chart(ctx,{type:'radar',data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Analista',data:analystVals,backgroundColor:'rgba(37,99,235,0.18)',borderColor:'#2563eb',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#2563eb',pointHoverRadius:6},{label:'Time',data:teamVals,backgroundColor:'rgba(148,163,184,0.12)',borderColor:'#94a3b8',borderWidth:1.5,pointRadius:3,pointBackgroundColor:'#94a3b8',borderDash:[4,3]}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}/5`}}},maintainAspectRatio:false}});
     renderPerfilCalendario(perfilCalYear, perfilCalMonth);
     document.getElementById('perfil-badge-total').textContent=reunioes.length+' avaliações';
     document.getElementById('perfil-tbody').innerHTML=reunioes.map(r=>{
