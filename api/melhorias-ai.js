@@ -9,7 +9,20 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(204).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido.' });
 
-    const { action, melhorias, produto } = req.body || {};
+    const { action, melhorias, produto, analista, periodo, mediaGeral, totalAvaliacoes, pilaresDestaque, pilaresAtencao, tendencia, fortes, atencao, resumos } = req.body || {};
+
+    // ── RESUMO PERFIL ANALISTA ───────────────────────────────────────────────
+    if (action === 'resumo_perfil') {
+        if (!analista || !totalAvaliacoes) return res.status(400).json({ error: 'Dados insuficientes.' });
+        const prompt = `Você é um coordenador de Customer Success sênior do Nibo analisando o desempenho de um analista.\n\nAnalista: ${analista}\nPeríodo analisado: ${periodo}\nTotal de avaliações: ${totalAvaliacoes}\nMédia geral: ${mediaGeral}/5\n\nPilares com melhor desempenho (média ≥ 4.5):\n${pilaresDestaque?.length ? pilaresDestaque.map(p=>`- ${p.label}: ${p.val}`).join('\n') : '- Nenhum'}\n\nPilares que precisam de atenção (média < 4.0):\n${pilaresAtencao?.length ? pilaresAtencao.map(p=>`- ${p.label}: ${p.val}`).join('\n') : '- Nenhum'}\n\nTendência (primeiras vs últimas avaliações):\n${tendencia}\n\nPontos fortes mais citados:\n${fortes?.length ? fortes.slice(0,5).map(f=>`- ${f}`).join('\n') : '- Sem dados'}\n\nPontos de atenção mais citados:\n${atencao?.length ? atencao.slice(0,5).map(a=>`- ${a}`).join('\n') : '- Sem dados'}\n\nResumos de reuniões recentes:\n${resumos?.length ? resumos.slice(0,4).map((r,i)=>`${i+1}. ${r}`).join('\n') : '- Sem dados'}\n\nEscreva um parágrafo narrativo de feedback (3 a 5 frases) em português, como se fosse um coordenador falando sobre esse analista. Mencione o nome, os pilares pelo nome, períodos quando relevante. Destaque conquistas, aponte desenvolvimento sem ser pejorativo. Texto corrido, sem bullet points.`;
+        try {
+            const result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { maxOutputTokens: 600 } });
+            return res.status(200).json({ resumo: result.text });
+        } catch (e) {
+            console.error('melhorias-ai resumo_perfil erro:', e.message);
+            return res.status(500).json({ error: e.message });
+        }
+    }
 
     if (!melhorias || !melhorias.length) {
         return res.status(400).json({ error: 'Nenhuma melhoria fornecida.' });
