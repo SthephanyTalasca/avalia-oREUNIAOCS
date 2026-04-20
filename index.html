@@ -1800,7 +1800,7 @@ async function gerarResumoDesempenho(){
     const resumos=reunioes.map(r=>r.analise_json?.resumo_executivo||'').filter(Boolean);
 
     try{
-        const res=await fetch('/api/resumo-perfil',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({analista:nome,periodo,mediaGeral,totalAvaliacoes:reunioes.length,pilaresDestaque,pilaresAtencao,tendencia,fortes:allFortes,atencao:allAtencao,resumos})});
+        const res=await fetch('/api/melhorias-ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'resumo_perfil',analista:nome,periodo,mediaGeral,totalAvaliacoes:reunioes.length,pilaresDestaque,pilaresAtencao,tendencia,fortes:allFortes,atencao:allAtencao,resumos})});
         const data=await res.json();
         if(!res.ok) throw new Error(data.error);
         container.innerHTML=`<p class="text-sm text-slate-700 leading-relaxed">${data.resumo.replace(/\n/g,'<br>')}</p>`;
