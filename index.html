@@ -218,28 +218,31 @@
                 <div class="bg-red-500/20 rounded-2xl p-4 text-center border border-red-400/30"><div id="perfil-pior" class="text-3xl font-black text-red-300">—</div><div class="text-[9px] font-bold text-red-200 uppercase tracking-wide mt-1">Menor Nota</div></div>
             </div>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="glass-card p-8 flex items-center justify-center" style="min-height:320px"><canvas id="perfil-radar"></canvas></div>
-            <div class="glass-card p-8">
-                <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-blue-600"></i>Média por Pilar</h3>
-                <div id="perfil-pilares" class="space-y-3"></div>
-            </div>
-        </div>
-        <!-- CALENDÁRIO DE REUNIÕES -->
-        <div class="glass-card overflow-hidden">
-            <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between">
-                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4 text-blue-500"></i>Calendário de Reuniões</h3>
-                <div class="flex items-center gap-1">
-                    <button onclick="perfilCalNav(-1)" class="p-2 hover:bg-slate-100 rounded-xl transition-all"><i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i></button>
-                    <span id="perfil-cal-label" class="text-sm font-bold text-slate-700 min-w-[130px] text-center">—</span>
-                    <button onclick="perfilCalNav(1)" class="p-2 hover:bg-slate-100 rounded-xl transition-all"><i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i></button>
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>Desempenho por Pilar vs Time</h3>
+                <div class="flex items-center gap-4 text-[11px] font-bold text-slate-500">
+                    <span class="flex items-center gap-1.5"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2563eb"></span>Analista</span>
+                    <span class="flex items-center gap-1.5"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#94a3b8"></span>Time</span>
                 </div>
             </div>
-            <div class="p-6">
-                <div id="perfil-cal-grid" class="grid grid-cols-7 gap-1 text-center"></div>
-                <div id="perfil-cal-day-detail" class="hidden mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200"></div>
+            <div style="position:relative;width:100%;height:380px"><canvas id="perfil-radar"></canvas></div>
+        </div>
+        <div id="perfil-pilares" class="hidden"></div>
+        <!-- RESUMO DE DESEMPENHO IA -->
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-violet-500"></i>Resumo de Desempenho</h3>
+                <button onclick="gerarResumoDesempenho()" id="btn-resumo-reload" class="p-1.5 hover:bg-slate-100 rounded-lg transition-all" title="Regenerar resumo">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+            </div>
+            <div id="perfil-resumo-desemp" class="text-sm text-slate-600 leading-relaxed min-h-[60px] flex items-center justify-center">
+                <p class="text-slate-300 text-xs">—</p>
             </div>
         </div>
+        <!-- mantém DOM do calendário para não quebrar funções existentes -->
+        <div class="hidden"><span id="perfil-cal-label"></span><div id="perfil-cal-grid"></div><div id="perfil-cal-day-detail"></div></div>
         <div class="glass-card overflow-hidden">
             <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-slate-500"></i>Todas as Avaliações</h3>
@@ -634,19 +637,21 @@
     </div>
 
     <!-- CALENDÁRIO GERAL -->
-    <div class="glass-card overflow-hidden">
-        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-            <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4 text-blue-500"></i>Calendário de Reuniões</h2>
-            <div class="flex items-center gap-1">
-                <button onclick="calGeralNav(-1)" class="p-2 hover:bg-slate-100 rounded-xl transition-all"><i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i></button>
-                <span id="cal-geral-label" class="text-sm font-bold text-slate-700 min-w-[140px] text-center">—</span>
-                <button onclick="calGeralNav(1)" class="p-2 hover:bg-slate-100 rounded-xl transition-all"><i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i></button>
+    <div class="flex justify-start">
+    <div class="glass-card overflow-hidden" style="max-width:320px;width:100%">
+        <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-500"></i>Calendário</h2>
+            <div class="flex items-center gap-0.5">
+                <button onclick="calGeralNav(-1)" class="p-1.5 hover:bg-slate-100 rounded-lg transition-all"><i data-lucide="chevron-left" class="w-3.5 h-3.5 text-slate-500"></i></button>
+                <span id="cal-geral-label" class="text-xs font-bold text-slate-700 min-w-[110px] text-center">—</span>
+                <button onclick="calGeralNav(1)" class="p-1.5 hover:bg-slate-100 rounded-lg transition-all"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i></button>
             </div>
         </div>
-        <div class="p-6">
-            <div id="cal-geral-grid" class="grid grid-cols-7 gap-1 text-center"></div>
-            <div id="cal-geral-day-detail" class="hidden mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200"></div>
+        <div class="p-3">
+            <div id="cal-geral-grid" class="grid grid-cols-7 gap-0.5 text-center"></div>
+            <div id="cal-geral-day-detail" class="hidden mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200"></div>
         </div>
+    </div>
     </div>
 
     <!-- TABELA COMPLETA -->
@@ -1663,6 +1668,7 @@ function abrirPerfil(nome) {
     reunioes=Object.values(Object.fromEntries(reunioes.map(r=>[r.id,r])));
     reunioes.sort((a,b)=>new Date(b.data_reuniao||b.created_at)-new Date(a.data_reuniao||a.created_at));
     perfilReunioesAtual=reunioes;
+    perfilNomeAtual=nome;
     const dataInicialCal=new Date(reunioes[0].data_reuniao||reunioes[0].created_at);
     perfilCalYear=dataInicialCal.getFullYear(); perfilCalMonth=dataInicialCal.getMonth();
     document.getElementById('perfil-avatar').textContent=nome.trim()[0].toUpperCase();
@@ -1683,8 +1689,10 @@ function abrirPerfil(nome) {
     }).join('');
     const ctx=document.getElementById('perfil-radar').getContext('2d');
     if(perfilRadar) perfilRadar.destroy();
-    perfilRadar=new Chart(ctx,{type:'radar',data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Média',data:PILLARS.map(p=>{const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;}),backgroundColor:'rgba(37,99,235,0.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1e3a8a'}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false}},maintainAspectRatio:false}});
-    renderPerfilCalendario(perfilCalYear, perfilCalMonth);
+    const analystVals=PILLARS.map(p=>{const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;});
+    const teamVals=PILLARS.map(p=>{const v=allReunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;});
+    perfilRadar=new Chart(ctx,{type:'radar',data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Analista',data:analystVals,backgroundColor:'rgba(37,99,235,0.18)',borderColor:'#2563eb',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#2563eb',pointHoverRadius:6},{label:'Time',data:teamVals,backgroundColor:'rgba(148,163,184,0.12)',borderColor:'#94a3b8',borderWidth:1.5,pointRadius:3,pointBackgroundColor:'#94a3b8',borderDash:[4,3]}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}/5`}}},maintainAspectRatio:false}});
+    gerarResumoDesempenho();
     document.getElementById('perfil-badge-total').textContent=reunioes.length+' avaliações';
     document.getElementById('perfil-tbody').innerHTML=reunioes.map(r=>{
         const media=r.media_final??0;
@@ -1745,6 +1753,63 @@ function renderPlanoAcaoModal(analista, reunioes) {
         </div>`;
     }).join('');
     lucide.createIcons();
+}
+
+// ── RESUMO DE DESEMPENHO IA ───────────────────────────────────────────────
+let perfilNomeAtual='';
+
+async function gerarResumoDesempenho(){
+    const container=document.getElementById('perfil-resumo-desemp');
+    if(!container||!perfilReunioesAtual.length) return;
+    container.innerHTML='<p class="text-slate-400 text-xs flex items-center gap-2"><span class="animate-spin inline-block w-3 h-3 border-2 border-violet-300 border-t-violet-600 rounded-full"></span>Gerando resumo com IA...</p>';
+    const btn=document.getElementById('btn-resumo-reload');
+    if(btn) btn.disabled=true;
+
+    const reunioes=[...perfilReunioesAtual].sort((a,b)=>new Date(a.data_reuniao||a.created_at)-new Date(b.data_reuniao||b.created_at));
+    const nome=perfilNomeAtual||reunioes[0]?.analista_nome||'—';
+    const datas=reunioes.map(r=>new Date(r.data_reuniao||r.created_at));
+    const periodo=datas.length>=2
+        ?`${datas[0].toLocaleDateString('pt-BR',{month:'long',year:'numeric'})} a ${datas[datas.length-1].toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}`
+        :datas[0]?.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})||'—';
+    const medias=reunioes.map(r=>r.media_final).filter(Boolean);
+    const mediaGeral=medias.length?(medias.reduce((s,v)=>s+v,0)/medias.length).toFixed(1):'—';
+
+    const pilaresMedia=PILLARS.map(p=>{const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return{label:p.l,val:v.length?+(v.reduce((s,x)=>s+x,0)/v.length).toFixed(1):null};}).filter(p=>p.val!==null);
+    const pilaresDestaque=pilaresMedia.filter(p=>p.val>=4.5).sort((a,b)=>b.val-a.val);
+    const pilaresAtencao=pilaresMedia.filter(p=>p.val<4.0).sort((a,b)=>a.val-b.val);
+
+    // tendência: primeiras metade vs segunda metade
+    let tendencia='Dados insuficientes para análise de tendência.';
+    if(reunioes.length>=4){
+        const metade=Math.floor(reunioes.length/2);
+        const primeiras=reunioes.slice(0,metade).map(r=>r.media_final).filter(Boolean);
+        const ultimas=reunioes.slice(metade).map(r=>r.media_final).filter(Boolean);
+        if(primeiras.length&&ultimas.length){
+            const mp=(primeiras.reduce((s,v)=>s+v,0)/primeiras.length).toFixed(1);
+            const mu=(ultimas.reduce((s,v)=>s+v,0)/ultimas.length).toFixed(1);
+            const diff=(parseFloat(mu)-parseFloat(mp)).toFixed(1);
+            tendencia=`Média inicial: ${mp} → Média recente: ${mu} (${diff>=0?'+':''}${diff})`;
+        }
+    }
+
+    const allFortes=[],allAtencao=[];
+    reunioes.forEach(r=>{
+        (r.analise_json?.pontos_fortes||[]).forEach(f=>allFortes.push(f));
+        (r.analise_json?.pontos_atencao||[]).forEach(a=>allAtencao.push(a));
+    });
+    const resumos=reunioes.map(r=>r.analise_json?.resumo_executivo||'').filter(Boolean);
+
+    try{
+        const res=await fetch('/api/resumo-perfil',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({analista:nome,periodo,mediaGeral,totalAvaliacoes:reunioes.length,pilaresDestaque,pilaresAtencao,tendencia,fortes:allFortes,atencao:allAtencao,resumos})});
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.error);
+        container.innerHTML=`<p class="text-sm text-slate-700 leading-relaxed">${data.resumo.replace(/\n/g,'<br>')}</p>`;
+    }catch(e){
+        container.innerHTML=`<p class="text-xs text-red-400">Erro ao gerar resumo: ${e.message}</p>`;
+    }finally{
+        if(btn) btn.disabled=false;
+        lucide.createIcons();
+    }
 }
 
 // ── CALENDÁRIO DO PERFIL ───────────────────────────────────────────────────
@@ -1832,7 +1897,7 @@ function renderCalGeralMes(year, month) {
             byDay[day].push(r);
         }
     });
-    let html = DIAS_CAL.map(d => `<div class="text-[9px] font-black text-slate-400 uppercase tracking-widest py-2">${d}</div>`).join('');
+    let html = DIAS_CAL.map(d => `<div class="text-[8px] font-black text-slate-400 uppercase tracking-widest py-1">${d[0]}</div>`).join('');
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
@@ -1842,13 +1907,13 @@ function renderCalGeralMes(year, month) {
         const meetings = byDay[day];
         const hasMeetings = meetings && meetings.length > 0;
         const count = hasMeetings ? meetings.length : 0;
-        let cls = 'relative flex flex-col items-center justify-center py-2 rounded-xl text-xs font-semibold ';
+        let cls = 'relative flex flex-col items-center justify-center rounded-lg font-semibold ';
         if (isToday) cls += 'bg-blue-600 text-white ';
         else if (hasMeetings) cls += 'bg-blue-50 text-blue-800 cursor-pointer hover:bg-blue-100 transition-all ';
         else cls += 'text-slate-300 ';
         const onclick = hasMeetings ? `onclick="showCalGeralDay(${day})"` : '';
-        const badge = hasMeetings ? `<span style="font-size:0.55rem;line-height:1;font-weight:800;background:${isToday ? 'rgba(255,255,255,0.3)' : '#bfdbfe'};color:${isToday ? '#fff' : '#1d4ed8'};border-radius:999px;padding:0.1rem 0.35rem;margin-top:1px">${count}</span>` : '';
-        html += `<div class="${cls}" ${onclick} style="width:32px;height:32px;min-width:32px;min-height:32px;font-size:0.7rem;padding:0;justify-self:center;"><span>${day}</span>${badge}</div>`;
+        const badge = hasMeetings ? `<span style="font-size:0.5rem;line-height:1;font-weight:800;background:${isToday ? 'rgba(255,255,255,0.3)' : '#bfdbfe'};color:${isToday ? '#fff' : '#1d4ed8'};border-radius:999px;padding:0.05rem 0.25rem;margin-top:1px">${count}</span>` : '';
+        html += `<div class="${cls}" ${onclick} style="width:26px;height:26px;min-width:26px;min-height:26px;font-size:0.65rem;padding:0;justify-self:center;"><span>${day}</span>${badge}</div>`;
     }
     document.getElementById('cal-geral-grid').innerHTML = html;
     document.getElementById('cal-geral-day-detail').classList.add('hidden');
@@ -1984,7 +2049,7 @@ function renderModal(r){
     });
     document.getElementById('modal-fortes').innerHTML=(aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
     document.getElementById('modal-atencao').innerHTML=(aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
-    const rel=aj.justificativa_detalhada||'';
+    const rel=(aj.justificativa_detalhada||'').replace(/##\s*plano de a[çc][aã]o[\s\S]*?(?=\n##\s|\s*$)/i,'').trim();
     document.getElementById('modal-relatorio').innerHTML=rel?rel.replace(/## (.+)/g,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>'):'<p class="text-slate-400">Relatório não disponível.</p>';
     document.getElementById('modal-overlay').classList.add('open');
     document.getElementById('modal-overlay').querySelector('.modal-box').scrollTop=0;
