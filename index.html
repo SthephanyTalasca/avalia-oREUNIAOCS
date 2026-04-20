@@ -135,9 +135,9 @@
             <div>
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Notas por Pilar</span>
-                    <span class="text-[9px] text-slate-300 font-semibold italic">Clique para ver justificativa</span>
+                    <span class="text-[9px] text-slate-300 font-semibold italic">Clique no ponto para ver detalhes</span>
                 </div>
-                <div id="modal-pilares" class="grid grid-cols-2 gap-2"></div>
+                <div id="modal-pilares" class="grid grid-cols-2 gap-4"></div>
             </div>
             <div id="modal-pilar-detalhe" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2">
                 <div class="flex items-center justify-between">
@@ -787,6 +787,13 @@ const CK_LABELS = {
 
 let allReunioes=[], todasReunioes=[], statsData={}, chartEvo=null, chartCoord=null, perfilRadar=null;
 let chartRadars=[null,null,null,null];
+let modalRadarCharts=[];
+const MODAL_RADAR_GROUPS=[
+    {label:'Consultividade',color:'#6431e2',bg:'rgba(100,49,226,0.15)',pillars:[{k:'consultividade',l:'Consultividade'},{k:'escuta_ativa',l:'Escuta Ativa'},{k:'jornada_cliente',l:'Jornada'},{k:'encantamento',l:'Encantamento'},{k:'objecoes',l:'Objeções'}]},
+    {label:'Comportamento',color:'#2563eb',bg:'rgba(37,99,235,0.15)',pillars:[{k:'rapport',l:'Rapport'},{k:'autoridade',l:'Autoridade'},{k:'postura',l:'Postura'},{k:'gestao_tempo',l:'Gestão Tempo'}]},
+    {label:'Comunicação',color:'#db2777',bg:'rgba(219,39,119,0.15)',pillars:[{k:'contextualizacao',l:'Contextualiz.'},{k:'clareza',l:'Clareza'},{k:'objetividade',l:'Objetividade'},{k:'flexibilidade',l:'Flexibilidade'}]},
+    {label:'Técnico',color:'#059669',bg:'rgba(5,150,105,0.15)',pillars:[{k:'dominio_produto',l:'Dom. Produto'},{k:'dominio_negocio',l:'Dom. Negócio'},{k:'ecossistema_nibo',l:'Ecossistema'},{k:'universo_contabil',l:'Univ. Contábil'}]},
+];
 const RADAR_GROUPS=[
     {id:'radar-consultividade',color:'#6431e2',pillars:[{k:'escuta_ativa',l:'Escuta Ativa'},{k:'jornada_cliente',l:'Jornada'},{k:'encantamento',l:'Encantamento'},{k:'objecoes',l:'Objeções'}]},
     {id:'radar-comportamento',color:'#2563eb',pillars:[{k:'rapport',l:'Rapport'},{k:'autoridade',l:'Autoridade'},{k:'postura',l:'Postura'},{k:'gestao_tempo',l:'Gestão Tempo'}]},
@@ -1937,36 +1944,44 @@ function renderModal(r){
     document.getElementById('modal-fala-cli-pct').textContent='Cliente '+tCli+'%';
     document.getElementById('modal-fala-cs').querySelector('span').style.display=tCS>15?'':'none';
     document.getElementById('modal-fala-cli').querySelector('span').style.display=tCli>15?'':'none';
+    modalRadarCharts.forEach(c=>c&&c.destroy());
+    modalRadarCharts=[];
     document.getElementById('modal-pilar-detalhe').classList.add('hidden');
-    document.getElementById('modal-pilares').innerHTML=PILLARS.map(p=>{
-        const val=r['nota_'+p.k],hasVal=val!=null;
-        const porque=aj['porque_'+p.k]||'—';
-        const bg=!hasVal?'bg-slate-50 opacity-60':val>=4?'bg-emerald-50 hover:bg-emerald-100':val>=3?'bg-blue-50 hover:bg-blue-100':'bg-red-50 hover:bg-red-100';
-        const tc=!hasVal?'text-slate-300':val>=4?'text-emerald-600':val>=3?'text-blue-600':'text-red-500';
-        const cur=hasVal?'cursor-pointer':'cursor-default';
-        return `<div data-pk="${p.k}" class="pilar-modal-card ${bg} ${cur} rounded-2xl p-3 border border-slate-100 flex items-center gap-3 transition-all select-none">
-            <div class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg ${tc} bg-white shadow-sm border border-slate-100">${hasVal?val:'—'}</div>
-            <div class="flex-1 min-w-0"><div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">${p.l}</div><p class="text-[11px] text-slate-500 font-medium leading-snug truncate">${hasVal?porque:'Sem evidência'}</p></div>
-            ${hasVal?'<i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300 flex-shrink-0"></i>':''}
-        </div>`;
-    }).join('');
-    document.getElementById('modal-pilares').addEventListener('click',function handler(e){
-        const card=e.target.closest('.pilar-modal-card');
-        if(!card||!card.dataset.pk) return;
-        const pk=card.dataset.pk,pillar=PILLARS.find(p=>p.k===pk),val=r['nota_'+pk];
-        if(val==null) return;
-        const porque=aj['porque_'+pk]||'Sem justificativa.',melhoria=aj['melhoria_'+pk]||'';
-        const tc=val>=4?'text-emerald-600':val>=3?'text-blue-600':'text-red-500';
-        document.getElementById('modal-pd-nome').textContent=pillar?.l||pk;
-        const notaEl=document.getElementById('modal-pd-nota');notaEl.textContent=val;notaEl.className=`text-2xl font-black ${tc}`;
-        document.getElementById('modal-pd-porque').textContent=porque;
-        const melhoriaBox=document.getElementById('modal-pd-melhoria-box');
-        if(melhoria&&melhoria!=='Excelência atingida.'&&val<5){document.getElementById('modal-pd-melhoria').textContent=melhoria;melhoriaBox.classList.remove('hidden');}
-        else melhoriaBox.classList.add('hidden');
-        const det=document.getElementById('modal-pilar-detalhe');det.classList.remove('hidden');det.scrollIntoView({behavior:'smooth',block:'nearest'});
-        document.querySelectorAll('.pilar-modal-card').forEach(c=>c.style.outline='');
-        card.style.outline='2px solid #2563eb';
-    },{once:false});
+    document.getElementById('modal-pilares').innerHTML=MODAL_RADAR_GROUPS.map((g,gi)=>`
+        <div class="rounded-2xl border border-slate-100 p-3 bg-white shadow-sm">
+            <div class="text-[9px] font-black uppercase tracking-widest mb-2" style="color:${g.color}">${g.label}</div>
+            <div style="position:relative;height:190px"><canvas id="modal-radar-${gi}"></canvas></div>
+        </div>
+    `).join('');
+    MODAL_RADAR_GROUPS.forEach((g,gi)=>{
+        const ctx=document.getElementById('modal-radar-'+gi).getContext('2d');
+        const vals=g.pillars.map(p=>r['nota_'+p.k]??0);
+        const chart=new Chart(ctx,{
+            type:'radar',
+            data:{labels:g.pillars.map(p=>p.l),datasets:[{data:vals,backgroundColor:g.bg,borderColor:g.color,borderWidth:2,pointBackgroundColor:vals.map(v=>v>=4?g.color:v>=3?'#f59e0b':'#ef4444'),pointRadius:6,pointHoverRadius:8}]},
+            options:{
+                responsive:true,maintainAspectRatio:false,
+                plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw}/5`}}},
+                scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:8},display:false},pointLabels:{font:{size:9,weight:'bold'}},grid:{color:'rgba(0,0,0,0.08)'},angleLines:{color:'rgba(0,0,0,0.08)'}}},
+                onClick:(evt,elements)=>{
+                    if(!elements.length) return;
+                    const idx=elements[0].index,p=g.pillars[idx],pk=p.k,val=r['nota_'+pk];
+                    if(val==null) return;
+                    const porque=aj['porque_'+pk]||'Sem justificativa.',melhoria=aj['melhoria_'+pk]||'';
+                    const tc=val>=4?'text-emerald-600':val>=3?'text-blue-600':'text-red-500';
+                    const pillarFull=PILLARS.find(x=>x.k===pk);
+                    document.getElementById('modal-pd-nome').textContent=pillarFull?.l||pk;
+                    const notaEl=document.getElementById('modal-pd-nota');notaEl.textContent=val;notaEl.className=`text-2xl font-black ${tc}`;
+                    document.getElementById('modal-pd-porque').textContent=porque;
+                    const melhoriaBox=document.getElementById('modal-pd-melhoria-box');
+                    if(melhoria&&melhoria!=='Excelência atingida.'&&val<5){document.getElementById('modal-pd-melhoria').textContent=melhoria;melhoriaBox.classList.remove('hidden');}
+                    else melhoriaBox.classList.add('hidden');
+                    const det=document.getElementById('modal-pilar-detalhe');det.classList.remove('hidden');det.scrollIntoView({behavior:'smooth',block:'nearest'});
+                }
+            }
+        });
+        modalRadarCharts.push(chart);
+    });
     document.getElementById('modal-fortes').innerHTML=(aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
     document.getElementById('modal-atencao').innerHTML=(aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
     const rel=aj.justificativa_detalhada||'';
