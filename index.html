@@ -252,6 +252,16 @@
                 </table>
             </div>
         </div>
+        <!-- PLANO DE AÇÃO INDIVIDUAL -->
+        <div class="glass-card overflow-hidden">
+            <div class="px-8 py-5 border-b border-slate-100 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-2xl flex items-center justify-center" style="background:#ede9fe"><i data-lucide="clipboard-list" class="w-4 h-4" style="color:#7c3aed"></i></div>
+                <h3 class="font-bold text-slate-800">Plano de Ação Individual</h3>
+            </div>
+            <div id="perfil-plano-acao" class="p-6 space-y-4">
+                <p class="text-sm text-slate-400 text-center py-4">Carregando...</p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -447,12 +457,40 @@
             </div>
             <select id="f-coordenador" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50"><option value="">Todos os coordenadores</option></select>
             <select id="f-analista" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50"><option value="">Todos os analistas</option></select>
-            <select id="f-origem" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50">
-                <option value="">Todas as origens</option>
-                <option value="auto">Automático (Drive)</option>
-                <option value="manual">Manual</option>
-            </select>
-            <button onclick="loadData()" class="bg-blue-600 hover:bg-[#002d72] text-white font-bold py-2.5 rounded-xl transition-all text-sm">Aplicar</button>
+            <div class="flex gap-2">
+                <button onclick="loadData()" class="flex-1 bg-blue-600 hover:bg-[#002d72] text-white font-bold py-2.5 rounded-xl transition-all text-sm">Aplicar</button>
+                <button onclick="limparFiltros()" class="px-3 py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 font-bold rounded-xl transition-all text-xs flex items-center gap-1" title="Limpar filtros"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i>Limpar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD VISÃO POR EQUIPE -->
+    <div id="card-visao-equipe" class="glass-card p-6" style="display:none;">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-100 flex items-center justify-center"><i data-lucide="shield" class="w-5 h-5 text-indigo-600"></i></div>
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Visão por Equipe</p>
+                <h3 id="ve-coord-nome" class="font-extrabold text-lg text-[#002d72]">—</h3>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-slate-50 rounded-2xl p-4 text-center border border-slate-100">
+                <div id="ve-analistas" class="text-3xl font-black text-slate-700">—</div>
+                <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-1">Analistas</div>
+            </div>
+            <div class="bg-blue-50 rounded-2xl p-4 text-center border border-blue-100">
+                <div id="ve-media" class="text-3xl font-black text-blue-700">—</div>
+                <div class="text-[9px] font-bold text-blue-600 uppercase tracking-wide mt-1">Média da Equipe</div>
+            </div>
+            <div class="bg-emerald-50 rounded-2xl p-4 text-center border border-emerald-100">
+                <div id="ve-reunioes" class="text-3xl font-black text-emerald-700">—</div>
+                <div class="text-[9px] font-bold text-emerald-600 uppercase tracking-wide mt-1">Reuniões no Período</div>
+            </div>
+            <div class="bg-amber-50 rounded-2xl p-4 border border-amber-100">
+                <div class="text-[9px] font-bold text-amber-600 uppercase tracking-wide mb-1">Top Performer</div>
+                <div id="ve-top" class="text-sm font-black text-amber-700 truncate">—</div>
+                <div id="ve-top-media" class="text-xs text-amber-500 font-semibold mt-0.5">—</div>
+            </div>
         </div>
     </div>
 
@@ -678,13 +716,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-5" id="melhorias-produtos-grid"></div>
+                <div id="melhorias-produtos-grid" class="hidden"></div>
                 <div class="flex items-center gap-2 mb-4 flex-wrap">
-                    <div class="flex rounded-xl border border-slate-200 p-0.5 gap-0.5 bg-slate-50">
-                        <button id="btn-view-recorrentes" onclick="setMelhoriasView('recorrentes')" class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all" style="background:#7c3aed;color:white">Recorrentes</button>
-                        <button id="btn-view-todas" onclick="setMelhoriasView('todas')" class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all" style="color:#94a3b8">Ver todas</button>
-                        <button id="btn-view-temas" onclick="setMelhoriasView('temas')" class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all flex items-center gap-1" style="color:#94a3b8"><i data-lucide="tags" class="w-3 h-3"></i>Por tema (IA)</button>
-                    </div>
                     <button id="btn-expandir-todas" onclick="toggleExpandirTodas()" class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition-all flex items-center gap-1.5"><i data-lucide="chevrons-down" class="w-3 h-3"></i>Expandir tudo</button>
                     <select id="melhorias-filtro-tipo" onchange="renderMelhorias()" class="text-xs p-1.5 border border-slate-200 rounded-lg bg-slate-50">
                         <option value="">Todos os tipos</option>
@@ -938,13 +971,11 @@ async function loadData() {
         const ate=document.getElementById('f-data-fim').value;
         const coord=document.getElementById('f-coordenador').value;
         const anal=document.getElementById('f-analista').value;
-        const origem=document.getElementById('f-origem').value;
         const params = new URLSearchParams();
         if(de)  params.append('data_inicio',de);
         if(ate) params.append('data_fim',ate);
         if(coord) params.append('coordenador',coord);
         if(anal) params.append('analista',anal);
-        if(origem) params.append('origem',origem);
         const [res, resTodas] = await Promise.all([
             fetch('/api/dashboard?'+params.toString()),
             fetch('/api/dashboard').catch(()=>null)
@@ -1038,7 +1069,48 @@ function populateFilters() {
     af.innerHTML='<option value="">Todos os analistas</option>'+analistas.map(a=>`<option value="${a}"${a===ca?' selected':''}>${a}</option>`).join('');
 }
 
-function renderAll(){renderKPIs();renderSaudeChurn();renderEvo();renderRanking();renderRadars();renderCoord();renderMelhorias();renderBugs();renderDesalinhamentos();renderCalGeral();renderReunioes();lucide.createIcons();}
+function limparFiltros() {
+    document.getElementById('f-data-inicio').value = '';
+    document.getElementById('f-data-fim').value = '';
+    document.getElementById('f-coordenador').value = '';
+    document.getElementById('f-analista').value = '';
+    loadData();
+}
+
+function renderAll(){renderKPIs();renderSaudeChurn();renderEvo();renderRanking();renderRadars();renderCoord();renderMelhorias();renderBugs();renderDesalinhamentos();renderCalGeral();renderReunioes();atualizarVisaoEquipe();lucide.createIcons();}
+
+function atualizarVisaoEquipe() {
+    const coord = document.getElementById('f-coordenador')?.value;
+    const card = document.getElementById('card-visao-equipe');
+    if (!card) return;
+    if (!coord) { card.style.display = 'none'; return; }
+    const reunioesDaEquipe = allReunioes.filter(r => r.coordenador === coord);
+    const analistas = [...new Set(reunioesDaEquipe.map(r => r.analista_nome).filter(Boolean))];
+    const medias = reunioesDaEquipe.map(r => r.media_final).filter(v => v != null);
+    const mediaGeral = medias.length ? (medias.reduce((a, b) => a + b, 0) / medias.length).toFixed(1) : '—';
+    // Top performer
+    const porAnalista = {};
+    for (const r of reunioesDaEquipe) {
+        if (!r.analista_nome || r.media_final == null) continue;
+        if (!porAnalista[r.analista_nome]) porAnalista[r.analista_nome] = [];
+        porAnalista[r.analista_nome].push(r.media_final);
+    }
+    let topNome = '—', topMedia = '—';
+    const entries = Object.entries(porAnalista).map(([nome, vals]) => ({nome, media: vals.reduce((a,b)=>a+b,0)/vals.length}));
+    if (entries.length) {
+        entries.sort((a, b) => b.media - a.media);
+        topNome = entries[0].nome;
+        topMedia = entries[0].media.toFixed(1);
+    }
+    document.getElementById('ve-coord-nome').textContent = coord;
+    document.getElementById('ve-analistas').textContent = analistas.length;
+    document.getElementById('ve-media').textContent = mediaGeral;
+    document.getElementById('ve-reunioes').textContent = reunioesDaEquipe.length;
+    document.getElementById('ve-top').textContent = topNome;
+    document.getElementById('ve-top-media').textContent = topMedia !== '—' ? 'Média: ' + topMedia : '—';
+    card.style.display = '';
+    lucide.createIcons();
+}
 
 function renderKPIs(){
     const s=statsData;
@@ -1351,7 +1423,7 @@ function toggleMelhoriasGrupo(prod) {
 }
 
 function toggleExpandirTodas() {
-    const PRODS = ['Nibo','Radar','Conciliador','BPO','Emissor','WhatsApp','Outro'];
+    const PRODS = ['Obrigações','Radar','Conciliador','BPO','Emissor','WhatsApp','Outro'];
     const allOpen = PRODS.every(p => _melhoriasExpanded.has(p));
     if (allOpen) _melhoriasExpanded.clear();
     else PRODS.forEach(p => _melhoriasExpanded.add(p));
@@ -1397,7 +1469,7 @@ async function gerarResumoIA() {
 }
 
 function renderMelhorias(){
-    const PROD_COLORS = {'Nibo':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706','Emissor':'#0891b2','WhatsApp':'#25D366','Outro':'#64748b'};
+    const PROD_COLORS = {'Obrigações':'#6431e2','Radar':'#0072ce','Conciliador':'#059669','BPO':'#d97706','Emissor':'#0891b2','WhatsApp':'#25D366','Outro':'#64748b'};
     const TIPO_LABEL  = {funcionalidade:'Funcionalidade',usabilidade:'Usabilidade',integracao:'Integração',processo:'Processo',relatorio:'Relatório',outro:'Outro'};
     const filtroTipo = (document.getElementById('melhorias-filtro-tipo')?.value||'').toLowerCase();
 
@@ -1411,38 +1483,24 @@ function renderMelhorias(){
     }
 
     // Contagem por produto
-    const countProd = {Nibo:0,Radar:0,Conciliador:0,BPO:0,Emissor:0,WhatsApp:0,Outro:0};
+    const countProd = {'Obrigações':0,Radar:0,Conciliador:0,BPO:0,Emissor:0,WhatsApp:0,Outro:0};
     for(const m of todasMelhorias){
         const prodKey = Object.keys(countProd).find(k=>(m.produto||'').includes(k));
         if(prodKey) countProd[prodKey]++;
         else countProd['Outro']++;
     }
 
-    // View "Por tema (IA)" — mostra apenas clusters temáticos
+    // View "Por tema (IA)" — mantida internamente mas não acessível via botões removidos
     if (_melhoriasView === 'temas') {
-        document.getElementById('melhorias-produtos-grid').style.display = 'none';
-        document.getElementById('btn-expandir-todas').style.display = 'none';
         const total = todasMelhorias.length;
         document.getElementById('badge-melhorias').textContent = total;
         if (_temasCache) renderTemasHtml();
         else gerarTemas();
         return;
     }
-    document.getElementById('melhorias-produtos-grid').style.display = '';
-    document.getElementById('btn-expandir-todas').style.display = '';
 
-    // Cards por produto — clicam para expandir/recolher o grupo
-    const PRODS_ORDER = ['Nibo','Radar','Conciliador','BPO','Emissor','WhatsApp','Outro'];
-    document.getElementById('melhorias-produtos-grid').innerHTML = PRODS_ORDER.map(prod=>{
-        const cnt = countProd[prod]||0;
-        const color = PROD_COLORS[prod]||'#64748b';
-        const isOpen = _melhoriasExpanded.has(prod);
-        return `<div class="rounded-2xl p-4 text-center border cursor-pointer hover:shadow-md transition-all select-none" style="background:${color}${isOpen?'20':'0d'};border-color:${color}${isOpen?'99':'33'};${isOpen?'box-shadow:0 0 0 2px '+color+'55':''}" onclick="toggleMelhoriasGrupo('${prod}')">
-            <div class="text-2xl font-black mb-1" style="color:${color}">${cnt}</div>
-            <div class="text-[10px] font-black uppercase tracking-widest mb-1.5" style="color:${color}">${prod}</div>
-            <div style="color:${color};opacity:0.6;font-size:0.6rem;font-weight:800">${isOpen?'▲ fechar':'▼ abrir'}</div>
-        </div>`;
-    }).join('');
+    // Accordion por produto (grid de cards coloridos removido — Item 3)
+    const PRODS_ORDER = ['Obrigações','Radar','Conciliador','BPO','Emissor','WhatsApp','Outro'];
 
     // Atualiza botão expandir tudo
     const btnExp = document.getElementById('btn-expandir-todas');
@@ -1630,6 +1688,7 @@ function abrirPerfil(nome) {
         const dataStr=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
         return `<tr onclick="openModalId('${r.id}')" style="cursor:pointer"><td class="text-slate-500 font-semibold">${dataStr}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td></tr>`;
     }).join('');
+    renderPlanoAcaoModal(nome, reunioes);
     document.getElementById('perfil-overlay').classList.add('open');
     document.getElementById('perfil-overlay').scrollTop=0;
     lucide.createIcons();
@@ -1637,6 +1696,49 @@ function abrirPerfil(nome) {
 
 function closePerfil(){document.getElementById('perfil-overlay').classList.remove('open');}
 function abrirPerfilDestaque(tipo){const d=tipo==='melhor'?destaquesMelhor:destaquesAtivo;if(d) abrirPerfil(d.nome);}
+
+function renderPlanoAcaoModal(analista, reunioes) {
+    const container = document.getElementById('perfil-plano-acao');
+    if (!container) return;
+    // Filtra reuniões que têm justificativa_detalhada e extrai seção ## Plano de ação
+    const comPlano = reunioes
+        .filter(r => r.analise_json?.justificativa_detalhada || r.justificativa_detalhada)
+        .map(r => {
+            const texto = r.analise_json?.justificativa_detalhada || r.justificativa_detalhada || '';
+            const match = texto.match(/##\s*plano de a[çc][aã]o[^\n]*/i);
+            if (!match) return null;
+            const startIdx = texto.indexOf(match[0]);
+            const afterHeader = texto.slice(startIdx + match[0].length).trim();
+            const nextHeader = afterHeader.match(/^##/m);
+            const body = nextHeader ? afterHeader.slice(0, afterHeader.search(/^##/m)).trim() : afterHeader.trim();
+            if (!body) return null;
+            const dataStr = new Date(r.data_reuniao || r.created_at).toLocaleDateString('pt-BR');
+            const cliente = r.nome_cliente || r.saude_cliente || '—';
+            return { dataStr, cliente, body };
+        })
+        .filter(Boolean)
+        .slice(0, 3);
+
+    if (!comPlano.length) {
+        container.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">Nenhum plano de ação registrado.</p>';
+        return;
+    }
+
+    container.innerHTML = comPlano.map(item => {
+        const linhas = item.body.split('\n').map(l => l.trim()).filter(l => l);
+        const itens = linhas.map(l => {
+            const texto = l.replace(/^[\-\*\•]\s*/, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            return `<li style="position:relative;padding-left:1.25rem;margin-bottom:0.3rem;color:#475569;font-size:0.82rem;"><span style="position:absolute;left:0;color:#7c3aed;font-weight:bold;">•</span>${texto}</li>`;
+        }).join('');
+        return `<div class="rounded-2xl border border-violet-100 bg-violet-50/50 p-5">
+            <p class="text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2" style="color:#7c3aed;">
+                <i data-lucide="calendar" class="w-3 h-3"></i>${item.dataStr} · ${item.cliente}
+            </p>
+            <ul style="list-style:none;padding:0;margin:0;">${itens}</ul>
+        </div>`;
+    }).join('');
+    lucide.createIcons();
+}
 
 // ── CALENDÁRIO DO PERFIL ───────────────────────────────────────────────────
 const MESES_CAL=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -1670,7 +1772,7 @@ function renderPerfilCalendario(year, month) {
         else cls+='text-slate-300 ';
         const onclick=hasMeetings?`onclick="showPerfilCalDay(${day})"` : '';
         const badge=hasMeetings?`<span style="font-size:0.55rem;line-height:1;font-weight:800;background:${isToday?'rgba(255,255,255,0.3)':'#bfdbfe'};color:${isToday?'#fff':'#1d4ed8'};border-radius:999px;padding:0.1rem 0.35rem;margin-top:1px">${count}</span>`:'';
-        html+=`<div class="${cls}" ${onclick}><span>${day}</span>${badge}</div>`;
+        html+=`<div class="${cls}" ${onclick} style="width:32px;height:32px;min-width:32px;min-height:32px;font-size:0.7rem;padding:0;justify-self:center;"><span>${day}</span>${badge}</div>`;
     }
     document.getElementById('perfil-cal-grid').innerHTML=html;
     document.getElementById('perfil-cal-day-detail').classList.add('hidden');
@@ -1739,7 +1841,7 @@ function renderCalGeralMes(year, month) {
         else cls += 'text-slate-300 ';
         const onclick = hasMeetings ? `onclick="showCalGeralDay(${day})"` : '';
         const badge = hasMeetings ? `<span style="font-size:0.55rem;line-height:1;font-weight:800;background:${isToday ? 'rgba(255,255,255,0.3)' : '#bfdbfe'};color:${isToday ? '#fff' : '#1d4ed8'};border-radius:999px;padding:0.1rem 0.35rem;margin-top:1px">${count}</span>` : '';
-        html += `<div class="${cls}" ${onclick}><span>${day}</span>${badge}</div>`;
+        html += `<div class="${cls}" ${onclick} style="width:32px;height:32px;min-width:32px;min-height:32px;font-size:0.7rem;padding:0;justify-self:center;"><span>${day}</span>${badge}</div>`;
     }
     document.getElementById('cal-geral-grid').innerHTML = html;
     document.getElementById('cal-geral-day-detail').classList.add('hidden');
@@ -2113,6 +2215,29 @@ async function gerarPdfAvaliacao() {
         .replace(/\n/g, '<br>')
         || '<p style="color:#94a3b8;font-size:12px;">Relatório não disponível.</p>';
 
+    // Plano de ação (extraído de justificativa_detalhada)
+    let planoAcaoHtml = '';
+    const textoRelatorio = aj.justificativa_detalhada || '';
+    const matchPlano = textoRelatorio.match(/##\s*plano de a[çc][aã]o[^\n]*/i);
+    if (matchPlano) {
+        const startIdx = textoRelatorio.indexOf(matchPlano[0]);
+        const afterHeader = textoRelatorio.slice(startIdx + matchPlano[0].length).trim();
+        const nextHeaderMatch = afterHeader.match(/^##/m);
+        const body = nextHeaderMatch ? afterHeader.slice(0, afterHeader.search(/^##/m)).trim() : afterHeader.trim();
+        if (body) {
+            const linhas = body.split('\n').map(l => l.trim()).filter(l => l);
+            const itensHtml = linhas.map(l => {
+                const texto = l.replace(/^[\-\*\•]\s*/, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                return `<li style="font-size:11px;color:#4c1d95;margin-bottom:4px;padding-left:12px;position:relative;"><span style="position:absolute;left:0;color:#7c3aed;font-weight:bold;">•</span>${texto}</li>`;
+            }).join('');
+            planoAcaoHtml = `
+        <div style="padding:16px 32px;border-bottom:1px solid #f1f5f9;background:#faf5ff;">
+            <div style="font-size:9px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Plano de Ação Individual</div>
+            <ul style="margin:0;padding:0;list-style:none;">${itensHtml}</ul>
+        </div>`;
+        }
+    }
+
     // Melhorias / Bugs / Desalinhamentos
     const buildList = (items, cols) => {
         if (!items || !items.length) return '<p style="font-size:11px;color:#94a3b8;margin:4px 0;">Nenhum registrado.</p>';
@@ -2219,6 +2344,8 @@ async function gerarPdfAvaliacao() {
             <div style="font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f1f5f9;">Relatório de Auditoria</div>
             <div style="font-size:11px;color:#334155;line-height:1.6;">${relatorio}</div>
         </div>
+
+        ${planoAcaoHtml}
 
         <!-- Rodapé -->
         <div style="padding:10px 32px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;background:#f8fafc;">
