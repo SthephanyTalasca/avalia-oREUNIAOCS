@@ -176,6 +176,19 @@ async function getNumbers(transcript) {
                 'Para cada pilar retorne nota 1-5. Sem evidência = -1. ' +
                 'media_final = média das notas diferentes de -1. ' +
                 'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100. ' +
+                'REGRA GERAL — bugs e erros de plataforma: ' +
+                'A existência de bugs, erros ou falhas do sistema/plataforma é um problema do PRODUTO, não do CS. ' +
+                'NUNCA penalize nenhum pilar porque um bug ou erro de plataforma ocorreu. ' +
+                'Em todos os pilares, avalie exclusivamente a CONDUTA do CS, independentemente de problemas técnicos. ' +
+                'REGRA ESPECIAL — nota_objecoes (Objeções/Bugs): ' +
+                'Bugs, erros e falhas de plataforma NUNCA devem resultar em nota baixa por si só. ' +
+                'Avalie APENAS como o CS conduziu a situação: ' +
+                'Nota 5: CS identificou o problema proativamente, ajudou a diagnosticar, escalou corretamente e manteve o cliente tranquilo — tentativas de ajudar a consertar o erro do sistema devem ser avaliadas com nota 5. ' +
+                'Nota 4: CS tratou bem o problema mas sem protagonismo total. ' +
+                'Nota 3: CS reconheceu o problema mas de forma passiva. ' +
+                'Nota 2: CS minimizou ou ignorou parcialmente a situação. ' +
+                'Nota 1: CS ignorou o problema ou piorou a situação. ' +
+                'Se não houve objeções nem bugs na reunião, retorne -1 (sem evidência). ' +
                 'REGRA ESPECIAL — nota_gestao_tempo: ' +
                 'Se a reunião foi encerrada antes do tempo OU se passou do horário previsto POR CAUSA de bug, erro ou falha de plataforma (ex: sistema caiu, erro técnico, plataforma travou), retorne -1 — isso está fora do controle do CS e NÃO deve ser penalizado. ' +
                 'Só penalize gestão de tempo (nota 1-4) se o problema de tempo foi causado pela CONDUTA do próprio CS (ex: se perdeu em detalhes desnecessários, não cobriu a pauta, deixou a reunião se estender por dispersão própria). ' +
