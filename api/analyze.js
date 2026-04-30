@@ -164,7 +164,26 @@ async function withRetry(fn, label, attempts) {
     throw lastErr;
 }
 
+
+
+function joinPromptBlocks(arr) {
+    return arr.filter(Boolean).map(function(t) { return String(t).trim(); }).filter(Boolean).join(' ');
+}
+
 async function getNumbers(transcript) {
+    const { PROMPTS, PILLARS_PROMPT } = await getConfig();
+
+    const instrucaoAvaliacao = joinPromptBlocks([
+        'Auditor de CS do Nibo. Leia a transcrição.',
+        PROMPTS?.instrucao_contexto_cs,
+        PROMPTS?.instrucao_avaliacao,
+        PROMPTS?.instrucao_avaliacao_justa,
+        PROMPTS?.instrucao_escala_notas,
+        PROMPTS?.instrucao_media_final,
+        PILLARS_PROMPT ? 'PILARES E RUBRICAS ATIVAS: ' + PILLARS_PROMPT : '',
+        'Para cada pilar retorne nota 1-5. Sem evidência = -1.',
+    ]);
+
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
@@ -172,12 +191,7 @@ async function getNumbers(transcript) {
             responseMimeType: 'application/json',
             maxOutputTokens: 8192,
             systemInstruction:
-                'Auditor de CS do Nibo. Leia a transcrição. ' +
-                'Para cada pilar retorne nota 1-5. Sem evidência = -1. ' +
-                'CALIBRAGEM ANTI-INFLAÇÃO: use toda a escala (1,2,3,4,5); NÃO concentre automaticamente em 4 ou 5. ' +
-                'Só use nota 5 quando houver evidência explícita e consistente de excelência naquele pilar durante a reunião. ' +
-                'Se a evidência for apenas parcial, superficial ou pontual, prefira nota 3 ou 4 conforme a intensidade. ' +
-                'Nunca repita o mesmo padrão de notas entre reuniões diferentes por padrão; avalie cada pilar individualmente com base no texto. ' +
+                instrucaoAvaliacao + ' ' +
                 'media_final = média das notas diferentes de -1. ' +
                 'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100. ' +
                 'REGRA GERAL — bugs e erros de plataforma: ' +
@@ -262,21 +276,11 @@ async function getNumbers(transcript) {
         if (val === -1 || val === 0 || val == null) parsed['nota_' + p[0]] = null;
     });
 
-    const notasTodas = CS_PILLARS.map(p => parsed['nota_' + p[0]]);
-    const notasValidas = notasTodas.filter(v => v !== null && v > 0 && v <= 5);
+    const notasValidas = CS_PILLARS
+        .map(p => parsed['nota_' + p[0]])
+        .filter(v => v !== null && v > 0 && v <= 5);
 
-    // Calibração: pilares sem evidência não devem inflar média final.
-    // Em vez de excluir da conta, aplicamos nota neutra 3 para cada pilar nulo.
-    const notasComNeutro = notasTodas.map(function(v) {
-        if (v !== null && v > 0 && v <= 5) return v;
-        return 3;
-    });
-
-    parsed.media_final = notasComNeutro.length
-        ? Math.round((notasComNeutro.reduce((a, b) => a + b, 0) / notasComNeutro.length) * 10) / 10
-        : null;
-
-    parsed.media_final_bruta = notasValidas.length
+    parsed.media_final = notasValidas.length
         ? Math.round((notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length) * 10) / 10
         : null;
 
