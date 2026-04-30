@@ -354,8 +354,10 @@ async function getTextsA(transcript, numbers) {
     const instruction =
         'Auditor de CS do Nibo. Notas dos pilares: ' + notasStr + '. ' +
         'Para pilares SEM evidência retorne "Sem evidência na transcrição." no porque e "" no melhoria. ' +
-        'Para os demais: porque = 1 frase curta do que aconteceu; ' +
-        'melhoria = 1 frase do que faltou para nota 5 (se nota=5 escreva "Excelência atingida.").';
+        'Para os demais: porque deve OBRIGATORIAMENTE citar 1 trecho literal curto da transcrição entre aspas e explicar o impacto da conduta do CS. ' +
+        'Formato obrigatório do porque: Trecho: "..." | Leitura: ... ' +
+        'melhoria = 1 frase objetiva do que faltou para nota 5 (se nota=5 escreva "Excelência atingida."). ' +
+        'NUNCA invente citação: use apenas texto que exista na transcrição.';
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
@@ -373,8 +375,10 @@ async function getTextsB(transcript, numbers) {
     const instruction =
         'Auditor de CS do Nibo. Notas dos pilares: ' + notasStr + '. ' +
         'Para pilares SEM evidência retorne "Sem evidência na transcrição." no porque e "" no melhoria. ' +
-        'Para os demais: porque = 1 frase curta do que aconteceu; ' +
-        'melhoria = 1 frase do que faltou para nota 5 (se nota=5 escreva "Excelência atingida.").';
+        'Para os demais: porque deve OBRIGATORIAMENTE citar 1 trecho literal curto da transcrição entre aspas e explicar o impacto da conduta do CS. ' +
+        'Formato obrigatório do porque: Trecho: "..." | Leitura: ... ' +
+        'melhoria = 1 frase objetiva do que faltou para nota 5 (se nota=5 escreva "Excelência atingida."). ' +
+        'NUNCA invente citação: use apenas texto que exista na transcrição.';
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
