@@ -164,7 +164,26 @@ async function withRetry(fn, label, attempts) {
     throw lastErr;
 }
 
+
+
+function joinPromptBlocks(arr) {
+    return arr.filter(Boolean).map(function(t) { return String(t).trim(); }).filter(Boolean).join(' ');
+}
+
 async function getNumbers(transcript) {
+    const { PROMPTS, PILLARS_PROMPT } = await getConfig();
+
+    const instrucaoAvaliacao = joinPromptBlocks([
+        'Auditor de CS do Nibo. Leia a transcrição.',
+        PROMPTS?.instrucao_contexto_cs,
+        PROMPTS?.instrucao_avaliacao,
+        PROMPTS?.instrucao_avaliacao_justa,
+        PROMPTS?.instrucao_escala_notas,
+        PROMPTS?.instrucao_media_final,
+        PILLARS_PROMPT ? 'PILARES E RUBRICAS ATIVAS: ' + PILLARS_PROMPT : '',
+        'Para cada pilar retorne nota 1-5. Sem evidência = -1.',
+    ]);
+
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
@@ -172,8 +191,7 @@ async function getNumbers(transcript) {
             responseMimeType: 'application/json',
             maxOutputTokens: 8192,
             systemInstruction:
-                'Auditor de CS do Nibo. Leia a transcrição. ' +
-                'Para cada pilar retorne nota 1-5. Sem evidência = -1. ' +
+                instrucaoAvaliacao + ' ' +
                 'media_final = média das notas diferentes de -1. ' +
                 'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100. ' +
                 'REGRA GERAL — bugs e erros de plataforma: ' +
@@ -261,6 +279,7 @@ async function getNumbers(transcript) {
     const notasValidas = CS_PILLARS
         .map(p => parsed['nota_' + p[0]])
         .filter(v => v !== null && v > 0 && v <= 5);
+
     parsed.media_final = notasValidas.length
         ? Math.round((notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length) * 10) / 10
         : null;
