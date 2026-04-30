@@ -262,10 +262,21 @@ async function getNumbers(transcript) {
         if (val === -1 || val === 0 || val == null) parsed['nota_' + p[0]] = null;
     });
 
-    const notasValidas = CS_PILLARS
-        .map(p => parsed['nota_' + p[0]])
-        .filter(v => v !== null && v > 0 && v <= 5);
-    parsed.media_final = notasValidas.length
+    const notasTodas = CS_PILLARS.map(p => parsed['nota_' + p[0]]);
+    const notasValidas = notasTodas.filter(v => v !== null && v > 0 && v <= 5);
+
+    // Calibração: pilares sem evidência não devem inflar média final.
+    // Em vez de excluir da conta, aplicamos nota neutra 3 para cada pilar nulo.
+    const notasComNeutro = notasTodas.map(function(v) {
+        if (v !== null && v > 0 && v <= 5) return v;
+        return 3;
+    });
+
+    parsed.media_final = notasComNeutro.length
+        ? Math.round((notasComNeutro.reduce((a, b) => a + b, 0) / notasComNeutro.length) * 10) / 10
+        : null;
+
+    parsed.media_final_bruta = notasValidas.length
         ? Math.round((notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length) * 10) / 10
         : null;
 
