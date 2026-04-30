@@ -9,6 +9,9 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #0f172a; }
         .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: all 0.3s ease; }
@@ -17,6 +20,19 @@
         #loading-overlay { position:fixed;inset:0;background:rgba(0,45,114,0.6);backdrop-filter:blur(4px);z-index:999;display:flex;align-items:center;justify-content:center; }
         .spinner { width:3rem;height:3rem;border:3px solid rgba(255,255,255,0.25);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 1rem; }
         @keyframes spin { to { transform:rotate(360deg); } }
+        /* ── Tabs ────────────────────────────────────────────────────── */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .tab-btn-active { border-bottom-color: #2563eb !important; color: #1d4ed8 !important; background: white; box-shadow: 0 1px 0 white; }
+        .tab-btn-inactive { border-bottom-color: transparent; color: #64748b; }
+        .tab-btn-inactive:hover { color: #2563eb; background: rgba(255,255,255,0.5); }
+        /* ── OI Alert pulse ────────────────────────────────────────── */
+        .oi-pulse { animation: oiPulse 2s ease-in-out infinite; }
+        @keyframes oiPulse { 0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0.4)} 50%{box-shadow:0 0 0 8px rgba(245,158,11,0)} }
+        /* ── Levantadas rank ─────────────────────────────────────────── */
+        .lev-rank-1 { background: linear-gradient(135deg,#fef3c7,#fde68a); border-color: #f59e0b; }
+        .lev-rank-2 { background: linear-gradient(135deg,#f8fafc,#e2e8f0); border-color: #94a3b8; }
+        .lev-rank-3 { background: linear-gradient(135deg,#fff7ed,#fed7aa); border-color: #f97316; }
         .pilar-bar-bg { flex:1;height:6px;background:#f1f5f9;border-radius:999px;overflow:hidden; }
         .pilar-bar-fill { height:100%;border-radius:999px;transition:width 0.8s ease; }
         .score-pill { display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;padding:0.2rem 0.65rem;border-radius:999px;min-width:2.5rem; }
@@ -442,12 +458,31 @@
     </div>
 </nav>
 
-<main class="max-w-7xl mx-auto px-4 mt-8 space-y-6">
+<!-- TABS NAVIGATION -->
+<div class="max-w-7xl mx-auto px-4 mt-6">
+    <div class="flex space-x-1 border-b-2 border-slate-200 overflow-x-auto hide-scrollbar">
+        <button onclick="switchTab('gestor')" id="tab-btn-gestor"
+            class="tab-btn-active tab-btn px-6 py-3.5 font-extrabold text-sm border-b-[3px] transition-all whitespace-nowrap rounded-t-xl flex items-center gap-2">
+            <i data-lucide="bar-chart-2" class="w-4 h-4"></i>Visão Gestor
+        </button>
+        <button onclick="switchTab('cs')" id="tab-btn-cs"
+            class="tab-btn-inactive tab-btn px-6 py-3.5 font-extrabold text-sm border-b-[3px] transition-all whitespace-nowrap rounded-t-xl flex items-center gap-2">
+            <i data-lucide="target" class="w-4 h-4"></i>Meu Painel (CS)
+            <span id="tab-cs-badge" class="hidden bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5">!</span>
+        </button>
+        <button onclick="switchTab('produto')" id="tab-btn-produto"
+            class="tab-btn-inactive tab-btn px-6 py-3.5 font-extrabold text-sm border-b-[3px] transition-all whitespace-nowrap rounded-t-xl flex items-center gap-2">
+            <i data-lucide="lightbulb" class="w-4 h-4"></i>Produto &amp; Insights
+        </button>
+    </div>
+</div>
 
-    <!-- FILTROS -->
+<main class="max-w-7xl mx-auto px-4 mt-6 space-y-6">
+
+    <!-- FILTROS GLOBAIS -->
     <div class="glass-card p-6">
         <div class="flex items-center gap-2 mb-4">
-            <i data-lucide="filter" class="w-4 h-4 text-slate-500"></i><span class="font-bold text-slate-700 text-sm">Filtros</span>
+            <i data-lucide="filter" class="w-4 h-4 text-slate-500"></i><span class="font-bold text-slate-700 text-sm">Filtros Globais</span>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
             <div class="col-span-2 md:col-span-1 relative">
@@ -466,6 +501,11 @@
             </div>
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TAB 1: VISÃO GESTOR                                        -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="tab-gestor" class="space-y-6">
 
     <!-- CARD VISÃO POR EQUIPE -->
     <div id="card-visao-equipe" class="glass-card p-6" style="display:none;">
@@ -609,29 +649,29 @@
         <div style="height:260px"><canvas id="chart-coord"></canvas></div>
     </div>
 
-    <!-- INSIGHTS DE PRODUTO -->
-    <div class="glass-card p-8">
-        <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
-            <i data-lucide="sparkles" class="w-4 h-4 text-purple-500"></i>Insights de Produto
-        </h2>
-        <div class="grid grid-cols-3 gap-4">
-            <div class="rounded-2xl border border-purple-100 bg-purple-50 p-6 text-center">
-                <i data-lucide="lightbulb" class="w-6 h-6 text-purple-500 mx-auto mb-2"></i>
-                <div id="kpi-melhorias" class="text-4xl font-black text-purple-600 mb-1">—</div>
-                <div class="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-4">Melhorias sugeridas</div>
-                <button onclick="abrirInsightsModal('melhorias')" class="w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-purple-200 text-purple-600 hover:bg-purple-100 transition-all">Ver detalhes →</button>
+    <!-- INSIGHTS RESUMO (link para tab Produto) -->
+    <div class="glass-card p-6 cursor-pointer hover:shadow-lg transition-all" onclick="switchTab('produto')">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4 text-purple-500"></i>Insights de Produto
+            </h2>
+            <span class="text-[10px] font-black uppercase tracking-widest text-purple-500 flex items-center gap-1">Ver aba completa <i data-lucide="arrow-right" class="w-3 h-3"></i></span>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+            <div class="rounded-2xl border border-purple-100 bg-purple-50 p-4 text-center">
+                <i data-lucide="lightbulb" class="w-5 h-5 text-purple-500 mx-auto mb-1.5"></i>
+                <div id="kpi-melhorias" class="text-3xl font-black text-purple-600 mb-0.5">—</div>
+                <div class="text-[10px] font-semibold text-purple-700 uppercase tracking-wide">Melhorias</div>
             </div>
-            <div class="rounded-2xl border border-red-100 bg-red-50 p-6 text-center">
-                <i data-lucide="bug" class="w-6 h-6 text-red-500 mx-auto mb-2"></i>
-                <div id="kpi-bugs" class="text-4xl font-black text-red-600 mb-1">—</div>
-                <div class="text-xs font-semibold text-red-700 uppercase tracking-wide mb-4">Bugs encontrados</div>
-                <button onclick="abrirInsightsModal('bugs')" class="w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-red-200 text-red-600 hover:bg-red-100 transition-all">Ver detalhes →</button>
+            <div class="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
+                <i data-lucide="bug" class="w-5 h-5 text-red-500 mx-auto mb-1.5"></i>
+                <div id="kpi-bugs" class="text-3xl font-black text-red-600 mb-0.5">—</div>
+                <div class="text-[10px] font-semibold text-red-700 uppercase tracking-wide">Bugs</div>
             </div>
-            <div class="rounded-2xl border border-amber-100 bg-amber-50 p-6 text-center">
-                <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-500 mx-auto mb-2"></i>
-                <div id="kpi-desalin" class="text-4xl font-black text-amber-600 mb-1">—</div>
-                <div class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-4">Desalinhamentos</div>
-                <button onclick="abrirInsightsModal('desalinhamentos')" class="w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-amber-200 text-amber-600 hover:bg-amber-100 transition-all">Ver detalhes →</button>
+            <div class="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-center">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-500 mx-auto mb-1.5"></i>
+                <div id="kpi-desalin" class="text-3xl font-black text-amber-600 mb-0.5">—</div>
+                <div class="text-[10px] font-semibold text-amber-700 uppercase tracking-wide">Desalin.</div>
             </div>
         </div>
     </div>
@@ -679,53 +719,209 @@
         </div>
     </div>
 
-</main>
+    </div><!-- /tab-gestor -->
 
-<!-- MODAL INSIGHTS DE PRODUTO -->
-<div id="insights-overlay" onclick="if(event.target===this)fecharInsightsModal()" style="position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:260;display:none;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto;">
-    <div style="background:white;border-radius:2.5rem;width:100%;max-width:880px;margin:auto;box-shadow:0 32px 80px rgba(0,0,0,0.3);">
-        <div class="sticky top-0 bg-white px-8 py-5 border-b border-slate-100 rounded-t-[2.5rem] flex justify-between items-center z-10">
-            <h2 class="font-extrabold text-lg text-[#002d72] flex items-center gap-2">
-                <i data-lucide="sparkles" class="w-5 h-5 text-purple-500"></i>Insights de Produto
-            </h2>
-            <div class="flex items-center gap-3">
-                <button onclick="exportarCsv(window._activeInsightTab||'melhorias')" class="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500 transition-all" title="Exportar aba atual como CSV"><i data-lucide="download" class="w-3 h-3"></i>CSV</button>
-                <button onclick="fecharInsightsModal()" class="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TAB 2: MEU PAINEL (CS)                                     -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="tab-cs" class="space-y-6 hidden">
+
+        <!-- ALERTA DE O.I GERAL ── Firebase: rankings_copiados ── -->
+        <div class="glass-card overflow-hidden border-l-[6px] border-amber-400">
+            <div class="px-8 py-5 bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-100 flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center oi-pulse">
+                        <i data-lucide="bell-ring" class="w-5 h-5 text-amber-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-base flex items-center gap-2">
+                            Alertas de O.I Geral
+                            <span id="oi-count-badge" class="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">0</span>
+                        </h3>
+                        <p class="text-xs text-amber-600 font-semibold mt-0.5">Oportunidades de Improvement · Atualizado em tempo real via Firebase</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="oi-firebase-status" class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                        <span class="w-2 h-2 rounded-full bg-slate-300 inline-block" id="oi-status-dot"></span>
+                        <span id="oi-status-label">Aguardando conexão Firebase...</span>
+                    </div>
+                    <button onclick="loadOIFromFirebase()" class="p-2 hover:bg-amber-100 rounded-xl transition-all" title="Recarregar OI">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-500"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <!-- Filtros OI -->
+                <div class="flex items-center gap-3 mb-5 flex-wrap">
+                    <div class="flex rounded-xl border border-slate-200 p-0.5 bg-slate-50">
+                        <button onclick="filtrarOI('todos')" id="oi-filter-todos" class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all bg-amber-500 text-white">Todos</button>
+                        <button onclick="filtrarOI('critico')" id="oi-filter-critico" class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all text-slate-400">Crítico</button>
+                        <button onclick="filtrarOI('melhoria')" id="oi-filter-melhoria" class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all text-slate-400">Melhoria</button>
+                        <button onclick="filtrarOI('bug')" id="oi-filter-bug" class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all text-slate-400">Bug</button>
+                    </div>
+                    <span id="oi-periodo-label" class="text-[10px] text-slate-400 font-semibold ml-auto"></span>
+                </div>
+                <!-- Lista OI -->
+                <div id="oi-geral-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="col-span-full text-center py-10 text-slate-400">
+                        <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="wifi-off" class="w-6 h-6 text-amber-300"></i>
+                        </div>
+                        <p class="font-bold text-sm text-slate-500 mb-1">Firebase ainda não configurado</p>
+                        <p class="text-xs text-slate-400 max-w-xs mx-auto">Configure as credenciais do Firebase para visualizar os alertas de O.I em tempo real.</p>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="p-8">
-            <!-- Tabs -->
-            <div class="flex rounded-xl border border-slate-200 p-0.5 gap-0.5 bg-slate-50 mb-6 w-fit">
-                <button id="tab-btn-melhorias" onclick="setInsightTab('melhorias')" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all" style="background:#7c3aed;color:white">
-                    <i data-lucide="lightbulb" class="w-3 h-3"></i>Melhorias<span id="badge-melhorias" class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-white/30">—</span>
-                </button>
-                <button id="tab-btn-bugs" onclick="setInsightTab('bugs')" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all" style="color:#94a3b8">
-                    <i data-lucide="bug" class="w-3 h-3"></i>Bugs<span id="badge-bugs" class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-slate-200 text-slate-600">—</span>
-                </button>
-                <button id="tab-btn-desalin" onclick="setInsightTab('desalinhamentos')" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all" style="color:#94a3b8">
-                    <i data-lucide="alert-triangle" class="w-3 h-3"></i>Desalinhamentos<span id="badge-desalin" class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-slate-200 text-slate-600">—</span>
+
+        <!-- PAINEL PESSOAL + LEVANTADAS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Painel Pessoal -->
+            <div class="lg:col-span-2 space-y-5">
+
+                <div id="cs-painel-vazio" class="glass-card p-10 text-center">
+                    <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="user-search" class="w-7 h-7 text-slate-300"></i>
+                    </div>
+                    <p class="font-bold text-slate-600 mb-1">Selecione um Analista no filtro global</p>
+                    <p class="text-xs text-slate-400 max-w-xs mx-auto">Para ver seu desempenho individual, escolha seu nome no filtro "Todos os analistas" acima.</p>
+                </div>
+
+                <div id="cs-painel-pessoal" class="hidden glass-card p-8 border-l-[6px] border-blue-600">
+                    <div class="flex items-start justify-between flex-wrap gap-4 mb-6 border-b border-slate-100 pb-5">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Desempenho Individual</p>
+                            <h2 class="text-2xl font-extrabold text-[#002d72]" id="cs-nome-label">—</h2>
+                        </div>
+                        <button onclick="abrirPerfilIndividual()" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4"></i>Relatório Completo
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                        <div class="bg-blue-50 rounded-2xl p-4 text-center border border-blue-100">
+                            <div id="cs-media-label" class="text-4xl font-black text-blue-700 mb-0.5">—</div>
+                            <div class="text-[9px] font-bold text-blue-600 uppercase tracking-wide">Média no Período</div>
+                        </div>
+                        <div class="bg-slate-50 rounded-2xl p-4 text-center border border-slate-200">
+                            <div id="cs-total-label" class="text-4xl font-black text-slate-700 mb-0.5">—</div>
+                            <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Avaliações</div>
+                        </div>
+                        <div class="bg-emerald-50 rounded-2xl p-4 text-center border border-emerald-100">
+                            <div id="cs-melhor-label" class="text-4xl font-black text-emerald-600 mb-0.5">—</div>
+                            <div class="text-[9px] font-bold text-emerald-600 uppercase tracking-wide">Melhor Nota</div>
+                        </div>
+                        <div class="bg-violet-50 rounded-2xl p-4 text-center border border-violet-100">
+                            <div id="cs-levantadas-label" class="text-4xl font-black text-violet-600 mb-0.5">—</div>
+                            <div class="text-[9px] font-bold text-violet-600 uppercase tracking-wide">Levantadas</div>
+                        </div>
+                    </div>
+                    <!-- Barra de pilares do analista -->
+                    <div id="cs-pilares-resumo" class="space-y-1.5"></div>
+                </div>
+
+            </div>
+
+            <!-- TOP LEVANTADAS (Firebase: rankings_copiados) -->
+            <div class="glass-card p-6 border-t-[5px] border-purple-600">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-extrabold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="megaphone" class="w-5 h-5 text-purple-500"></i>Top Levantadas
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <span id="lev-firebase-dot" class="w-2 h-2 rounded-full bg-slate-300" title="Status Firebase"></span>
+                        <span id="total-levantadas-badge" class="px-2.5 py-1 bg-purple-100 text-purple-700 text-[10px] font-black rounded-lg">0</span>
+                    </div>
+                </div>
+                <p id="lev-periodo-label" class="text-[10px] text-slate-400 font-semibold mb-4">—</p>
+                <p class="text-[10px] text-slate-500 mb-4 leading-relaxed">Ranking de engajamento do time — bugs, melhorias e desalinhamentos levantados no período de importação.</p>
+                <div id="ranking-levantadas-container" class="space-y-2.5">
+                    <div class="text-center py-6 text-slate-400 text-xs">
+                        <i data-lucide="loader" class="w-5 h-5 mx-auto mb-2 animate-spin text-purple-300"></i>
+                        Carregando do Firebase...
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                    <button onclick="loadLevantadasFirebase()" class="w-full text-[10px] font-black uppercase tracking-widest text-purple-500 hover:text-purple-700 flex items-center justify-center gap-1.5 transition-all">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i>Atualizar do Firebase
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div><!-- /tab-cs -->
+
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TAB 3: PRODUTO & INSIGHTS                                   -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="tab-produto" class="space-y-6 hidden">
+
+        <!-- VISÃO GERAL KPIs -->
+        <div class="glass-card p-8">
+            <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-5 h-5 text-purple-500"></i>Visão Geral de Produto
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="rounded-2xl border border-purple-100 bg-purple-50 p-6 text-center cursor-pointer hover:shadow-md transition-all" onclick="setInsightTab('melhorias')">
+                    <i data-lucide="lightbulb" class="w-6 h-6 text-purple-500 mx-auto mb-2"></i>
+                    <div id="kpi-melhorias-p" class="text-4xl font-black text-purple-600 mb-1">—</div>
+                    <div class="text-xs font-semibold text-purple-700 uppercase tracking-wide">Melhorias sugeridas</div>
+                </div>
+                <div class="rounded-2xl border border-red-100 bg-red-50 p-6 text-center cursor-pointer hover:shadow-md transition-all" onclick="setInsightTab('bugs')">
+                    <i data-lucide="bug" class="w-6 h-6 text-red-500 mx-auto mb-2"></i>
+                    <div id="kpi-bugs-p" class="text-4xl font-black text-red-600 mb-1">—</div>
+                    <div class="text-xs font-semibold text-red-700 uppercase tracking-wide">Bugs encontrados</div>
+                </div>
+                <div class="rounded-2xl border border-amber-100 bg-amber-50 p-6 text-center cursor-pointer hover:shadow-md transition-all" onclick="setInsightTab('desalinhamentos')">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-500 mx-auto mb-2"></i>
+                    <div id="kpi-desalin-p" class="text-4xl font-black text-amber-600 mb-1">—</div>
+                    <div class="text-xs font-semibold text-amber-700 uppercase tracking-wide">Desalinhamentos</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FULL INSIGHTS LIST (inline) -->
+        <div class="glass-card p-8">
+            <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                <div class="flex rounded-xl border border-slate-200 p-0.5 gap-0.5 bg-slate-50">
+                    <button id="tab-btn-melhorias" onclick="setInsightTab('melhorias')" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all bg-violet-700 text-white">
+                        <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>Melhorias<span id="badge-melhorias" class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-white/30">—</span>
+                    </button>
+                    <button id="tab-btn-bugs" onclick="setInsightTab('bugs')" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all text-slate-400">
+                        <i data-lucide="bug" class="w-3.5 h-3.5"></i>Bugs<span id="badge-bugs" class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-slate-200 text-slate-600">—</span>
+                    </button>
+                    <button id="tab-btn-desalin" onclick="setInsightTab('desalinhamentos')" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all text-slate-400">
+                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>Desalinhamentos<span id="badge-desalin" class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-slate-200 text-slate-600">—</span>
+                    </button>
+                </div>
+                <button onclick="exportarCsv(window._activeInsightTab||'melhorias')" class="flex items-center gap-1 px-3 py-2 text-[10px] font-bold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-all shadow-sm">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>Exportar CSV
                 </button>
             </div>
+
             <!-- TAB: Melhorias -->
             <div id="tab-melhorias-content">
-                <div class="rounded-2xl p-4 mb-6 border border-purple-100" style="background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%)">
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#7c3aed"><i data-lucide="sparkles" class="w-4 h-4 text-white"></i></div>
+                <div class="rounded-2xl p-5 mb-6 border border-purple-100" style="background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%)">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#7c3aed"><i data-lucide="sparkles" class="w-5 h-5 text-white"></i></div>
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-2 flex-wrap">
-                                <span class="text-[10px] font-black uppercase tracking-widest" style="color:#7c3aed">Resumo IA</span>
-                                <button onclick="gerarResumoIA()" id="btn-gerar-resumo" class="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border transition-all hover:opacity-80" style="border-color:#c4b5fd;color:#7c3aed;background:white">Gerar resumo</button>
-                                <span id="melhorias-ia-loading" class="hidden items-center gap-1.5 text-[10px] font-semibold" style="color:#7c3aed"><span class="spinner" style="width:0.7rem;height:0.7rem;border-width:2px;margin:0;display:inline-block"></span>Analisando...</span>
+                            <div class="flex items-center gap-3 mb-2 flex-wrap">
+                                <span class="text-xs font-black uppercase tracking-widest" style="color:#7c3aed">Resumo Analítico da IA</span>
+                                <button onclick="gerarResumoIA()" id="btn-gerar-resumo" class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 shadow-sm" style="border-color:#c4b5fd;color:#7c3aed;background:white">Gerar resumo</button>
+                                <span id="melhorias-ia-loading" class="hidden items-center gap-1.5 text-[10px] font-semibold" style="color:#7c3aed"><span class="spinner" style="width:0.8rem;height:0.8rem;border-width:2px;margin:0;display:inline-block"></span>Analisando dados...</span>
                             </div>
-                            <p id="melhorias-ia-texto" class="text-sm leading-relaxed" style="color:#4c1d95">Clique em <strong>Gerar resumo</strong> para que a IA leia todas as sugestões e produza um diagnóstico consolidado.</p>
+                            <p id="melhorias-ia-texto" class="text-sm leading-relaxed" style="color:#4c1d95">Clique em <strong>Gerar resumo</strong> para que a IA leia todas as sugestões do período e produza um diagnóstico consolidado de Produto.</p>
                         </div>
                     </div>
                 </div>
-                <div id="melhorias-produtos-grid" class="hidden"></div>
-                <div class="flex items-center gap-2 mb-4 flex-wrap">
-                    <button id="btn-expandir-todas" onclick="toggleExpandirTodas()" class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition-all flex items-center gap-1.5"><i data-lucide="chevrons-down" class="w-3 h-3"></i>Expandir tudo</button>
-                    <select id="melhorias-filtro-tipo" onchange="renderMelhorias()" class="text-xs p-1.5 border border-slate-200 rounded-lg bg-slate-50">
-                        <option value="">Todos os tipos</option>
+                <div class="flex items-center gap-3 mb-5 flex-wrap">
+                    <button id="btn-expandir-todas" onclick="toggleExpandirTodas()" class="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5"><i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i>Expandir tudo</button>
+                    <select id="melhorias-filtro-tipo" onchange="renderMelhorias()" class="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-purple-400">
+                        <option value="">Todos os tipos de melhoria</option>
                         <option value="funcionalidade">Funcionalidade</option>
                         <option value="usabilidade">Usabilidade</option>
                         <option value="integracao">Integração</option>
@@ -734,22 +930,26 @@
                         <option value="outro">Outro</option>
                     </select>
                 </div>
-                <div id="melhorias-lista" class="space-y-2"></div>
-                <div id="melhorias-empty" class="hidden text-center py-8"><i data-lucide="inbox" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i><p class="text-sm text-slate-400">Nenhuma sugestão registrada</p></div>
+                <div id="melhorias-lista" class="space-y-3"></div>
+                <div id="melhorias-empty" class="hidden text-center py-12"><i data-lucide="inbox" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-sm text-slate-400">Nenhuma sugestão registrada no período</p></div>
             </div>
+
             <!-- TAB: Bugs -->
             <div id="tab-bugs-content" class="hidden">
-                <div id="bugs-lista" class="space-y-2"></div>
-                <div id="bugs-empty" class="hidden text-center py-8"><i data-lucide="inbox" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i><p class="text-sm text-slate-400">Nenhum bug registrado no período</p></div>
+                <div id="bugs-lista" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <div id="bugs-empty" class="hidden text-center py-12"><i data-lucide="inbox" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-sm text-slate-400">Nenhum bug registrado no período</p></div>
             </div>
+
             <!-- TAB: Desalinhamentos -->
             <div id="tab-desalin-content" class="hidden">
-                <div id="desalin-lista" class="space-y-2"></div>
-                <div id="desalin-empty" class="hidden text-center py-8"><i data-lucide="inbox" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i><p class="text-sm text-slate-400">Nenhum desalinhamento registrado no período</p></div>
+                <div id="desalin-lista" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <div id="desalin-empty" class="hidden text-center py-12"><i data-lucide="inbox" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-sm text-slate-400">Nenhum desalinhamento registrado no período</p></div>
             </div>
         </div>
-    </div>
-</div>
+
+    </div><!-- /tab-produto -->
+
+</main>
 
 <!-- MODAL RISCO DE CHURN -->
 <div id="churn-modal-overlay" onclick="if(event.target===this)fecharChurnModal()" style="position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:260;display:none;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto;">
@@ -1089,7 +1289,15 @@ function limparFiltros() {
     loadData();
 }
 
-function renderAll(){renderKPIs();renderSaudeChurn();renderEvo();renderRanking();renderRadars();renderCoord();renderMelhorias();renderBugs();renderDesalinhamentos();renderCalGeral();renderReunioes();atualizarVisaoEquipe();lucide.createIcons();}
+function renderAll(){
+    renderKPIs();renderSaudeChurn();renderEvo();renderRanking();renderRadars();renderCoord();
+    renderMelhorias();renderBugs();renderDesalinhamentos();renderCalGeral();renderReunioes();
+    atualizarVisaoEquipe();
+    renderAlertasOILocal();
+    if (currentTab === 'cs') renderPainelCS();
+    if (currentTab === 'produto') renderKpisProduto();
+    lucide.createIcons();
+}
 
 function atualizarVisaoEquipe() {
     const coord = document.getElementById('f-coordenador')?.value;
@@ -1130,6 +1338,13 @@ function renderKPIs(){
     document.getElementById('kpi-media').textContent=s.media_geral!=null?s.media_geral.toFixed(1):'—';
     document.getElementById('kpi-saude').textContent=s.saudeStats?.saudavel??'—';
     document.getElementById('kpi-churn').textContent=s.churnStats?.alto??'—';
+}
+function _syncProdutoKpis() {
+    ['melhorias','bugs','desalin'].forEach(k => {
+        const src = document.getElementById('kpi-'+k);
+        const dst = document.getElementById('kpi-'+k+'-p');
+        if (src && dst) dst.textContent = src.textContent;
+    });
 }
 
 function renderSaudeChurn(){
@@ -1222,15 +1437,10 @@ function renderCoord(){
 }
 
 function abrirInsightsModal(tab){
-    const overlay=document.getElementById('insights-overlay');
-    overlay.style.display='flex';
+    switchTab('produto');
     setInsightTab(tab||'melhorias');
-    renderMelhorias();renderBugs();renderDesalinhamentos();
-    lucide.createIcons();
 }
-function fecharInsightsModal(){
-    document.getElementById('insights-overlay').style.display='none';
-}
+function fecharInsightsModal(){ /* modal removido — conteúdo agora na tab Produto */ }
 
 function abrirModalChurn(nivel){
     const nivelLabels={alto:'Alto Risco',medio:'Risco Médio',baixo:'Baixo Risco',nd:'Indefinido'};
@@ -1325,6 +1535,7 @@ function renderBugs() {
     const kpiBugs = document.getElementById('kpi-bugs');
     if (badge) badge.textContent = allBugs.length || '0';
     if (kpiBugs) kpiBugs.textContent = allBugs.length || '0';
+    _syncProdutoKpis();
     if (!allBugs.length) { listEl.innerHTML=''; emptyEl.classList.remove('hidden'); lucide.createIcons(); return; }
     emptyEl.classList.add('hidden');
     const sorted = [...allBugs].sort((a,b)=>({alto:0,medio:1,baixo:2}[a.impacto]??3)-({alto:0,medio:1,baixo:2}[b.impacto]??3));
@@ -1361,6 +1572,7 @@ function renderDesalinhamentos() {
     const kpiDesalin = document.getElementById('kpi-desalin');
     if (badge) badge.textContent = allDesalin.length || '0';
     if (kpiDesalin) kpiDesalin.textContent = allDesalin.length || '0';
+    _syncProdutoKpis();
     if (!allDesalin.length) { listEl.innerHTML=''; emptyEl.classList.remove('hidden'); lucide.createIcons(); return; }
     emptyEl.classList.add('hidden');
     const sorted = [...allDesalin].sort((a,b)=>({alta:0,media:1,baixa:2}[a.severidade]??3)-({alta:0,media:1,baixa:2}[b.severidade]??3));
@@ -1527,6 +1739,7 @@ function renderMelhorias(){
     document.getElementById('badge-melhorias').textContent = total;
     const kpiMelhorias = document.getElementById('kpi-melhorias');
     if (kpiMelhorias) kpiMelhorias.textContent = total || '0';
+    _syncProdutoKpis();
 
     // Filtra por tipo (filtro de módulo removido do select — accordion substitui)
     let listaBase = todasMelhorias;
@@ -2459,6 +2672,427 @@ async function gerarPdfAvaliacao() {
         lucide.createIcons();
     }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// TABS NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+let currentTab = 'gestor';
+
+function switchTab(tabId) {
+    currentTab = tabId;
+    ['gestor','cs','produto'].forEach(t => {
+        const el  = document.getElementById('tab-' + t);
+        const btn = document.getElementById('tab-btn-' + t);
+        if (!el || !btn) return;
+        const active = t === tabId;
+        el.classList.toggle('hidden', !active);
+        btn.classList.toggle('tab-btn-active', active);
+        btn.classList.toggle('tab-btn-inactive', !active);
+    });
+    if (tabId === 'gestor') {
+        if (chartEvo) chartEvo.resize();
+        if (chartCoord) chartCoord.resize();
+        chartRadars.forEach(c => c && c.resize());
+    } else if (tabId === 'cs') {
+        renderPainelCS();
+    } else if (tabId === 'produto') {
+        renderKpisProduto();
+        renderMelhorias();
+        renderBugs();
+        renderDesalinhamentos();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FIREBASE — configuração + helpers
+// ═══════════════════════════════════════════════════════════════
+
+// ⚠️  Preencha com os dados do seu projeto Firebase:
+const FIREBASE_CONFIG = {
+    apiKey:            window.__FB_API_KEY__            || '',
+    authDomain:        window.__FB_AUTH_DOMAIN__        || '',
+    projectId:         window.__FB_PROJECT_ID__         || '',
+    storageBucket:     window.__FB_STORAGE_BUCKET__     || '',
+    messagingSenderId: window.__FB_MESSAGING_SENDER_ID__ || '',
+    appId:             window.__FB_APP_ID__             || '',
+};
+
+let fbApp  = null;
+let fbDb   = null;
+let fbReady = false;
+
+function initFirebase() {
+    try {
+        if (!FIREBASE_CONFIG.apiKey) {
+            setFirebaseStatus('offline', 'Firebase não configurado');
+            return false;
+        }
+        if (!firebase.apps.length) {
+            fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+        } else {
+            fbApp = firebase.apps[0];
+        }
+        fbDb = firebase.firestore();
+        fbReady = true;
+        setFirebaseStatus('online', 'Firebase conectado');
+        return true;
+    } catch (e) {
+        console.warn('Firebase init error:', e.message);
+        setFirebaseStatus('error', 'Erro Firebase: ' + e.message);
+        return false;
+    }
+}
+
+function setFirebaseStatus(state, label) {
+    const dot   = document.getElementById('oi-status-dot');
+    const lbl   = document.getElementById('oi-status-label');
+    const ldot  = document.getElementById('lev-firebase-dot');
+    const colors = { online:'#22c55e', offline:'#94a3b8', error:'#ef4444', loading:'#f59e0b' };
+    const c = colors[state] || '#94a3b8';
+    if (dot)  dot.style.background  = c;
+    if (ldot) ldot.style.background = c;
+    if (lbl)  lbl.textContent = label;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ALERTA O.I GERAL — lê rankings_copiados filtrado pelo mês atual
+// ═══════════════════════════════════════════════════════════════
+let oiData = [];
+let oiFilterAtivo = 'todos';
+
+async function loadOIFromFirebase() {
+    if (!fbReady && !initFirebase()) {
+        renderOIPlaceholder();
+        return;
+    }
+    setFirebaseStatus('loading', 'Carregando O.I...');
+    try {
+        const now = new Date();
+        const mes  = now.getMonth() + 1;
+        const ano  = now.getFullYear();
+        const snap = await fbDb.collection('rankings_copiados')
+            .where('mes', '==', mes)
+            .where('ano', '==', ano)
+            .get();
+        oiData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setFirebaseStatus('online', `Firebase · ${snap.size} itens`);
+        document.getElementById('oi-periodo-label').textContent =
+            `Mês ${String(mes).padStart(2,'0')}/${ano}`;
+        renderOIGeral();
+    } catch (e) {
+        console.warn('loadOIFromFirebase:', e);
+        setFirebaseStatus('error', 'Erro ao carregar O.I');
+        renderOIPlaceholder(e.message);
+    }
+}
+
+function filtrarOI(tipo) {
+    oiFilterAtivo = tipo;
+    ['todos','critico','melhoria','bug'].forEach(t => {
+        const btn = document.getElementById('oi-filter-' + t);
+        if (!btn) return;
+        btn.classList.toggle('bg-amber-500', t === tipo);
+        btn.classList.toggle('text-white',   t === tipo);
+        btn.classList.toggle('text-slate-400', t !== tipo);
+        btn.style.background = t === tipo ? '' : '';
+    });
+    renderOIGeral();
+}
+
+function renderOIGeral() {
+    const container = document.getElementById('oi-geral-container');
+    if (!container) return;
+
+    let lista = [...oiData];
+    if (oiFilterAtivo !== 'todos') {
+        lista = lista.filter(item => {
+            const t = (item.tipo || '').toLowerCase();
+            if (oiFilterAtivo === 'critico') return t === 'critico' || t === 'crítico' || (item.severidade||'').toLowerCase().includes('alt');
+            return t.includes(oiFilterAtivo);
+        });
+    }
+
+    document.getElementById('oi-count-badge').textContent = oiData.length;
+    const badge = document.getElementById('tab-cs-badge');
+    if (badge) {
+        badge.classList.toggle('hidden', oiData.length === 0);
+    }
+
+    if (!lista.length) {
+        container.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400">
+            <i data-lucide="check-circle" class="w-8 h-8 mx-auto mb-2 text-emerald-300"></i>
+            <p class="text-sm font-bold text-slate-500">Sem alertas de O.I neste período.</p>
+        </div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    const TYPE_COLORS = {
+        critico:  { bg:'#fee2e2', border:'#fca5a5', text:'#dc2626', badge:'bg-red-100 text-red-700' },
+        crítico:  { bg:'#fee2e2', border:'#fca5a5', text:'#dc2626', badge:'bg-red-100 text-red-700' },
+        bug:      { bg:'#fff7ed', border:'#fed7aa', text:'#ea580c', badge:'bg-orange-100 text-orange-700' },
+        melhoria: { bg:'#f5f3ff', border:'#ddd6fe', text:'#7c3aed', badge:'bg-violet-100 text-violet-700' },
+        default:  { bg:'#f8fafc', border:'#e2e8f0', text:'#475569', badge:'bg-slate-100 text-slate-500' },
+    };
+
+    container.innerHTML = lista.map(item => {
+        const tp  = (item.tipo || 'default').toLowerCase();
+        const col = TYPE_COLORS[tp] || TYPE_COLORS.default;
+        const analista = item.analista || '—';
+        const desc     = item.descricao || item.titulo || '—';
+        const prod     = item.produto   || '';
+        const sev      = item.severidade || item.impacto || '';
+        const dataStr  = item.data_importacao?.toDate
+            ? item.data_importacao.toDate().toLocaleDateString('pt-BR')
+            : (item.data || '');
+        return `<div class="rounded-2xl border p-4 hover:shadow-md transition-all" style="background:${col.bg};border-color:${col.border}">
+            <div class="flex items-start gap-3">
+                <div class="mt-0.5 flex-shrink-0">
+                    <span class="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${col.badge}">${(item.tipo||'OI').toUpperCase()}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-slate-800 text-sm leading-snug mb-1">${desc}</p>
+                    ${prod ? `<span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/60 text-slate-600 border border-slate-200 mr-1">${prod}</span>` : ''}
+                    ${sev  ? `<span class="text-[9px] font-bold px-2 py-0.5 rounded-full text-white mr-1" style="background:${col.text}">${sev}</span>` : ''}
+                    <p class="text-[10px] text-slate-400 font-semibold mt-2">${analista}${dataStr ? ' · ' + dataStr : ''}</p>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+    lucide.createIcons();
+}
+
+function renderOIPlaceholder(msg) {
+    const container = document.getElementById('oi-geral-container');
+    if (!container) return;
+    container.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400">
+        <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="wifi-off" class="w-6 h-6 text-amber-300"></i>
+        </div>
+        <p class="font-bold text-sm text-slate-500 mb-1">Firebase ainda não configurado</p>
+        <p class="text-xs text-slate-400 max-w-xs mx-auto">${msg || 'Configure as credenciais do Firebase para visualizar os alertas de O.I em tempo real.'}</p>
+    </div>`;
+    lucide.createIcons();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEVANTADAS — lê rankings_copiados do Firebase (mês atual)
+// ═══════════════════════════════════════════════════════════════
+let levData = [];
+
+async function loadLevantadasFirebase() {
+    const container = document.getElementById('ranking-levantadas-container');
+    if (container) container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">
+        <i data-lucide="loader" class="w-5 h-5 mx-auto mb-2 animate-spin text-purple-300"></i>
+        Carregando do Firebase...
+    </div>`;
+
+    if (!fbReady && !initFirebase()) {
+        renderLevantadasFallback();
+        return;
+    }
+
+    try {
+        const now  = new Date();
+        const mes  = now.getMonth() + 1;
+        const ano  = now.getFullYear();
+
+        const snap = await fbDb.collection('rankings_copiados')
+            .where('mes', '==', mes)
+            .where('ano', '==', ano)
+            .get();
+
+        levData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        document.getElementById('lev-periodo-label').textContent =
+            `${String(mes).padStart(2,'0')}/${ano} · ${snap.size} registros importados`;
+        document.getElementById('lev-firebase-dot').style.background = '#22c55e';
+        renderLevantadasRanking();
+    } catch (e) {
+        console.warn('loadLevantadasFirebase:', e);
+        document.getElementById('lev-firebase-dot').style.background = '#ef4444';
+        renderLevantadasFallback();
+    }
+}
+
+function renderLevantadasRanking() {
+    const container = document.getElementById('ranking-levantadas-container');
+    const badgeEl   = document.getElementById('total-levantadas-badge');
+    if (!container) return;
+
+    // Agrupa por analista somando melhorias + bugs + desalinhamentos
+    const counts = {};
+    for (const doc of levData) {
+        const nome = doc.analista || doc.nome || '—';
+        if (!counts[nome]) counts[nome] = { nome, melhorias: 0, bugs: 0, desalin: 0, total: 0 };
+        counts[nome].melhorias += Number(doc.melhorias  || doc.qtd_melhorias  || 0);
+        counts[nome].bugs      += Number(doc.bugs       || doc.qtd_bugs       || 0);
+        counts[nome].desalin   += Number(doc.desalinhamentos || doc.qtd_desalinhamentos || 0);
+        counts[nome].total     += Number(doc.total      || (
+            (doc.melhorias || doc.qtd_melhorias || 0) +
+            (doc.bugs      || doc.qtd_bugs      || 0) +
+            (doc.desalinhamentos || doc.qtd_desalinhamentos || 0)
+        ));
+    }
+
+    const ranking = Object.values(counts)
+        .filter(a => a.total > 0)
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
+
+    const totalGeral = ranking.reduce((s, a) => s + a.total, 0);
+    if (badgeEl) badgeEl.textContent = totalGeral;
+
+    if (!ranking.length) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">
+            <i data-lucide="inbox" class="w-6 h-6 mx-auto mb-2 text-slate-200"></i>
+            Nenhuma levantada no período.
+        </div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    const MEDALS = ['🥇','🥈','🥉'];
+    container.innerHTML = ranking.map((item, i) => {
+        const rankClass = i === 0 ? 'lev-rank-1' : i === 1 ? 'lev-rank-2' : i === 2 ? 'lev-rank-3' : '';
+        return `<div class="flex items-center justify-between p-3 rounded-xl border ${rankClass||'border-slate-100 bg-white'} hover:shadow-sm transition-all cursor-pointer shadow-sm" onclick="abrirPerfil('${item.nome.replace(/'/g,"\\'")}')">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0 ${i<3?'':'bg-slate-100 text-slate-400'}">
+                    ${MEDALS[i] || (i+1)}
+                </div>
+                <span class="font-bold text-slate-700 text-sm truncate">${item.nome}</span>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+                ${item.melhorias ? `<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[9px] font-black rounded">${item.melhorias}💡</span>` : ''}
+                ${item.bugs      ? `<span class="px-1.5 py-0.5 bg-red-100 text-red-700 text-[9px] font-black rounded">${item.bugs}🐛</span>` : ''}
+                <span class="font-black text-slate-500 text-[10px] ml-1">= ${item.total}</span>
+            </div>
+        </div>`;
+    }).join('');
+    lucide.createIcons();
+}
+
+function renderLevantadasFallback() {
+    // Firebase não disponível — usa dados das avaliações carregadas
+    const container = document.getElementById('ranking-levantadas-container');
+    const badgeEl   = document.getElementById('total-levantadas-badge');
+    document.getElementById('lev-periodo-label').textContent = 'Dados locais (Firebase offline)';
+    document.getElementById('lev-firebase-dot').style.background = '#f59e0b';
+
+    const counts = {};
+    let totalInsights = 0;
+    allReunioes.forEach(r => {
+        const analista = r.analista_nome || '—';
+        if (!analista || analista === '—') return;
+        if (!counts[analista]) counts[analista] = { nome: analista, melhorias:0, bugs:0, desalin:0, total:0 };
+        const m = (r.analise_json?.melhorias||[]).length;
+        const b = (r.analise_json?.bugs||[]).length;
+        const d = (r.analise_json?.desalinhamentos||[]).length;
+        counts[analista].melhorias += m;
+        counts[analista].bugs      += b;
+        counts[analista].desalin   += d;
+        counts[analista].total     += m+b+d;
+        totalInsights += m+b+d;
+    });
+    levData = [];
+    if (badgeEl) badgeEl.textContent = totalInsights;
+
+    const ranking = Object.values(counts).filter(a => a.total > 0).sort((a,b) => b.total-a.total).slice(0,10);
+    if (!ranking.length) {
+        if (container) container.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs">Sem levantadas no período.</div>';
+        return;
+    }
+    const MEDALS = ['🥇','🥈','🥉'];
+    if (container) container.innerHTML = ranking.map((item, i) => `
+        <div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-white hover:shadow-sm transition-all cursor-pointer" onclick="abrirPerfil('${item.nome.replace(/'/g,"\\'")}')">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs bg-slate-100 text-slate-400 flex-shrink-0">${MEDALS[i]||(i+1)}</div>
+                <span class="font-bold text-slate-700 text-sm truncate">${item.nome}</span>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+                ${item.melhorias ? `<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[9px] font-black rounded">${item.melhorias}💡</span>` : ''}
+                ${item.bugs      ? `<span class="px-1.5 py-0.5 bg-red-100 text-red-700 text-[9px] font-black rounded">${item.bugs}🐛</span>` : ''}
+                <span class="font-black text-slate-500 text-[10px] ml-1">= ${item.total}</span>
+            </div>
+        </div>`).join('');
+    lucide.createIcons();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAINEL INDIVIDUAL (tab CS)
+// ═══════════════════════════════════════════════════════════════
+function renderPainelCS() {
+    renderAlertasOILocal();
+    loadOIFromFirebase();
+    loadLevantadasFirebase();
+
+    const analista = document.getElementById('f-analista').value;
+    const panel  = document.getElementById('cs-painel-pessoal');
+    const empty  = document.getElementById('cs-painel-vazio');
+    if (!analista) {
+        if (empty)  empty.classList.remove('hidden');
+        if (panel)  panel.classList.add('hidden');
+        return;
+    }
+    if (empty)  empty.classList.add('hidden');
+    if (panel)  panel.classList.remove('hidden');
+
+    const reunioes = allReunioes.filter(r => r.analista_nome === analista);
+    const medias   = reunioes.map(r => r.media_final).filter(Boolean);
+    const media    = medias.length ? avgArr(medias).toFixed(1) : '—';
+    const melhor   = medias.length ? Math.max(...medias).toFixed(1) : '—';
+    const levTotal = reunioes.reduce((s, r) => s +
+        (r.analise_json?.melhorias||[]).length +
+        (r.analise_json?.bugs||[]).length +
+        (r.analise_json?.desalinhamentos||[]).length, 0);
+
+    document.getElementById('cs-nome-label').textContent      = analista;
+    document.getElementById('cs-media-label').textContent     = media;
+    document.getElementById('cs-total-label').textContent     = reunioes.length;
+    document.getElementById('cs-melhor-label').textContent    = melhor;
+    document.getElementById('cs-levantadas-label').textContent = levTotal;
+
+    // Mini barra de pilares
+    const resumoEl = document.getElementById('cs-pilares-resumo');
+    if (resumoEl) {
+        const pilaresMedia = PILLARS.map(p => {
+            const vals = reunioes.map(r => r['nota_' + p.k]).filter(v => v != null);
+            return { ...p, val: vals.length ? +(avgArr(vals).toFixed(1)) : null };
+        }).filter(p => p.val !== null).sort((a,b) => a.val - b.val).slice(0, 5); // 5 mais baixos
+        resumoEl.innerHTML = `<p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Pilares que precisam de atenção</p>` +
+            pilaresMedia.map(p => {
+                const pct = (p.val / 5) * 100;
+                const col = p.val < 3 ? '#ef4444' : p.val < 4 ? '#f59e0b' : '#10b981';
+                return `<div class="flex items-center gap-2 mb-1.5">
+                    <span class="text-[10px] text-slate-500 font-semibold min-w-[9rem] text-right">${p.l}</span>
+                    <div class="pilar-bar-bg flex-1"><div class="pilar-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+                    <span class="text-[11px] font-black min-w-[1.5rem] text-right" style="color:${col}">${p.val}</span>
+                </div>`;
+            }).join('');
+    }
+}
+
+function abrirPerfilIndividual() {
+    const analista = document.getElementById('f-analista').value;
+    if (analista) abrirPerfil(analista);
+}
+
+// OI local (churn alto + checklist + bugs críticos das avaliações)
+function renderAlertasOILocal() {
+    // Alimenta o tab-cs-badge se houver alertas locais críticos
+    const alertas = [];
+    allReunioes.forEach(r => {
+        const cv = (r.risco_churn || '').toLowerCase();
+        if (cv.includes('alto') || cv.includes('crít')) alertas.push(r);
+    });
+    const badge = document.getElementById('tab-cs-badge');
+    if (badge) badge.classList.toggle('hidden', alertas.length === 0);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// KPIs do Produto (tab 3) — espelha os ids do gestor
+// ═══════════════════════════════════════════════════════════════
+function renderKpisProduto() { _syncProdutoKpis(); }
 
 checkAuthAndLoad();
 </script>
