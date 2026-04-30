@@ -174,6 +174,10 @@ async function getNumbers(transcript) {
             systemInstruction:
                 'Auditor de CS do Nibo. Leia a transcrição. ' +
                 'Para cada pilar retorne nota 1-5. Sem evidência = -1. ' +
+                'CALIBRAGEM ANTI-INFLAÇÃO: use toda a escala (1,2,3,4,5); NÃO concentre automaticamente em 4 ou 5. ' +
+                'Só use nota 5 quando houver evidência explícita e consistente de excelência naquele pilar durante a reunião. ' +
+                'Se a evidência for apenas parcial, superficial ou pontual, prefira nota 3 ou 4 conforme a intensidade. ' +
+                'Nunca repita o mesmo padrão de notas entre reuniões diferentes por padrão; avalie cada pilar individualmente com base no texto. ' +
                 'media_final = média das notas diferentes de -1. ' +
                 'tempo_fala_cs_pct e tempo_fala_cliente_pct = inteiro 0-100. ' +
                 'REGRA GERAL — bugs e erros de plataforma: ' +
