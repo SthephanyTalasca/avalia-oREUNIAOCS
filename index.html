@@ -2915,18 +2915,24 @@ function _levItemHtml(item, i) {
     const safeNome = item.nome.replace(/'/g,"\\'").replace(/"/g,'&quot;');
     const expanded = _levExpanded.has(item.nome);
     const chevron = expanded ? 'chevron-up' : 'chevron-down';
-    return `<div class="rounded-xl border ${rankClass||'border-slate-100 bg-white'} shadow-sm overflow-hidden">
+    const tagsHtml = [
+        item.melhorias ? `<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[9px] font-black rounded">${item.melhorias}💡</span>` : '',
+        item.bugs      ? `<span class="px-1.5 py-0.5 bg-red-100 text-red-700 text-[9px] font-black rounded">${item.bugs}🐛</span>` : '',
+        item.desalin   ? `<span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black rounded">${item.desalin}⚠️</span>` : '',
+    ].filter(Boolean).join('');
+    return `<div class="rounded-xl border overflow-hidden shadow-sm ${rankClass}">
         <div onclick="toggleLevExpand('${safeNome}')" class="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 transition-all">
             <div class="flex items-center gap-2.5 min-w-0">
                 <div class="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0 ${i<3?'':'bg-slate-100 text-slate-400'}">${MEDALS[i]||(i+1)}</div>
                 <span class="font-bold text-slate-700 text-sm truncate">${item.nome}</span>
             </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <span class="px-2 py-1 bg-violet-100 text-violet-700 text-[10px] font-black rounded-lg">${item.total} reuniões</span>
-                <i data-lucide="${chevron}" class="w-3.5 h-3.5 text-slate-400"></i>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+                ${tagsHtml}
+                <span class="font-black text-slate-500 text-[10px] ml-0.5">= ${item.total}</span>
+                <i data-lucide="${chevron}" class="w-3.5 h-3.5 text-slate-400 ml-1"></i>
             </div>
         </div>
-        ${expanded ? `<div class="px-3 pb-3 border-t border-slate-100">${_levMeetingsHtml(item.nome)}</div>` : ''}
+        ${expanded ? `<div class="border-t border-slate-100 divide-y divide-slate-50">${_levMeetingsHtml(item.nome)}</div>` : ''}
     </div>`;
 }
 
@@ -2970,7 +2976,7 @@ function renderLevantadasRanking() {
     const badgeEl   = document.getElementById('total-levantadas-badge');
     if (!container) return;
 
-    // Conta reuniões (levantadas) por analista, respeitando filtros globais
+    // Agrega oportunidades (melhorias + bugs + desalinhamentos) por analista vindas do Firebase
     const fAnalista = (document.getElementById('f-analista')?.value || '').toLowerCase().trim();
     const fCoord    = (document.getElementById('f-coordenador')?.value || '').toLowerCase().trim();
     const counts = {};
@@ -2979,8 +2985,14 @@ function renderLevantadasRanking() {
         if (!nome || nome === '—') continue;
         if (fAnalista && nome.toLowerCase() !== fAnalista) continue;
         if (fCoord && (doc.coordenador || '').toLowerCase() !== fCoord) continue;
-        if (!counts[nome]) counts[nome] = { nome, total: 0 };
-        counts[nome].total += Number(doc.levantadas || doc.qtd_levantadas || doc.reunioes || doc.qtd_reunioes || 1);
+        if (!counts[nome]) counts[nome] = { nome, melhorias: 0, bugs: 0, desalin: 0, total: 0 };
+        const m = Number(doc.melhorias  || doc.qtd_melhorias  || 0);
+        const b = Number(doc.bugs       || doc.qtd_bugs       || 0);
+        const d = Number(doc.desalinhamentos || doc.qtd_desalinhamentos || 0);
+        counts[nome].melhorias += m;
+        counts[nome].bugs      += b;
+        counts[nome].desalin   += d;
+        counts[nome].total     += Number(doc.total || (m + b + d));
     }
 
     const ranking = Object.values(counts).filter(a => a.total > 0).sort((a, b) => b.total - a.total).slice(0, 10);
@@ -2990,7 +3002,7 @@ function renderLevantadasRanking() {
     if (!ranking.length) {
         container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">
             <i data-lucide="inbox" class="w-6 h-6 mx-auto mb-2 text-slate-200"></i>
-            Nenhuma levantada no período.
+            Nenhuma oportunidade no período.
         </div>`;
         lucide.createIcons();
         return;
@@ -3003,24 +3015,30 @@ function renderLevantadasRanking() {
 function renderLevantadasFallback() {
     const container = document.getElementById('ranking-levantadas-container');
     const badgeEl   = document.getElementById('total-levantadas-badge');
-    document.getElementById('lev-periodo-label').textContent = 'Dados locais (filtros aplicados)';
+    document.getElementById('lev-periodo-label').textContent = 'Dados locais (Firebase offline)';
     document.getElementById('lev-firebase-dot').style.background = '#f59e0b';
 
-    // usa todasReunioes (já filtrada pelos filtros globais) para respeitar período/analista/coord
+    // Agrega oportunidades locais (analise_json) respeitando filtros via todasReunioes
     const base = todasReunioes.length ? todasReunioes : allReunioes;
     const counts = {};
     for (const r of base) {
         const analista = (r.analista_nome || '').trim();
         if (!analista) continue;
-        if (!counts[analista]) counts[analista] = { nome: analista, total: 0 };
-        counts[analista].total++;
+        if (!counts[analista]) counts[analista] = { nome: analista, melhorias: 0, bugs: 0, desalin: 0, total: 0 };
+        const m = (r.analise_json?.melhorias || []).length;
+        const b = (r.analise_json?.bugs || []).length;
+        const d = (r.analise_json?.desalinhamentos || []).length;
+        counts[analista].melhorias += m;
+        counts[analista].bugs      += b;
+        counts[analista].desalin   += d;
+        counts[analista].total     += m + b + d;
     }
     levData = [];
     const ranking = Object.values(counts).filter(a => a.total > 0).sort((a, b) => b.total - a.total).slice(0, 10);
     if (badgeEl) badgeEl.textContent = ranking.reduce((s, a) => s + a.total, 0);
 
     if (!ranking.length) {
-        if (container) container.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs">Sem levantadas no período.</div>';
+        if (container) container.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs">Sem oportunidades no período.</div>';
         return;
     }
     if (container) container.innerHTML = `<div class="space-y-2">${ranking.map((item, i) => _levItemHtml(item, i)).join('')}</div>`;
