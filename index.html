@@ -588,7 +588,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 glass-card p-8">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>Evolução Semanal</h2>
+                <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-blue-600"></i><span id="evo-title-text">Evolução Semanal</span></h2>
                 <span class="text-xs text-slate-400 font-semibold" id="badge-semanas">—</span>
             </div>
             <div style="height:220px"><canvas id="chart-evo"></canvas></div>
@@ -1371,14 +1371,70 @@ function renderSaudeChurn(){
 }
 
 function renderEvo(){
-    const evo=statsData.evolucao||[];
-    document.getElementById('badge-semanas').textContent=evo.length+' semanas';
-    const labels=evo.map(e=>new Date(e.semana).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}));
+    const de=document.getElementById('f-data-inicio').value;
+    const ate=document.getElementById('f-data-fim').value;
+
+    // Determina o intervalo em dias para escolher a granularidade
+    let rangeDays;
+    if(de && ate){
+        rangeDays=(new Date(ate)-new Date(de))/86400000;
+    } else if(de){
+        rangeDays=(Date.now()-new Date(de))/86400000;
+    } else if(allReunioes.length){
+        const dates=allReunioes.map(r=>new Date(r.data_reuniao||r.created_at)).filter(d=>!isNaN(d));
+        rangeDays=dates.length?(Math.max(...dates)-Math.min(...dates))/86400000:90;
+    } else {
+        rangeDays=90;
+    }
+
+    // Granularidade: diário ≤21 dias | semanal ≤120 dias | mensal acima disso
+    const gran = rangeDays<=21 ? 'day' : rangeDays<=120 ? 'week' : 'month';
+    const granLabel   = {day:'Diária',week:'Semanal',month:'Mensal'};
+    const granBadge   = {day:'dias',week:'semanas',month:'meses'};
+    const granDataset = {day:'Média Diária',week:'Média Semanal',month:'Média Mensal'};
+
+    // Agrupa allReunioes pela granularidade escolhida
+    const grupos={};
+    for(const r of allReunioes){
+        const d=new Date(r.data_reuniao||r.created_at);
+        if(isNaN(d.getTime())) continue;
+        let key;
+        if(gran==='day'){
+            key=d.toISOString().split('T')[0];
+        } else if(gran==='week'){
+            const mon=new Date(d); mon.setDate(d.getDate()-d.getDay());
+            key=mon.toISOString().split('T')[0];
+        } else {
+            key=d.toISOString().slice(0,7); // YYYY-MM
+        }
+        if(!grupos[key]) grupos[key]={medias:[],total:0};
+        grupos[key].total++;
+        if(r.media_final&&r.media_final>0) grupos[key].medias.push(r.media_final);
+    }
+
+    const evo=Object.entries(grupos)
+        .sort((a,b)=>a[0].localeCompare(b[0]))
+        .map(([key,v])=>({
+            key,
+            media:v.medias.length?+(v.medias.reduce((a,b)=>a+b,0)/v.medias.length).toFixed(1):0,
+            total:v.total
+        }));
+
+    const labels=evo.map(e=>{
+        if(gran==='month'){
+            return new Date(e.key+'-15T12:00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
+        }
+        return new Date(e.key+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    });
+
+    document.getElementById('evo-title-text').textContent='Evolução '+granLabel[gran];
+    document.getElementById('badge-semanas').textContent=evo.length+' '+granBadge[gran];
+
     const vals=evo.map(e=>e.media);
     if(chartEvo) chartEvo.destroy();
     chartEvo=new Chart(document.getElementById('chart-evo').getContext('2d'),{
         type:'line',
-        data:{labels,datasets:[{label:'Média Semanal',data:vals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#2563eb',pointBorderColor:'#fff',pointBorderWidth:2,fill:true,tension:0.4}]},
+        data:{labels,datasets:[{label:granDataset[gran],data:vals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#2563eb',pointBorderColor:'#fff',pointBorderWidth:2,fill:true,tension:0.4}]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}
     });
 }
