@@ -352,11 +352,12 @@ async function getTextsA(transcript, numbers) {
         .map(p    => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
         .join(', ');
     const instruction =
-        'Auditor de CS do Nibo. Notas dos pilares: ' + notasStr + '. ' +
-        'Para pilares SEM evidência retorne "Sem evidência na transcrição." no porque e "" no melhoria. ' +
-        'Para os demais: porque deve OBRIGATORIAMENTE citar 1 trecho literal curto da transcrição entre aspas e explicar o impacto da conduta do CS. ' +
-        'Formato obrigatório do porque: Trecho: "..." | Leitura: ... ' +
-        'melhoria = 1 frase objetiva do que faltou para nota 5 (se nota=5 escreva "Excelência atingida."). ' +
+        'Auditor de CS do Nibo. Notas dos pilares (nota 1 a 5): ' + notasStr + '. ' +
+        'REGRA 1 — Pilares COM nota (listados acima, qualquer nota de 1 a 5): ' +
+        'porque: OBRIGATÓRIO para TODOS — cite 1 trecho literal curto da transcrição entre aspas e explique o impacto da conduta do CS. ' +
+        'Formato obrigatório: Trecho: "..." | Leitura: ... ' +
+        'melhoria: se nota=5 escreva "Excelência atingida."; para nota 1, 2, 3 ou 4 escreva 1 frase objetiva do que faltou para atingir nota 5. ' +
+        'REGRA 2 — Pilares SEM nota (não aparecem na lista acima): porque = "Sem evidência na transcrição."; melhoria = "". ' +
         'NUNCA invente citação: use apenas texto que exista na transcrição.';
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -373,11 +374,12 @@ async function getTextsB(transcript, numbers) {
         .map(p    => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
         .join(', ');
     const instruction =
-        'Auditor de CS do Nibo. Notas dos pilares: ' + notasStr + '. ' +
-        'Para pilares SEM evidência retorne "Sem evidência na transcrição." no porque e "" no melhoria. ' +
-        'Para os demais: porque deve OBRIGATORIAMENTE citar 1 trecho literal curto da transcrição entre aspas e explicar o impacto da conduta do CS. ' +
-        'Formato obrigatório do porque: Trecho: "..." | Leitura: ... ' +
-        'melhoria = 1 frase objetiva do que faltou para nota 5 (se nota=5 escreva "Excelência atingida."). ' +
+        'Auditor de CS do Nibo. Notas dos pilares (nota 1 a 5): ' + notasStr + '. ' +
+        'REGRA 1 — Pilares COM nota (listados acima, qualquer nota de 1 a 5): ' +
+        'porque: OBRIGATÓRIO para TODOS — cite 1 trecho literal curto da transcrição entre aspas e explique o impacto da conduta do CS. ' +
+        'Formato obrigatório: Trecho: "..." | Leitura: ... ' +
+        'melhoria: se nota=5 escreva "Excelência atingida."; para nota 1, 2, 3 ou 4 escreva 1 frase objetiva do que faltou para atingir nota 5. ' +
+        'REGRA 2 — Pilares SEM nota (não aparecem na lista acima): porque = "Sem evidência na transcrição."; melhoria = "". ' +
         'NUNCA invente citação: use apenas texto que exista na transcrição.';
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -673,7 +675,7 @@ export default async function handler(req, res) {
                 texts['melhoria_' + k] = null;
             } else {
                 texts['porque_'   + k] = texts['porque_'   + k] || 'Sem justificativa disponível.';
-                texts['melhoria_' + k] = texts['melhoria_' + k] || 'Excelência atingida.';
+                texts['melhoria_' + k] = texts['melhoria_' + k] || (numbers['nota_' + k] === 5 ? 'Excelência atingida.' : 'Informação não disponível.');
             }
         });
 
