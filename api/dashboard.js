@@ -1,6 +1,8 @@
 // api/dashboard.js — CS Auditor
 import { db, docsToArray } from '../lib/firebase.js';
 
+export const maxDuration = 60;
+
 function getSession(req) {
     const m = (req.headers.cookie || '').match(/nibo_cs_session=([^;]+)/);
     if (!m) return null;
@@ -68,7 +70,11 @@ export default async function handler(req, res) {
         if (!reunioes.length) return res.status(200).json({ reunioes: [], stats: null });
         return res.status(200).json({ reunioes, stats: calcStats(reunioes) });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        const msg = error.message || String(error);
+        if (msg.includes('RESOURCE_EXHAUSTED') || msg.includes('8 RESOURCE')) {
+            return res.status(503).json({ error: 'Cota do banco de dados excedida. Aguarde alguns minutos e tente novamente.' });
+        }
+        return res.status(500).json({ error: msg });
     }
 }
 

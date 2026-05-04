@@ -710,6 +710,10 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('Erro na API:', error);
-        return res.status(500).json({ error: 'Erro: ' + error.message });
+        const msg = error.message || String(error);
+        if (msg.includes('RESOURCE_EXHAUSTED') || msg.includes('8 RESOURCE')) {
+            return res.status(503).json({ error: 'Cota do banco de dados excedida. Aguarde alguns minutos e tente novamente.' });
+        }
+        return res.status(500).json({ error: 'Erro: ' + msg });
     }
 }
