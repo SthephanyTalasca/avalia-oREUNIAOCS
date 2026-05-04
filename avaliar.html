@@ -185,6 +185,10 @@
                     <p id="analista-nome-resultado" class="text-lg font-extrabold text-[#002d72]">—</p>
                     <p id="analista-coord-resultado" class="text-xs text-slate-500">—</p>
                 </div>
+                <!-- Botão link da transcrição -->
+                <a id="btn-link-transcricao" href="#" target="_blank" rel="noopener noreferrer" class="hidden items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all" style="background:#e6f3ff;color:#0072ce">
+                    <i data-lucide="link" class="w-4 h-4"></i>Transcrição
+                </a>
                 <!-- Botão "Ver no Dashboard" após salvar -->
                 <a id="btn-ver-dashboard" href="/" class="hidden flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all">
                     <i data-lucide="bar-chart-3" class="w-4 h-4"></i>Ver no Dashboard
@@ -606,6 +610,8 @@ async function handleAnalysis(){
     document.getElementById('analysis-content').classList.add('hidden');
     document.getElementById('analista-resultado').classList.add('hidden');
     document.getElementById('btn-ver-dashboard').classList.add('hidden');
+    document.getElementById('btn-link-transcricao').classList.add('hidden');
+    document.getElementById('btn-link-transcricao').classList.remove('flex');
     document.getElementById('save-banner').classList.remove('visible');
     ['bar-scores','bar-report'].forEach(id=>document.getElementById(id).style.width='0%');
     activate('step-scores');
@@ -640,6 +646,14 @@ async function handleAnalysis(){
 
         // Renderiza dashboard
         renderDashboard(data);
+
+        // Mostra botão da transcrição se link foi fornecido
+        if(linkTranscricao){
+            const btnTr=document.getElementById('btn-link-transcricao');
+            btnTr.href=linkTranscricao;
+            btnTr.classList.remove('hidden');
+            btnTr.classList.add('flex');
+        }
 
         // Salva no Supabase
         try{

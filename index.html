@@ -169,7 +169,7 @@
                 </div>
                 <p id="modal-pd-porque" class="text-sm text-slate-700 font-medium leading-relaxed">—</p>
                 <div id="modal-pd-melhoria-box" class="rounded-xl p-3 border border-amber-100 bg-amber-50 hidden">
-                    <span class="text-[9px] font-black uppercase text-amber-600 tracking-widest block mb-1">O que faltou para o 5?</span>
+                    <span id="modal-pd-melhoria-label" class="text-[9px] font-black uppercase text-amber-600 tracking-widest block mb-1">O que faltou para o 5?</span>
                     <p id="modal-pd-melhoria" class="text-xs text-amber-900 font-medium leading-relaxed">—</p>
                 </div>
             </div>
@@ -2397,8 +2397,21 @@ function renderModal(r){
                     const notaEl=document.getElementById('modal-pd-nota');notaEl.textContent=val;notaEl.className=`text-2xl font-black ${tc}`;
                     document.getElementById('modal-pd-porque').textContent=porque;
                     const melhoriaBox=document.getElementById('modal-pd-melhoria-box');
-                    if(melhoria&&melhoria!=='Excelência atingida.'&&val<5){document.getElementById('modal-pd-melhoria').textContent=melhoria;melhoriaBox.classList.remove('hidden');}
-                    else melhoriaBox.classList.add('hidden');
+                    const melhoriaLabel=document.getElementById('modal-pd-melhoria-label');
+                    const melhoriaText=document.getElementById('modal-pd-melhoria');
+                    const isExcelente=val>=5||!melhoria||melhoria==='Excelência atingida.';
+                    melhoriaText.textContent=isExcelente?'Excelência atingida.':melhoria;
+                    if(isExcelente){
+                        melhoriaBox.className='rounded-xl p-3 border border-emerald-100 bg-emerald-50';
+                        melhoriaLabel.className='text-[9px] font-black uppercase text-emerald-600 tracking-widest block mb-1';
+                        melhoriaLabel.textContent='Excelente!';
+                        melhoriaText.className='text-xs text-emerald-900 font-medium leading-relaxed';
+                    }else{
+                        melhoriaBox.className='rounded-xl p-3 border border-amber-100 bg-amber-50';
+                        melhoriaLabel.className='text-[9px] font-black uppercase text-amber-600 tracking-widest block mb-1';
+                        melhoriaLabel.textContent='O que faltou para o 5?';
+                        melhoriaText.className='text-xs text-amber-900 font-medium leading-relaxed';
+                    }
                     const det=document.getElementById('modal-pilar-detalhe');det.classList.remove('hidden');det.scrollIntoView({behavior:'smooth',block:'nearest'});
                 }
             }
