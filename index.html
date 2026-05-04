@@ -2388,7 +2388,7 @@ function renderModal(r){
                     if(!elements.length) return;
                     const idx=elements[0].index,p=g.pillars[idx],pk=p.k,val=r['nota_'+pk];
                     if(val==null) return;
-                    const porque=aj['porque_'+pk]||'Sem justificativa.',melhoria=aj['melhoria_'+pk]||'';
+                    const porque=aj['porque_'+pk]||r['porque_'+pk]||'Sem justificativa disponível.',melhoria=aj['melhoria_'+pk]||r['melhoria_'+pk]||'';
                     const tc=val>=4?'text-emerald-600':val>=3?'text-blue-600':'text-red-500';
                     const pillarFull=PILLARS.find(x=>x.k===pk);
                     document.getElementById('modal-pd-nome').textContent=pillarFull?.l||pk;
@@ -2419,8 +2419,8 @@ function renderModal(r){
     document.getElementById('modal-fortes').innerHTML=(aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
     document.getElementById('modal-atencao').innerHTML=(aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
     // ── Transcrição e observação do coordenador ───────────────────────────
-    const linkTr=r.link_transcricao||null;
-    const obsCoord=r.observacao_coordenador||null;
+    const linkTr=r.link_transcricao||aj.link_transcricao||null;
+    const obsCoord=r.observacao_coordenador||aj.observacao_coordenador||null;
     const trSection=document.getElementById('modal-transcricao-section');
     const linkWrap=document.getElementById('modal-link-transcricao-wrap');
     const obsWrap=document.getElementById('modal-observacao-wrap');

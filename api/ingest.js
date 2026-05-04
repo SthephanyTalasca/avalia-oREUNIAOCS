@@ -88,8 +88,12 @@ export default async function handler(req, res) {
         const { nome: analistaNome, coordenador } = await resolverAnalista(rawNome);
 
         const notasCols = {};
+        const porqueCols = {};
+        const melhoriaCols = {};
         ALL_PILLARS.forEach(p => {
-            notasCols['nota_' + p] = analise?.['nota_' + p] ?? null;
+            notasCols['nota_'     + p] = analise?.['nota_'     + p] ?? null;
+            porqueCols['porque_'  + p] = analise?.['porque_'   + p] || null;
+            melhoriaCols['melhoria_' + p] = analise?.['melhoria_' + p] || null;
         });
 
         const row = {
@@ -109,7 +113,7 @@ export default async function handler(req, res) {
             sistemas_citados:        analise?.sistemas_citados   || [],
             pontos_fortes:           analise?.pontos_fortes      || [],
             pontos_atencao:          analise?.pontos_atencao     || [],
-            justificativa_detalhada: null,
+            justificativa_detalhada: analise?.justificativa_detalhada || null,
             ck_prazo:                analise?.ck_prazo           || false,
             ck_dever_casa:           analise?.ck_dever_casa      || false,
             ck_certificado:          analise?.ck_certificado     || false,
@@ -117,6 +121,10 @@ export default async function handler(req, res) {
             ck_dor_vendas:           analise?.ck_dor_vendas      || false,
             ck_suporte:              analise?.ck_suporte         || false,
             ...notasCols,
+            ...porqueCols,
+            ...melhoriaCols,
+            link_transcricao:       body.link_transcricao       || null,
+            observacao_coordenador: body.observacao_coordenador || null,
             analise_json: { ...analise, file_name: file_name || null },
             created_at: FieldValue.serverTimestamp(),
         };
