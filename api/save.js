@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
     if (!getSession(req)) return res.status(401).json({ error: 'Não autorizado' });
 
-    const { analise, coordenador } = req.body;
+    const { analise, coordenador, link_transcricao, observacao_coordenador } = req.body;
     if (!analise) return res.status(400).json({ error: 'Análise obrigatória' });
 
     try {
@@ -74,6 +74,10 @@ export default async function handler(req, res) {
 
             // ── Desalinhamentos de venda ───────────────────────────────
             tem_desalinhamento: analise.tem_desalinhamento || false,
+
+            // ── Transcrição e observação do coordenador ────────────────
+            link_transcricao:       link_transcricao       || null,
+            observacao_coordenador: observacao_coordenador || null,
 
             // ── JSON completo (backup) ─────────────────────────────────
             analise_json: analise,

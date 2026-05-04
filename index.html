@@ -183,6 +183,28 @@
                     <ul id="modal-atencao" class="space-y-1.5 text-xs font-semibold text-amber-900"></ul>
                 </div>
             </div>
+            <!-- Transcrição e observação -->
+            <div id="modal-transcricao-section" class="hidden rounded-3xl border border-slate-100 bg-slate-50 p-5 space-y-3">
+                <div id="modal-link-transcricao-wrap" class="hidden items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#ede9ff">
+                        <i data-lucide="link" class="w-4 h-4" style="color:#6431e2"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Link da Transcrição</p>
+                        <a id="modal-link-transcricao" href="#" target="_blank" rel="noopener noreferrer"
+                           class="text-sm font-bold truncate block hover:underline" style="color:#6431e2">—</a>
+                    </div>
+                </div>
+                <div id="modal-observacao-wrap" class="hidden items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#f0fdf4">
+                        <i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Observação do Coordenador</p>
+                        <p id="modal-observacao" class="text-sm font-medium text-slate-700 leading-snug">—</p>
+                    </div>
+                </div>
+            </div>
             <div>
                 <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-4 border-b pb-3">Relatório de Auditoria</span>
                 <div id="modal-relatorio" class="md"></div>
@@ -2385,6 +2407,32 @@ function renderModal(r){
     });
     document.getElementById('modal-fortes').innerHTML=(aj.pontos_fortes||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-emerald-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
     document.getElementById('modal-atencao').innerHTML=(aj.pontos_atencao||[]).map(f=>`<li class="flex items-start gap-1.5"><span class="text-amber-500 text-[10px] mt-0.5">▶</span>${f}</li>`).join('')||'<li class="text-slate-400">—</li>';
+    // ── Transcrição e observação do coordenador ───────────────────────────
+    const linkTr=r.link_transcricao||null;
+    const obsCoord=r.observacao_coordenador||null;
+    const trSection=document.getElementById('modal-transcricao-section');
+    const linkWrap=document.getElementById('modal-link-transcricao-wrap');
+    const obsWrap=document.getElementById('modal-observacao-wrap');
+    if(linkTr||obsCoord){
+        trSection.classList.remove('hidden');
+        if(linkTr){
+            linkWrap.classList.remove('hidden');
+            linkWrap.classList.add('flex');
+            const a=document.getElementById('modal-link-transcricao');
+            a.href=linkTr;a.textContent=linkTr;
+        } else {
+            linkWrap.classList.add('hidden');
+        }
+        if(obsCoord){
+            obsWrap.classList.remove('hidden');
+            obsWrap.classList.add('flex');
+            document.getElementById('modal-observacao').textContent=obsCoord;
+        } else {
+            obsWrap.classList.add('hidden');
+        }
+    } else {
+        trSection.classList.add('hidden');
+    }
     const rel=(aj.justificativa_detalhada||'').replace(/##\s*plano de a[çc][aã]o[\s\S]*?(?=\n##\s|\s*$)/i,'').trim();
     document.getElementById('modal-relatorio').innerHTML=rel?rel.replace(/## (.+)/g,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>'):'<p class="text-slate-400">Relatório não disponível.</p>';
     document.getElementById('modal-overlay').classList.add('open');
