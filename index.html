@@ -85,6 +85,13 @@
         #select-all-cb { width:1rem;height:1rem;accent-color:#2563eb;cursor:pointer; }
         .row-selected td { background:#eff6ff !important; }
         .rtbl th:first-child, .rtbl td:first-child { width:2.5rem;padding-left:1rem;padding-right:0.25rem; }
+        .th-sort { cursor:pointer; user-select:none; white-space:nowrap; }
+        .th-sort:hover { color:#475569 !important; }
+        .sort-arrow { display:inline-block; margin-left:3px; opacity:0.35; font-size:0.7em; vertical-align:middle; }
+        .th-sort.sorted-asc .sort-arrow::after { content:'↑'; opacity:1; color:#2563eb; }
+        .th-sort.sorted-desc .sort-arrow::after { content:'↓'; opacity:1; color:#2563eb; }
+        .th-sort:not(.sorted-asc):not(.sorted-desc) .sort-arrow::after { content:'↕'; }
+        .th-sort.sorted-asc, .th-sort.sorted-desc { color:#2563eb !important; }
     </style>
 </head>
 <body class="pb-20 antialiased">
@@ -266,7 +273,7 @@
             </div>
             <div class="overflow-x-auto">
                 <table class="rtbl w-full border-collapse">
-                    <thead><tr><th>Data</th><th>Média CS</th><th>Saúde</th><th>Churn</th><th></th></tr></thead>
+                    <thead><tr><th id="th-perfil-data" class="th-sort" onclick="sortPerfil('data')">Data<span class="sort-arrow"></span></th><th id="th-perfil-media" class="th-sort" onclick="sortPerfil('media')">Média CS<span class="sort-arrow"></span></th><th id="th-perfil-saude" class="th-sort" onclick="sortPerfil('saude')">Saúde<span class="sort-arrow"></span></th><th id="th-perfil-churn" class="th-sort" onclick="sortPerfil('churn')">Churn<span class="sort-arrow"></span></th><th></th></tr></thead>
                     <tbody id="perfil-tbody"></tbody>
                 </table>
             </div>
@@ -614,7 +621,7 @@
             </div>
             <div class="overflow-x-auto">
                 <table class="tbl w-full border-collapse">
-                    <thead><tr><th>#</th><th>Analista</th><th>Coord.</th><th>Reuniões</th><th>Média</th></tr></thead>
+                    <thead><tr><th>#</th><th id="th-ranking-nome" class="th-sort" onclick="sortRanking('nome')">Analista<span class="sort-arrow"></span></th><th id="th-ranking-coordenador" class="th-sort" onclick="sortRanking('coordenador')">Coord.<span class="sort-arrow"></span></th><th id="th-ranking-total" class="th-sort" onclick="sortRanking('total')">Reuniões<span class="sort-arrow"></span></th><th id="th-ranking-media" class="th-sort" onclick="sortRanking('media')">Média<span class="sort-arrow"></span></th></tr></thead>
                     <tbody id="tbody-ranking"></tbody>
                 </table>
                 <div id="empty-ranking" class="hidden text-center py-8"><i data-lucide="inbox" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i><p class="text-sm text-slate-400">Nenhum dado disponível</p></div>
@@ -710,7 +717,7 @@
                 <thead>
                     <tr>
                         <th class="w-10"><input type="checkbox" id="select-all-cb" title="Selecionar todos" onchange="toggleSelectAll(this.checked)" /></th>
-                        <th>Data</th><th>Analista</th><th>Coordenador</th><th>Média CS</th><th>Saúde</th><th>Churn</th><th>Origem</th><th></th>
+                        <th id="th-reunioes-data" class="th-sort" onclick="sortReunioes('data')">Data<span class="sort-arrow"></span></th><th id="th-reunioes-analista" class="th-sort" onclick="sortReunioes('analista')">Analista<span class="sort-arrow"></span></th><th id="th-reunioes-coordenador" class="th-sort" onclick="sortReunioes('coordenador')">Coordenador<span class="sort-arrow"></span></th><th id="th-reunioes-media" class="th-sort" onclick="sortReunioes('media')">Média CS<span class="sort-arrow"></span></th><th id="th-reunioes-saude" class="th-sort" onclick="sortReunioes('saude')">Saúde<span class="sort-arrow"></span></th><th id="th-reunioes-churn" class="th-sort" onclick="sortReunioes('churn')">Churn<span class="sort-arrow"></span></th><th id="th-reunioes-origem" class="th-sort" onclick="sortReunioes('origem')">Origem<span class="sort-arrow"></span></th><th></th>
                     </tr>
                 </thead>
                 <tbody id="tbody-reunioes"></tbody>
@@ -991,6 +998,9 @@ const CK_LABELS = {
 };
 
 let allReunioes=[], todasReunioes=[], statsData={}, chartEvo=null, chartCoord=null, perfilRadar=null;
+let reunioesSortCol='data', reunioesSortDir=-1;
+let rankingSortCol='media', rankingSortDir=-1;
+let perfilSortCol='data', perfilSortDir=-1;
 let chartRadars=[null,null,null,null];
 let modalRadarCharts=[];
 const MODAL_RADAR_GROUPS=[
@@ -1379,8 +1389,15 @@ function renderRanking(){
     const tbody=document.getElementById('tbody-ranking'),empty=document.getElementById('empty-ranking');
     if(!ranking.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
     empty.classList.add('hidden');
+    const sorted=[...ranking].sort((a,b)=>{
+        if(rankingSortCol==='nome') return rankingSortDir*(a.nome||'').localeCompare(b.nome||'','pt');
+        if(rankingSortCol==='coordenador') return rankingSortDir*(a.coordenador||'').localeCompare(b.coordenador||'','pt');
+        if(rankingSortCol==='total') return rankingSortDir*(a.total-b.total);
+        return rankingSortDir*(a.media-b.media);
+    });
+    updateSortHeaders('ranking',rankingSortCol,rankingSortDir);
     const medals=['🥇','🥈','🥉'];
-    tbody.innerHTML=ranking.map((a,i)=>{
+    tbody.innerHTML=sorted.map((a,i)=>{
         const pos=medals[i]||(i+1);
         const cls=a.media>=4?'score-high':a.media>=3?'score-mid':'score-low';
         return `<tr onclick="abrirPerfil('${a.nome.replace(/'/g,"\\\'")}')" style="cursor:pointer">
@@ -1829,12 +1846,69 @@ function renderMelhorias(){
     lucide.createIcons();
 }
 
+function churnOrder(r){ const cv=(r.risco_churn||'').toLowerCase(); return cv.includes('alto')||cv.includes('crít')?3:cv.includes('médio')||cv.includes('medio')?2:cv.includes('baixo')?1:0; }
+function compareVal(a,b,col){
+    if(col==='data') return new Date(a.data_reuniao||a.created_at)-new Date(b.data_reuniao||b.created_at);
+    if(col==='analista') return (a.analista_nome||'').localeCompare(b.analista_nome||'','pt');
+    if(col==='coordenador') return (a.coordenador||'').localeCompare(b.coordenador||'','pt');
+    if(col==='media') return (a.media_final??0)-(b.media_final??0);
+    if(col==='saude') return (a.saude_cliente||'').localeCompare(b.saude_cliente||'','pt');
+    if(col==='churn') return churnOrder(a)-churnOrder(b);
+    if(col==='origem') return ((a.analise_json?.origem||'')>(b.analise_json?.origem||'')?1:-1);
+    return 0;
+}
+function updateSortHeaders(prefix, col, dir){
+    ['data','analista','coordenador','media','saude','churn','origem','nome','total'].forEach(c=>{
+        const el=document.getElementById('th-'+prefix+'-'+c);
+        if(!el) return;
+        el.classList.remove('sorted-asc','sorted-desc');
+        if(c===col) el.classList.add(dir===1?'sorted-asc':'sorted-desc');
+    });
+}
+function sortReunioes(col){
+    if(reunioesSortCol===col){ reunioesSortDir*=-1; } else { reunioesSortCol=col; reunioesSortDir=1; }
+    updateSortHeaders('reunioes',col,reunioesSortDir);
+    renderReunioes();
+}
+function sortRanking(col){
+    if(rankingSortCol===col){ rankingSortDir*=-1; } else { rankingSortCol=col; rankingSortDir=1; }
+    updateSortHeaders('ranking',col,rankingSortDir);
+    renderRanking();
+}
+function sortPerfil(col){
+    if(perfilSortCol===col){ perfilSortDir*=-1; } else { perfilSortCol=col; perfilSortDir=1; }
+    updateSortHeaders('perfil',col,perfilSortDir);
+    renderPerfilTabela();
+}
+function renderPerfilTabela(){
+    if(!perfilReunioesAtual) return;
+    const sorted=[...perfilReunioesAtual].sort((a,b)=>{
+        if(perfilSortCol==='data') return perfilSortDir*(new Date(a.data_reuniao||a.created_at)-new Date(b.data_reuniao||b.created_at));
+        if(perfilSortCol==='media') return perfilSortDir*((a.media_final??0)-(b.media_final??0));
+        if(perfilSortCol==='saude') return perfilSortDir*(a.saude_cliente||'').localeCompare(b.saude_cliente||'','pt');
+        if(perfilSortCol==='churn') return perfilSortDir*(churnOrder(a)-churnOrder(b));
+        return 0;
+    });
+    document.getElementById('perfil-tbody').innerHTML=sorted.map(r=>{
+        const media=r.media_final??0;
+        const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
+        const cv=(r.risco_churn||'').toLowerCase();
+        const churnCls=cv.includes('baixo')?'baixo':cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':'nd';
+        const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
+        const dataStr=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
+        return `<tr onclick="openModalId('${r.id}')" style="cursor:pointer"><td class="text-slate-500 font-semibold">${dataStr}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td></tr>`;
+    }).join('');
+    lucide.createIcons();
+}
+
 function renderReunioes(){
     const tbody=document.getElementById('tbody-reunioes'),empty=document.getElementById('empty-reunioes');
     document.getElementById('badge-total').textContent=allReunioes.length+' registros';
     if(!allReunioes.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
     empty.classList.add('hidden');
-    tbody.innerHTML=allReunioes.map(r=>{
+    const sorted=[...allReunioes].sort((a,b)=>reunioesSortDir*compareVal(a,b,reunioesSortCol));
+    updateSortHeaders('reunioes',reunioesSortCol,reunioesSortDir);
+    tbody.innerHTML=sorted.map(r=>{
         const analistaNome=r.analista_nome||'—';
         const naoId=analistaNome.toLowerCase().includes('identificado')||analistaNome==='—';
         const media=r.media_final??0;
@@ -1908,15 +1982,9 @@ function abrirPerfil(nome) {
     perfilRadar=new Chart(ctx,{type:'radar',data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Analista',data:analystVals,backgroundColor:'rgba(37,99,235,0.18)',borderColor:'#2563eb',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#2563eb',pointHoverRadius:6},{label:'Time',data:teamVals,backgroundColor:'rgba(148,163,184,0.12)',borderColor:'#94a3b8',borderWidth:1.5,pointRadius:3,pointBackgroundColor:'#94a3b8',borderDash:[4,3]}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}/5`}}},maintainAspectRatio:false}});
     gerarResumoDesempenho();
     document.getElementById('perfil-badge-total').textContent=reunioes.length+' avaliações';
-    document.getElementById('perfil-tbody').innerHTML=reunioes.map(r=>{
-        const media=r.media_final??0;
-        const pillCls=media>=4?'score-high':media>=3?'score-mid':'score-low';
-        const cv=(r.risco_churn||'').toLowerCase();
-        const churnCls=cv.includes('baixo')?'baixo':cv.includes('alto')||cv.includes('crít')?'alto':cv.includes('médio')||cv.includes('medio')?'medio':'nd';
-        const churnLabel={alto:'Alto',medio:'Médio',baixo:'Baixo',nd:'—'}[churnCls];
-        const dataStr=new Date(r.data_reuniao||r.created_at).toLocaleDateString('pt-BR');
-        return `<tr onclick="openModalId('${r.id}')" style="cursor:pointer"><td class="text-slate-500 font-semibold">${dataStr}</td><td><span class="score-pill ${pillCls}">${media.toFixed(1)}</span></td><td class="text-slate-600 text-xs">${r.saude_cliente||'—'}</td><td><span class="tag-${churnCls}">${churnLabel}</span></td><td><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></td></tr>`;
-    }).join('');
+    perfilSortCol='data'; perfilSortDir=-1;
+    renderPerfilTabela();
+    updateSortHeaders('perfil','data',-1);
     renderPlanoAcaoModal(nome, reunioes);
     document.getElementById('perfil-overlay').classList.add('open');
     document.getElementById('perfil-overlay').scrollTop=0;
