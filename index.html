@@ -1174,8 +1174,6 @@ async function executeBatch() {
         const val = document.getElementById('bm-data-input').value;
         if (!val) { alert('Selecione uma data.'); return; }
         payload = { data_reuniao: val };
-    } else if (batchAction === 'delete') {
-        if (!confirm(`Confirma a exclusão de ${ids.length} registro(s)?\nEsta ação não pode ser desfeita.`)) return;
     }
     const confirmBtn = document.getElementById('bm-confirm-btn');
     confirmBtn.disabled = true;
