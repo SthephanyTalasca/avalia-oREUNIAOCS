@@ -15,36 +15,23 @@ function getSession(req) {
     } catch { return null; }
 }
 
-// Deleta docs em lotes de 500 (limite do Firestore batch)
+// BulkWriter usa batchWrite (sem transação) — evita "Transaction too big"
 async function batchDeleteIds(ids) {
-    for (let i = 0; i < ids.length; i += 500) {
-        const batch = db.batch();
-        ids.slice(i, i + 500).forEach(id =>
-            batch.delete(db.collection('cs_reunioes').doc(String(id)))
-        );
-        await batch.commit();
-    }
+    const writer = db.bulkWriter();
+    ids.forEach(id => writer.delete(db.collection('cs_reunioes').doc(String(id))));
+    await writer.close();
 }
 
-// Atualiza docs em lotes de 500
 async function batchUpdateIds(ids, updates) {
-    for (let i = 0; i < ids.length; i += 500) {
-        const batch = db.batch();
-        ids.slice(i, i + 500).forEach(id =>
-            batch.update(db.collection('cs_reunioes').doc(String(id)), updates)
-        );
-        await batch.commit();
-    }
+    const writer = db.bulkWriter();
+    ids.forEach(id => writer.update(db.collection('cs_reunioes').doc(String(id)), updates));
+    await writer.close();
 }
 
-// Deleta todos os docs de um snapshot em lotes de 500
 async function batchDeleteSnap(snapshot) {
-    const docs = snapshot.docs;
-    for (let i = 0; i < docs.length; i += 500) {
-        const batch = db.batch();
-        docs.slice(i, i + 500).forEach(d => batch.delete(d.ref));
-        await batch.commit();
-    }
+    const writer = db.bulkWriter();
+    snapshot.docs.forEach(d => writer.delete(d.ref));
+    await writer.close();
 }
 
 export default async function handler(req, res) {
