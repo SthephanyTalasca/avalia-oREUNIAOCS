@@ -650,10 +650,20 @@
         </div>
     </div>
 
-    <!-- COORD -->
-    <div class="glass-card p-8">
-        <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-indigo-500"></i>Performance por Coordenador</h2>
-        <div style="height:260px"><canvas id="chart-coord"></canvas></div>
+    <!-- CALENDÁRIO GERAL -->
+    <div class="glass-card overflow-hidden">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4 text-blue-500"></i>Calendário de Reuniões</h2>
+            <div class="flex items-center gap-1">
+                <button onclick="calGeralNav(-1)" class="p-2 hover:bg-slate-100 rounded-xl transition-all"><i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i></button>
+                <span id="cal-geral-label" class="text-sm font-bold text-slate-700 min-w-[140px] text-center">—</span>
+                <button onclick="calGeralNav(1)" class="p-2 hover:bg-slate-100 rounded-xl transition-all"><i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i></button>
+            </div>
+        </div>
+        <div class="p-6">
+            <div id="cal-geral-grid" class="grid grid-cols-7 gap-1 text-center"></div>
+            <div id="cal-geral-day-detail" class="hidden mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200"></div>
+        </div>
     </div>
 
     <!-- INSIGHTS RESUMO (link para tab Produto) -->
@@ -683,22 +693,10 @@
         </div>
     </div>
 
-    <!-- CALENDÁRIO GERAL -->
-    <div class="flex justify-start">
-    <div class="glass-card overflow-hidden" style="max-width:320px;width:100%">
-        <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-500"></i>Calendário</h2>
-            <div class="flex items-center gap-0.5">
-                <button onclick="calGeralNav(-1)" class="p-1.5 hover:bg-slate-100 rounded-lg transition-all"><i data-lucide="chevron-left" class="w-3.5 h-3.5 text-slate-500"></i></button>
-                <span id="cal-geral-label" class="text-xs font-bold text-slate-700 min-w-[110px] text-center">—</span>
-                <button onclick="calGeralNav(1)" class="p-1.5 hover:bg-slate-100 rounded-lg transition-all"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i></button>
-            </div>
-        </div>
-        <div class="p-3">
-            <div id="cal-geral-grid" class="grid grid-cols-7 gap-0.5 text-center"></div>
-            <div id="cal-geral-day-detail" class="hidden mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200"></div>
-        </div>
-    </div>
+    <!-- COORD -->
+    <div class="glass-card p-8">
+        <h2 class="font-bold text-slate-800 mb-6 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-indigo-500"></i>Performance por Coordenador</h2>
+        <div style="height:260px"><canvas id="chart-coord"></canvas></div>
     </div>
 
     <!-- TABELA COMPLETA -->
