@@ -123,7 +123,7 @@ export default async function handler(req, res) {
             ...notasCols,
             ...porqueCols,
             ...melhoriaCols,
-            link_transcricao:       body.link_transcricao       || null,
+            link_transcricao:       body.link_transcricao || file_url || null,
             observacao_coordenador: body.observacao_coordenador || null,
             analise_json: { ...analise, file_name: file_name || null },
             created_at: FieldValue.serverTimestamp(),
