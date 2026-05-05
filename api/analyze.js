@@ -345,24 +345,26 @@ async function getMeta(transcript, numbers) {
     return safeParse(safeText(res, 'getMeta'), 'getMeta');
 }
 
+function makeTextInstruction(notasStr) {
+    return 'Auditor de CS do Nibo. Notas dos pilares (nota 1 a 5): ' + notasStr + '. ' +
+        'REGRA 1 — Pilares COM nota (listados acima): ' +
+        'porque: OBRIGATÓRIO e NÃO pode ficar vazio — se houver trecho literal relevante, cite entre aspas (Trecho: "..." | Leitura: ...); ' +
+        'se não houver trecho específico, descreva objetivamente o comportamento do CS neste pilar com base no que foi observado na transcrição. ' +
+        'melhoria: se nota=5 escreva "Excelência atingida."; para nota 1, 2, 3 ou 4 escreva 1 frase objetiva do que faltou para atingir nota 5 — NUNCA deixe vazio. ' +
+        'REGRA 2 — Pilares SEM nota (não aparecem na lista acima): porque = "Sem evidência na transcrição."; melhoria = "". ' +
+        'NUNCA invente citação que não exista na transcrição. Quando não houver trecho específico, use observação direta sobre o comportamento.';
+}
+
 async function getTextsA(transcript, numbers) {
     const group = CS_PILLARS.slice(0, 9);
     const notasStr = group
         .filter(p => numbers['nota_' + p[0]] !== null)
         .map(p    => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
         .join(', ');
-    const instruction =
-        'Auditor de CS do Nibo. Notas dos pilares (nota 1 a 5): ' + notasStr + '. ' +
-        'REGRA 1 — Pilares COM nota (listados acima, qualquer nota de 1 a 5): ' +
-        'porque: OBRIGATÓRIO para TODOS — cite 1 trecho literal curto da transcrição entre aspas e explique o impacto da conduta do CS. ' +
-        'Formato obrigatório: Trecho: "..." | Leitura: ... ' +
-        'melhoria: se nota=5 escreva "Excelência atingida."; para nota 1, 2, 3 ou 4 escreva 1 frase objetiva do que faltou para atingir nota 5. ' +
-        'REGRA 2 — Pilares SEM nota (não aparecem na lista acima): porque = "Sem evidência na transcrição."; melhoria = "". ' +
-        'NUNCA invente citação: use apenas texto que exista na transcrição.';
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
-        config: { responseMimeType: 'application/json', maxOutputTokens: 3000, systemInstruction: instruction, responseSchema: makeTextSchema(group) },
+        config: { responseMimeType: 'application/json', maxOutputTokens: 6000, systemInstruction: makeTextInstruction(notasStr), responseSchema: makeTextSchema(group) },
     });
     return safeParse(safeText(res, 'getTextsA'), 'getTextsA');
 }
@@ -373,18 +375,10 @@ async function getTextsB(transcript, numbers) {
         .filter(p => numbers['nota_' + p[0]] !== null)
         .map(p    => p[1] + ': ' + numbers['nota_' + p[0]] + '/5')
         .join(', ');
-    const instruction =
-        'Auditor de CS do Nibo. Notas dos pilares (nota 1 a 5): ' + notasStr + '. ' +
-        'REGRA 1 — Pilares COM nota (listados acima, qualquer nota de 1 a 5): ' +
-        'porque: OBRIGATÓRIO para TODOS — cite 1 trecho literal curto da transcrição entre aspas e explique o impacto da conduta do CS. ' +
-        'Formato obrigatório: Trecho: "..." | Leitura: ... ' +
-        'melhoria: se nota=5 escreva "Excelência atingida."; para nota 1, 2, 3 ou 4 escreva 1 frase objetiva do que faltou para atingir nota 5. ' +
-        'REGRA 2 — Pilares SEM nota (não aparecem na lista acima): porque = "Sem evidência na transcrição."; melhoria = "". ' +
-        'NUNCA invente citação: use apenas texto que exista na transcrição.';
     const res = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: transcript,
-        config: { responseMimeType: 'application/json', maxOutputTokens: 3000, systemInstruction: instruction, responseSchema: makeTextSchema(group) },
+        config: { responseMimeType: 'application/json', maxOutputTokens: 6000, systemInstruction: makeTextInstruction(notasStr), responseSchema: makeTextSchema(group) },
     });
     return safeParse(safeText(res, 'getTextsB'), 'getTextsB');
 }
