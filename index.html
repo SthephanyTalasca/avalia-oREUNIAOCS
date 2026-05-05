@@ -3225,8 +3225,10 @@ function renderLevantadasRanking() {
 function renderLevantadasFallback() {
     const container = document.getElementById('ranking-levantadas-container');
     const badgeEl   = document.getElementById('total-levantadas-badge');
-    document.getElementById('lev-periodo-label').textContent = 'Dados locais (Firebase offline)';
-    document.getElementById('lev-firebase-dot').style.background = '#f59e0b';
+    const _levPeriodo = document.getElementById('lev-periodo-label');
+    const _levDot = document.getElementById('lev-firebase-dot');
+    if (_levPeriodo) _levPeriodo.textContent = 'Dados locais (Firebase offline)';
+    if (_levDot) _levDot.style.background = '#f59e0b';
 
     // Agrega oportunidades locais respeitando filtros via todasReunioes
     const base = todasReunioes.length ? todasReunioes : allReunioes;
