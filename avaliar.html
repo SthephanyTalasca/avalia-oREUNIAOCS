@@ -116,7 +116,11 @@
                     <input id="link-transcricao" type="url"
                         class="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 text-sm transition-all"
                         style="--tw-ring-color:#c4b5fd"
-                        placeholder="https://drive.google.com/... (opcional)" />
+                        placeholder="https://docs.google.com/document/d/... (opcional)" />
+                    <div id="link-transcricao-erro" class="hidden mt-2 flex items-start gap-2 px-4 py-3 rounded-xl border border-red-200 bg-red-50">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5"></i>
+                        <p class="text-[11px] font-semibold text-red-700 leading-snug">Este link é um arquivo do Drive (provavelmente o chat da gravação), não uma transcrição. Use um link do Google Docs: <span class="font-black">docs.google.com/document/d/...</span></p>
+                    </div>
                 </div>
                 <div>
                     <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-2 flex items-center gap-1.5">
@@ -559,6 +563,27 @@ function closePdfViewer(){
     setTimeout(()=>modal.classList.replace('flex','hidden'),300);
 }
 
+// ── Validação link da transcrição ────────────────────────────────────────
+function isLinkDriveFile(url){
+    return /drive\.google\.com\/file\/d\//i.test(url);
+}
+function validateLinkTranscricao(){
+    const val=document.getElementById('link-transcricao').value.trim();
+    const erro=document.getElementById('link-transcricao-erro');
+    const input=document.getElementById('link-transcricao');
+    if(val && isLinkDriveFile(val)){
+        erro.classList.remove('hidden');
+        input.style.borderColor='#fca5a5';
+        lucide.createIcons();
+        return false;
+    }
+    erro.classList.add('hidden');
+    input.style.borderColor='';
+    return true;
+}
+document.getElementById('link-transcricao').addEventListener('input',validateLinkTranscricao);
+document.getElementById('link-transcricao').addEventListener('blur',validateLinkTranscricao);
+
 // ── Toast ───────────────────────────────────────────────────────────────
 function showToast(msg,color){
     color=color||'bg-emerald-500';
@@ -601,6 +626,11 @@ const analyzeBtn=document.getElementById('analyze-btn');
 async function handleAnalysis(){
     const prompt=document.getElementById('transcript-input').value.trim();
     if(!prompt){alert('Cole uma transcrição antes de analisar.');return;}
+    if(!validateLinkTranscricao()){
+        document.getElementById('link-transcricao').focus();
+        showToast('⚠️ O link informado é um arquivo do Drive, não uma transcrição. Corrija antes de analisar.','bg-red-600');
+        return;
+    }
     const coordinator=document.getElementById('coordinator-select').value;
     const linkTranscricao=document.getElementById('link-transcricao').value.trim()||null;
     const observacaoCoord=document.getElementById('observacao-coordenador').value.trim()||null;
