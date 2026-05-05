@@ -46,12 +46,18 @@ export default async function handler(req, res) {
 
         if (data_inicio) {
             const from = new Date(data_inicio);
-            reunioes = reunioes.filter(r => r.created_at && new Date(r.created_at) >= from);
+            reunioes = reunioes.filter(r => {
+                const d = r.data_reuniao || r.created_at;
+                return d && new Date(d) >= from;
+            });
         }
 
         if (data_fim) {
             const to = new Date(data_fim); to.setHours(23, 59, 59, 999);
-            reunioes = reunioes.filter(r => r.created_at && new Date(r.created_at) <= to);
+            reunioes = reunioes.filter(r => {
+                const d = r.data_reuniao || r.created_at;
+                return d && new Date(d) <= to;
+            });
         }
 
         if (origem === 'auto') {
