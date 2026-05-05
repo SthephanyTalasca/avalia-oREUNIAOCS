@@ -274,6 +274,28 @@
             <div style="position:relative;width:100%;height:380px"><canvas id="perfil-radar"></canvas></div>
         </div>
         <div id="perfil-pilares" class="hidden"></div>
+        <!-- DESEMPENHO POR PRODUTO -->
+        <div class="glass-card p-6" id="perfil-produtos-card">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2 mb-1">
+                <i data-lucide="package" class="w-4 h-4 text-indigo-500"></i>Desempenho por Produto
+                <span class="text-[10px] font-normal text-slate-400 ml-1">média das avaliações por produto citado</span>
+            </h3>
+            <div id="perfil-produtos" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-4"></div>
+        </div>
+        <!-- PADRÕES RECORRENTES IA -->
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="repeat" class="w-4 h-4 text-rose-500"></i>Padrões que se Repetem
+                </h3>
+                <button onclick="gerarPadroesRecorrentes()" id="btn-padroes-reload" class="p-1.5 hover:bg-slate-100 rounded-lg transition-all" title="Regenerar">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+            </div>
+            <div id="perfil-padroes" class="text-sm text-slate-600 leading-relaxed min-h-[60px] flex items-center justify-center">
+                <p class="text-slate-300 text-xs">—</p>
+            </div>
+        </div>
         <!-- RESUMO DE DESEMPENHO IA -->
         <div class="glass-card p-6">
             <div class="flex items-center justify-between mb-4">
@@ -758,127 +780,47 @@
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div id="tab-cs" class="space-y-6 hidden">
 
-        <!-- ALERTA DE O.I GERAL ── Firebase: rankings_copiados ── -->
-        <div class="glass-card overflow-hidden border-l-[6px] border-amber-400">
-            <div class="px-8 py-5 bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-100 flex items-center justify-between flex-wrap gap-3">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center oi-pulse">
-                        <i data-lucide="bell-ring" class="w-5 h-5 text-amber-600"></i>
-                    </div>
+        <!-- PAINEL PESSOAL -->
+        <div class="space-y-5">
+
+            <div id="cs-painel-vazio" class="glass-card p-10 text-center">
+                <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="user-search" class="w-7 h-7 text-slate-300"></i>
+                </div>
+                <p class="font-bold text-slate-600 mb-1">Selecione um Analista no filtro global</p>
+                <p class="text-xs text-slate-400 max-w-xs mx-auto">Para ver seu desempenho individual, escolha seu nome no filtro "Todos os analistas" acima.</p>
+            </div>
+
+            <div id="cs-painel-pessoal" class="hidden glass-card p-8 border-l-[6px] border-blue-600">
+                <div class="flex items-start justify-between flex-wrap gap-4 mb-6 border-b border-slate-100 pb-5">
                     <div>
-                        <h3 class="font-extrabold text-slate-800 text-base flex items-center gap-2">
-                            Alertas de O.I Geral
-                            <span id="oi-count-badge" class="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">0</span>
-                        </h3>
-                        <p class="text-xs text-amber-600 font-semibold mt-0.5">Oportunidades de Improvement · Atualizado em tempo real via Firebase</p>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Desempenho Individual</p>
+                        <h2 class="text-2xl font-extrabold text-[#002d72]" id="cs-nome-label">—</h2>
                     </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div id="oi-firebase-status" class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
-                        <span class="w-2 h-2 rounded-full bg-slate-300 inline-block" id="oi-status-dot"></span>
-                        <span id="oi-status-label">Aguardando conexão Firebase...</span>
-                    </div>
-                    <button onclick="loadOIFromFirebase()" class="p-2 hover:bg-amber-100 rounded-xl transition-all" title="Recarregar OI">
-                        <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-500"></i>
+                    <button onclick="abrirPerfilIndividual()" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4"></i>Relatório Completo
                     </button>
                 </div>
-            </div>
-            <div class="p-6">
-                <!-- Filtros OI -->
-                <div class="flex items-center gap-3 mb-5 flex-wrap">
-                    <div class="flex rounded-xl border border-slate-200 p-0.5 bg-slate-50">
-                        <button onclick="filtrarOI('todos')" id="oi-filter-todos" class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all bg-amber-500 text-white">Todos</button>
-                        <button onclick="filtrarOI('critico')" id="oi-filter-critico" class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all text-slate-400">Crítico</button>
-                        <button onclick="filtrarOI('melhoria')" id="oi-filter-melhoria" class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all text-slate-400">Melhoria</button>
-                        <button onclick="filtrarOI('bug')" id="oi-filter-bug" class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all text-slate-400">Bug</button>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                    <div class="bg-blue-50 rounded-2xl p-4 text-center border border-blue-100">
+                        <div id="cs-media-label" class="text-4xl font-black text-blue-700 mb-0.5">—</div>
+                        <div class="text-[9px] font-bold text-blue-600 uppercase tracking-wide">Média no Período</div>
                     </div>
-                    <span id="oi-periodo-label" class="text-[10px] text-slate-400 font-semibold ml-auto"></span>
-                </div>
-                <!-- Lista OI -->
-                <div id="oi-geral-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div class="col-span-full text-center py-10 text-slate-400">
-                        <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <i data-lucide="wifi-off" class="w-6 h-6 text-amber-300"></i>
-                        </div>
-                        <p class="font-bold text-sm text-slate-500 mb-1">Firebase ainda não configurado</p>
-                        <p class="text-xs text-slate-400 max-w-xs mx-auto">Configure as credenciais do Firebase para visualizar os alertas de O.I em tempo real.</p>
+                    <div class="bg-slate-50 rounded-2xl p-4 text-center border border-slate-200">
+                        <div id="cs-total-label" class="text-4xl font-black text-slate-700 mb-0.5">—</div>
+                        <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Avaliações</div>
+                    </div>
+                    <div class="bg-emerald-50 rounded-2xl p-4 text-center border border-emerald-100">
+                        <div id="cs-melhor-label" class="text-4xl font-black text-emerald-600 mb-0.5">—</div>
+                        <div class="text-[9px] font-bold text-emerald-600 uppercase tracking-wide">Melhor Nota</div>
+                    </div>
+                    <div class="bg-violet-50 rounded-2xl p-4 text-center border border-violet-100">
+                        <div id="cs-levantadas-label" class="text-4xl font-black text-violet-600 mb-0.5">—</div>
+                        <div class="text-[9px] font-bold text-violet-600 uppercase tracking-wide">Levantadas</div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- PAINEL PESSOAL + LEVANTADAS -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            <!-- Painel Pessoal -->
-            <div class="lg:col-span-2 space-y-5">
-
-                <div id="cs-painel-vazio" class="glass-card p-10 text-center">
-                    <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="user-search" class="w-7 h-7 text-slate-300"></i>
-                    </div>
-                    <p class="font-bold text-slate-600 mb-1">Selecione um Analista no filtro global</p>
-                    <p class="text-xs text-slate-400 max-w-xs mx-auto">Para ver seu desempenho individual, escolha seu nome no filtro "Todos os analistas" acima.</p>
-                </div>
-
-                <div id="cs-painel-pessoal" class="hidden glass-card p-8 border-l-[6px] border-blue-600">
-                    <div class="flex items-start justify-between flex-wrap gap-4 mb-6 border-b border-slate-100 pb-5">
-                        <div>
-                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Desempenho Individual</p>
-                            <h2 class="text-2xl font-extrabold text-[#002d72]" id="cs-nome-label">—</h2>
-                        </div>
-                        <button onclick="abrirPerfilIndividual()" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow">
-                            <i data-lucide="bar-chart-2" class="w-4 h-4"></i>Relatório Completo
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-                        <div class="bg-blue-50 rounded-2xl p-4 text-center border border-blue-100">
-                            <div id="cs-media-label" class="text-4xl font-black text-blue-700 mb-0.5">—</div>
-                            <div class="text-[9px] font-bold text-blue-600 uppercase tracking-wide">Média no Período</div>
-                        </div>
-                        <div class="bg-slate-50 rounded-2xl p-4 text-center border border-slate-200">
-                            <div id="cs-total-label" class="text-4xl font-black text-slate-700 mb-0.5">—</div>
-                            <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Avaliações</div>
-                        </div>
-                        <div class="bg-emerald-50 rounded-2xl p-4 text-center border border-emerald-100">
-                            <div id="cs-melhor-label" class="text-4xl font-black text-emerald-600 mb-0.5">—</div>
-                            <div class="text-[9px] font-bold text-emerald-600 uppercase tracking-wide">Melhor Nota</div>
-                        </div>
-                        <div class="bg-violet-50 rounded-2xl p-4 text-center border border-violet-100">
-                            <div id="cs-levantadas-label" class="text-4xl font-black text-violet-600 mb-0.5">—</div>
-                            <div class="text-[9px] font-bold text-violet-600 uppercase tracking-wide">Levantadas</div>
-                        </div>
-                    </div>
-                    <!-- Barra de pilares do analista -->
-                    <div id="cs-pilares-resumo" class="space-y-1.5"></div>
-                </div>
-
-            </div>
-
-            <!-- TOP LEVANTADAS (Firebase: rankings_copiados) -->
-            <div class="glass-card p-6 border-t-[5px] border-purple-600">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-extrabold text-slate-800 flex items-center gap-2">
-                        <i data-lucide="megaphone" class="w-5 h-5 text-purple-500"></i>Top Levantadas
-                    </h3>
-                    <div class="flex items-center gap-2">
-                        <span id="lev-firebase-dot" class="w-2 h-2 rounded-full bg-slate-300" title="Status Firebase"></span>
-                        <span id="total-levantadas-badge" class="px-2.5 py-1 bg-purple-100 text-purple-700 text-[10px] font-black rounded-lg">0</span>
-                    </div>
-                </div>
-                <p id="lev-periodo-label" class="text-[10px] text-slate-400 font-semibold mb-4">—</p>
-                <p class="text-[10px] text-slate-500 mb-4 leading-relaxed">Ranking de engajamento do time — bugs, melhorias e desalinhamentos levantados no período de importação.</p>
-                <div id="ranking-levantadas-container" class="space-y-2.5">
-                    <div class="text-center py-6 text-slate-400 text-xs">
-                        <i data-lucide="loader" class="w-5 h-5 mx-auto mb-2 animate-spin text-purple-300"></i>
-                        Carregando do Firebase...
-                    </div>
-                </div>
-                <div class="mt-4 pt-4 border-t border-slate-100">
-                    <button onclick="loadLevantadasFirebase()" class="w-full text-[10px] font-black uppercase tracking-widest text-purple-500 hover:text-purple-700 flex items-center justify-center gap-1.5 transition-all">
-                        <i data-lucide="refresh-cw" class="w-3 h-3"></i>Atualizar do Firebase
-                    </button>
-                </div>
+                <!-- Barra de pilares do analista -->
+                <div id="cs-pilares-resumo" class="space-y-1.5"></div>
             </div>
 
         </div>
@@ -1042,6 +984,7 @@ const RADAR_GROUPS=[
 let destaquesMelhor=null, destaquesAtivo=null;
 let editandoId=null;
 let perfilReunioesAtual=[], perfilCalYear=new Date().getFullYear(), perfilCalMonth=new Date().getMonth();
+let perfilProdutosAtual=[];
 let equipeData=[];
 let mostrandoInativos=false;
 
@@ -1493,6 +1436,21 @@ function renderRanking(){
 
 function renderRadars(){
     const pt=statsData.pilaresTime||{};
+    const radarValPlugin={id:'radarVals',afterDatasetsDraw(chart){
+        const ctx=chart.ctx,ds=chart.data.datasets[0],meta=chart.getDatasetMeta(0);
+        const cx=chart.scales.r.xCenter,cy=chart.scales.r.yCenter;
+        ctx.save();
+        ctx.font='800 9px "Plus Jakarta Sans",sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        meta.data.forEach((p,i)=>{
+            const v=ds.data[i]; if(!v) return;
+            const dx=p.x-cx,dy=p.y-cy,len=Math.sqrt(dx*dx+dy*dy)||1;
+            const off=12,tx=p.x+dx/len*off,ty=p.y+dy/len*off;
+            ctx.fillStyle=ds.borderColor;
+            ctx.fillText(v.toFixed(1),tx,ty);
+        });
+        ctx.restore();
+    }};
     RADAR_GROUPS.forEach((grp,i)=>{
         const canvas=document.getElementById(grp.id);
         if(!canvas) return;
@@ -1501,9 +1459,10 @@ function renderRadars(){
             type:'radar',
             data:{
                 labels:grp.pillars.map(p=>p.l),
-                datasets:[{data:grp.pillars.map(p=>pt[p.k]||0),backgroundColor:grp.color+'22',borderColor:grp.color,borderWidth:2,pointBackgroundColor:grp.color,pointRadius:3,pointHoverRadius:5}]
+                datasets:[{data:grp.pillars.map(p=>pt[p.k]||0),backgroundColor:grp.color+'22',borderColor:grp.color,borderWidth:2,pointBackgroundColor:grp.color,pointRadius:4,pointHoverRadius:6}]
             },
-            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw.toFixed(1)}`}}},scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:7},display:false},pointLabels:{font:{size:8,weight:'700'}},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'}}}}
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:7},display:false},pointLabels:{font:{size:8,weight:'700'}},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'}}}},
+            plugins:[radarValPlugin]
         });
     });
 }
@@ -2061,7 +2020,42 @@ function abrirPerfil(nome) {
     const analystVals=PILLARS.map(p=>{const v=reunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;});
     const teamVals=PILLARS.map(p=>{const v=allReunioes.map(r=>r['nota_'+p.k]).filter(x=>x!=null);return v.length?+avgArr(v).toFixed(1):0;});
     perfilRadar=new Chart(ctx,{type:'radar',data:{labels:PILLARS.map(p=>p.l),datasets:[{label:'Analista',data:analystVals,backgroundColor:'rgba(37,99,235,0.18)',borderColor:'#2563eb',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#2563eb',pointHoverRadius:6},{label:'Time',data:teamVals,backgroundColor:'rgba(148,163,184,0.12)',borderColor:'#94a3b8',borderWidth:1.5,pointRadius:3,pointBackgroundColor:'#94a3b8',borderDash:[4,3]}]},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:8,weight:'700'},color:'#475569'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}/5`}}},maintainAspectRatio:false}});
+
+    // Nota por produto
+    const prodMap={};
+    reunioes.forEach(r=>{
+        const prod=(r.produto_reuniao||r.analise_json?.produto_reuniao||'Não identificado').trim();
+        if(!prodMap[prod]) prodMap[prod]=[];
+        if(r.media_final!=null) prodMap[prod].push(r.media_final);
+    });
+    const produtosNotas=Object.entries(prodMap)
+        .map(([nome,vals])=>({nome,media:vals.length?+(vals.reduce((s,v)=>s+v,0)/vals.length).toFixed(1):null,count:vals.length}))
+        .filter(p=>p.media!==null)
+        .sort((a,b)=>b.count-a.count);
+    perfilProdutosAtual=produtosNotas;
+    const prodEl=document.getElementById('perfil-produtos');
+    const prodCard=document.getElementById('perfil-produtos-card');
+    if(prodEl){
+        if(!produtosNotas.length){
+            if(prodCard) prodCard.classList.add('hidden');
+        } else {
+            if(prodCard) prodCard.classList.remove('hidden');
+            prodEl.innerHTML=produtosNotas.map(p=>{
+                const color=p.media>=4?'#059669':p.media>=3?'#d97706':'#dc2626';
+                const bg=p.media>=4?'#ecfdf5':p.media>=3?'#fffbeb':'#fef2f2';
+                const border=p.media>=4?'#a7f3d0':p.media>=3?'#fde68a':'#fecaca';
+                const label=p.media>=4?'Bom':'Atenção';
+                return `<div class="rounded-2xl p-4 border text-center" style="background:${bg};border-color:${border}">
+                    <div class="text-[10px] font-black uppercase tracking-wide mb-1.5 truncate" style="color:${color}">${p.nome}</div>
+                    <div class="text-3xl font-black mb-1" style="color:${color}">${p.media}</div>
+                    <div class="text-[9px] font-semibold" style="color:${color}">${label} · ${p.count} reun.</div>
+                </div>`;
+            }).join('');
+        }
+    }
+
     gerarResumoDesempenho();
+    gerarPadroesRecorrentes();
     document.getElementById('perfil-badge-total').textContent=reunioes.length+' avaliações';
     perfilSortCol='data'; perfilSortDir=-1;
     renderPerfilTabela();
@@ -2172,6 +2166,34 @@ async function gerarResumoDesempenho(){
     }finally{
         if(btn) btn.disabled=false;
         lucide.createIcons();
+    }
+}
+
+// ── PADRÕES RECORRENTES IA ────────────────────────────────────────────────
+async function gerarPadroesRecorrentes(){
+    const container=document.getElementById('perfil-padroes');
+    if(!container||!perfilReunioesAtual.length) return;
+    container.innerHTML='<p class="text-slate-400 text-xs flex items-center gap-2"><span class="animate-spin inline-block w-3 h-3 border-2 border-rose-200 border-t-rose-500 rounded-full"></span>Identificando padrões com IA...</p>';
+    const btn=document.getElementById('btn-padroes-reload');
+    if(btn) btn.disabled=true;
+
+    const reunioes=[...perfilReunioesAtual];
+    const nome=perfilNomeAtual||reunioes[0]?.analista_nome||'—';
+    const resumos=reunioes.map(r=>r.analise_json?.resumo_executivo||'').filter(Boolean);
+    const atencao=reunioes.flatMap(r=>r.analise_json?.pontos_atencao||[]);
+    const fortes=reunioes.flatMap(r=>r.analise_json?.pontos_fortes||[]);
+    const produtosNotas=perfilProdutosAtual;
+
+    try{
+        const res=await fetch('/api/melhorias-ai',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({action:'padroes_reunioes',analista:nome,totalAvaliacoes:reunioes.length,resumos,atencao,fortes,produtosNotas})});
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.error);
+        container.innerHTML=`<p class="text-sm text-slate-700 leading-relaxed">${data.padroes.replace(/\n/g,'<br>')}</p>`;
+    }catch(e){
+        container.innerHTML=`<p class="text-xs text-red-400">Erro ao identificar padrões: ${e.message}</p>`;
+    }finally{
+        if(btn) btn.disabled=false;
     }
 }
 
@@ -3235,8 +3257,6 @@ function renderLevantadasFallback() {
 // ═══════════════════════════════════════════════════════════════
 function renderPainelCS() {
     renderAlertasOILocal();
-    loadOIFromFirebase();
-    loadLevantadasFirebase();
 
     const analista = document.getElementById('f-analista').value;
     const panel  = document.getElementById('cs-painel-pessoal');

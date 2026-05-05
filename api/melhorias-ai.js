@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(204).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido.' });
 
-    const { action, melhorias, produto, analista, periodo, mediaGeral, totalAvaliacoes, pilaresDestaque, pilaresAtencao, tendencia, fortes, atencao, resumos } = req.body || {};
+    const { action, melhorias, produto, analista, periodo, mediaGeral, totalAvaliacoes, pilaresDestaque, pilaresAtencao, tendencia, fortes, atencao, resumos, produtosNotas } = req.body || {};
 
     // ── RESUMO PERFIL ANALISTA ───────────────────────────────────────────────
     if (action === 'resumo_perfil') {
@@ -20,6 +20,51 @@ export default async function handler(req, res) {
             return res.status(200).json({ resumo: result.text });
         } catch (e) {
             console.error('melhorias-ai resumo_perfil erro:', e.message);
+            return res.status(500).json({ error: e.message });
+        }
+    }
+
+    // ── PADRÕES RECORRENTES ──────────────────────────────────────────────────
+    if (action === 'padroes_reunioes') {
+        if (!analista || !totalAvaliacoes) return res.status(400).json({ error: 'Dados insuficientes.' });
+
+        const produtosStr = produtosNotas?.length
+            ? produtosNotas.map(p => `- ${p.nome}: ${p.media}/5 (${p.count} reuniões)`).join('\n')
+            : '- Sem dados de produto';
+
+        const atencaoStr = atencao?.length
+            ? [...new Set(atencao)].slice(0, 8).map(a => `- ${a}`).join('\n')
+            : '- Sem dados';
+
+        const fortesStr = fortes?.length
+            ? [...new Set(fortes)].slice(0, 8).map(f => `- ${f}`).join('\n')
+            : '- Sem dados';
+
+        const resumosStr = resumos?.length
+            ? resumos.slice(0, 6).map((r, i) => `${i + 1}. ${r}`).join('\n')
+            : '- Sem dados';
+
+        const prompt = `Você é um coordenador de Customer Success sênior do Nibo analisando padrões nas reuniões do analista ${analista} (${totalAvaliacoes} avaliações no período).
+
+Nota por produto (média das reuniões onde cada produto foi citado):
+${produtosStr}
+
+Pontos de atenção mais citados nas reuniões:
+${atencaoStr}
+
+Pontos fortes mais citados:
+${fortesStr}
+
+Resumos de reuniões recentes:
+${resumosStr}
+
+Com base nesses dados, identifique de 2 a 4 padrões que se repetem com mais frequência nessas reuniões. Para cada padrão, diga: o que está se repetindo, se é algo positivo ou um ponto de atenção, e em quais produtos ou situações aparece mais. Mencione também se há algum produto com nota abaixo do esperado que mereça atenção especial. Escreva em formato de texto corrido, em português, de forma objetiva e direta. Máximo de 6 frases.`;
+
+        try {
+            const result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { maxOutputTokens: 500 } });
+            return res.status(200).json({ padroes: result.text });
+        } catch (e) {
+            console.error('melhorias-ai padroes_reunioes erro:', e.message);
             return res.status(500).json({ error: e.message });
         }
     }
