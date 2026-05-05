@@ -524,6 +524,7 @@
             </div>
             <select id="f-coordenador" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50"><option value="">Todos os coordenadores</option></select>
             <select id="f-analista" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50"><option value="">Todos os analistas</option></select>
+            <select id="f-origem" class="p-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50"><option value="">Todas as origens</option><option value="auto">Automático (Drive)</option><option value="manual">Manual</option></select>
             <div class="flex gap-2">
                 <button onclick="loadData()" class="flex-1 bg-blue-600 hover:bg-[#002d72] text-white font-bold py-2.5 rounded-xl transition-all text-sm">Aplicar</button>
                 <button onclick="limparFiltros()" class="px-3 py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 font-bold rounded-xl transition-all text-xs flex items-center gap-1" title="Limpar filtros"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i>Limpar</button>
@@ -1211,11 +1212,13 @@ async function loadData() {
         const ate=document.getElementById('f-data-fim').value;
         const coord=document.getElementById('f-coordenador').value;
         const anal=document.getElementById('f-analista').value;
+        const orig=document.getElementById('f-origem').value;
         const params = new URLSearchParams();
         if(de)  params.append('data_inicio',de);
         if(ate) params.append('data_fim',ate);
         if(coord) params.append('coordenador',coord);
         if(anal) params.append('analista',anal);
+        if(orig) params.append('origem',orig);
         const [res, resTodas] = await Promise.all([
             fetch('/api/dashboard?'+params.toString()),
             fetch('/api/dashboard').catch(()=>null)
@@ -1314,6 +1317,7 @@ function limparFiltros() {
     document.getElementById('f-data-fim').value = '';
     document.getElementById('f-coordenador').value = '';
     document.getElementById('f-analista').value = '';
+    document.getElementById('f-origem').value = '';
     loadData();
 }
 
