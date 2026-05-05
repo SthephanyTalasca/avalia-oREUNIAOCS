@@ -125,7 +125,7 @@ export default async function handler(req, res) {
             ...melhoriaCols,
             link_transcricao:       body.link_transcricao || file_url || null,
             observacao_coordenador: body.observacao_coordenador || null,
-            analise_json: { ...analise, file_name: file_name || null },
+            analise_json: { ...analise, file_name: file_name || null, origem: 'drive_automatico' },
             created_at: FieldValue.serverTimestamp(),
         };
 
