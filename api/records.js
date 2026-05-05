@@ -105,6 +105,22 @@ export default async function handler(req, res) {
                 await batchDeleteSnap(snap);
                 count = snap.size;
 
+            } else if (modo === 'drive_file_link') {
+                if (email !== ADMIN_EMAIL)
+                    return res.status(403).json({ error: 'Apenas admin pode executar esta limpeza.' });
+                const snap = await db.collection('cs_reunioes').get();
+                const toDelete = snap.docs.filter(d => {
+                    const link = d.data().link_transcricao || '';
+                    return /drive\.google\.com\/file\/d\//i.test(link);
+                });
+                for (let i = 0; i < toDelete.length; i += 500) {
+                    const batch = db.batch();
+                    toDelete.slice(i, i + 500).forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                }
+                count = toDelete.length;
+                console.log(`🗑️ drive_file_link cleanup por ${email} — ${count} registros deletados`);
+
             } else if (modo === 'nao_id') {
                 const snap = await db.collection('cs_reunioes').get();
                 const toDelete = snap.docs.filter(d =>

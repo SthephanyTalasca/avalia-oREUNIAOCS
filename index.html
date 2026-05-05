@@ -480,6 +480,9 @@
             <button id="btn-migrate" class="hidden items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-bold transition-all shadow" onclick="reprocessarDados()">
                 <i data-lucide="refresh-ccw" class="w-4 h-4"></i>Reprocessar dados
             </button>
+            <button id="btn-clean-drive" class="hidden items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-sm font-bold transition-all shadow" onclick="cleanDriveFileLinks()">
+                <i data-lucide="link-2-off" class="w-4 h-4"></i>Limpar drive/file
+            </button>
             <button id="btn-clear-all" class="hidden items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow" onclick="clearAllData()">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>Limpar tudo
             </button>
@@ -2603,11 +2606,23 @@ async function checkAuthAndLoad(){
             btn.classList.remove('hidden');btn.classList.add('flex');
             const btnMig=document.getElementById('btn-migrate');
             btnMig.classList.remove('hidden');btnMig.classList.add('flex');
+            const btnDrive=document.getElementById('btn-clean-drive');
+            btnDrive.classList.remove('hidden');btnDrive.classList.add('flex');
         }
         // Inicializa edição em lote para usuários autorizados
         initBatchForUser(user.email);
         loadData();
     }catch(e){window.location.href='/api/auth';}
+}
+
+async function cleanDriveFileLinks(){
+    if(!confirm('⚠️ Isso vai deletar todos os registros cujo link da transcrição é do tipo drive.google.com/file/d/ (chats de gravação).\n\nEssas análises têm notas inválidas. Confirma a exclusão?')) return;
+    try{
+        const res=await fetch('/api/records',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({modo:'drive_file_link'})});
+        const data=await res.json();if(!res.ok) throw new Error(data.error);
+        showToast(`🗑️ ${data.count} registro(s) com link drive/file excluídos.`,'bg-orange-600');
+        await loadData();
+    }catch(err){alert('Erro: '+err.message);}
 }
 
 async function clearAllData(){
