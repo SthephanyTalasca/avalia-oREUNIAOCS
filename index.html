@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -92,6 +92,27 @@
         .th-sort.sorted-desc .sort-arrow::after { content:'↓'; opacity:1; color:#2563eb; }
         .th-sort:not(.sorted-asc):not(.sorted-desc) .sort-arrow::after { content:'↕'; }
         .th-sort.sorted-asc, .th-sort.sorted-desc { color:#2563eb !important; }
+        /* ── Levantadas Tab ─────────────────────────────────────────────── */
+        .lev-progress-track { background:#e2e8f0; border-radius:99px; height:10px; overflow:hidden; }
+        .lev-progress-fill { height:100%; border-radius:99px; transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1); background:linear-gradient(90deg,#7c3aed,#a855f7); }
+        .lev-progress-fill.complete { background:linear-gradient(90deg,#10b981,#34d399); }
+        .lev-autocomplete { position:absolute; z-index:50; background:white; border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); max-height:200px; overflow-y:auto; width:100%; top:calc(100% + 4px); left:0; }
+        .lev-autocomplete li { padding:9px 14px; cursor:pointer; font-size:0.875rem; color:#334155; }
+        .lev-autocomplete li:hover, .lev-autocomplete li.active { background:#f5f0ff; color:#7c3aed; }
+        .lev-evolucao-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f1f5f9; }
+        .lev-evolucao-row:last-child { border-bottom:none; }
+        .lev-evolucao-bar-bg { flex:1; background:#f1f5f9; border-radius:99px; height:8px; overflow:hidden; }
+        .lev-evolucao-bar-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#7c3aed,#a855f7); transition:width 0.6s ease; }
+        .lev-delta { font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:99px; }
+        .lev-delta-up { background:#dcfce7; color:#15803d; }
+        .lev-delta-same { background:#f1f5f9; color:#94a3b8; }
+        .lev-delta-down { background:#fee2e2; color:#dc2626; }
+        .lev-sub-btn { transition:all 0.2s; border-bottom:2px solid transparent; padding:0.6rem 1.25rem; font-size:0.82rem; font-weight:700; color:#64748b; }
+        .lev-sub-btn.ativa { color:#7c3aed; border-bottom-color:#7c3aed; }
+        .lev-periodo-btn { padding:6px 14px; border-radius:99px; font-size:0.78rem; font-weight:600; border:1px solid #e2e8f0; background:white; cursor:pointer; transition:all 0.15s; color:#64748b; }
+        .lev-periodo-btn.ativo { background:#7c3aed; color:white; border-color:#7c3aed; }
+        .lev-cp-card { background:white; border-radius:16px; border:1px solid #e2e8f0; padding:1rem; transition:box-shadow 0.2s; }
+        .lev-cp-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); }
     </style>
 </head>
 <body class="pb-20 antialiased">
@@ -528,6 +549,10 @@
             class="tab-btn-inactive tab-btn px-6 py-3.5 font-extrabold text-sm border-b-[3px] transition-all whitespace-nowrap rounded-t-xl flex items-center gap-2">
             <i data-lucide="lightbulb" class="w-4 h-4"></i>Produto &amp; Insights
         </button>
+        <button onclick="switchTab('levantadas')" id="tab-btn-levantadas"
+            class="tab-btn-inactive tab-btn px-6 py-3.5 font-extrabold text-sm border-b-[3px] transition-all whitespace-nowrap rounded-t-xl flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>Levantadas
+        </button>
     </div>
 </div>
 
@@ -921,6 +946,209 @@
         </div>
 
     </div><!-- /tab-produto -->
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TAB 4: LEVANTADAS                                           -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="tab-levantadas" class="space-y-6 hidden">
+
+        <!-- Status + Sub-tabs -->
+        <div class="flex items-center justify-between border-b border-slate-200 pb-0">
+            <div class="flex gap-0">
+                <button class="lev-sub-btn ativa" onclick="levTrocarSubAba('leitor', this)">📥 Leitor de Dados</button>
+                <button class="lev-sub-btn" onclick="levTrocarSubAba('acompanhamento', this)">📈 Acompanhamento</button>
+            </div>
+            <div class="flex items-center gap-1.5 pb-3">
+                <div id="lev-firebase-dot" class="w-2 h-2 rounded-full bg-amber-400"></div>
+                <span class="text-xs text-slate-400 font-semibold">Firebase</span>
+            </div>
+        </div>
+
+        <!-- ── Sub-aba: Leitor de Dados ── -->
+        <div id="lev-sub-leitor" class="space-y-5">
+
+            <!-- Meta do mês -->
+            <div class="glass-card p-6 border-l-[6px] border-violet-500">
+                <h2 class="font-bold text-slate-700 mb-1 flex items-center gap-2"><i data-lucide="target" class="w-4 h-4 text-violet-500"></i>Meta do Mês</h2>
+                <p class="text-xs text-slate-500 mb-3">Defina a meta de levantadas da equipe para ver o progresso no relatório.</p>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <input type="number" id="lev-meta-mes" min="1" placeholder="Ex: 150"
+                        class="w-36 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-300 outline-none text-sm bg-slate-50"/>
+                    <span class="text-sm text-slate-500">levantadas</span>
+                </div>
+            </div>
+
+            <!-- Gerenciar Equipe -->
+            <div class="glass-card p-6 border-l-[6px] border-amber-400">
+                <div class="flex items-center justify-between cursor-pointer" onclick="levToggleAdmin()">
+                    <h2 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-amber-500"></i>Gerenciar Equipe</h2>
+                    <i id="lev-admin-chevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+                </div>
+                <div id="lev-admin-content" class="hidden mt-4">
+                    <p class="text-xs text-slate-400 mb-3">Gerencie analistas do ranking e membros ativos da equipe CS.</p>
+                    <div class="flex gap-1 mb-4 bg-slate-100 p-1 rounded-xl w-fit">
+                        <button id="lev-tab-analistas" onclick="levTrocarTabAdmin('analistas')" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 shadow-sm transition-all">📊 cs_analistas</button>
+                        <button id="lev-tab-membros" onclick="levTrocarTabAdmin('membros')" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 transition-all">👥 cs_membros</button>
+                    </div>
+                    <div class="flex gap-3 mb-4">
+                        <input type="text" id="lev-novo-analista" placeholder="Nome completo"
+                            onkeydown="if(event.key==='Enter') levAdicionarAnalista()"
+                            class="flex-1 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-300 outline-none text-sm bg-slate-50"/>
+                        <button onclick="levAdicionarAnalista()" class="bg-amber-400 hover:bg-amber-500 text-white font-bold py-3 px-5 rounded-xl transition-all text-sm">+ Adicionar</button>
+                    </div>
+                    <div id="lev-label-colecao" class="text-xs text-slate-400 mb-2 font-black uppercase tracking-wider">cs_analistas</div>
+                    <div id="lev-lista-admin" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+
+            <!-- Input de dados -->
+            <div class="glass-card p-6">
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Cole o texto bruto do HubSpot:</label>
+                <textarea id="lev-input"
+                    class="w-full h-44 p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-transparent outline-none transition-all text-sm font-mono bg-slate-50"
+                    placeholder="Ex: Negócio criado! Nome do Contato... Sucesso... Nome do CS... Exibir contato na HubSpot"></textarea>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <button onclick="levProcessar()" class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-xl shadow-sm transition-all active:scale-95">Processar Dados</button>
+                    <button onclick="levLimpar()" class="bg-slate-100 text-slate-600 font-bold py-3 px-6 rounded-xl hover:bg-slate-200 transition-all">Limpar Tudo</button>
+                </div>
+            </div>
+
+            <!-- Key Account -->
+            <div class="glass-card p-6 border-l-[6px] border-purple-400">
+                <div class="flex items-start justify-between mb-1">
+                    <h2 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="star" class="w-4 h-4 text-purple-500"></i>Adicionar Key Account</h2>
+                    <a href="https://docs.google.com/spreadsheets/d/18b7WI9hjWVjop2h9NvO-6lZ2_okHwmmIoWJSJ1uJKD4/edit?usp=sharing" target="_blank"
+                        class="flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-all shrink-0">
+                        <i data-lucide="external-link" class="w-3 h-3"></i>Ver planilha
+                    </a>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Cada key account adiciona levantadas extras para o CS selecionado.</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="number" id="lev-ka-qtd" placeholder="Nº de levantadas" min="1"
+                        class="w-36 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-300 outline-none text-sm bg-slate-50"/>
+                    <div class="relative flex-1">
+                        <input type="text" id="lev-ka-cs" placeholder="Nome do CS" autocomplete="off"
+                            oninput="levMostrarSugestoes()" onkeydown="levNavegueSugestoes(event)"
+                            class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-300 outline-none text-sm bg-slate-50"/>
+                        <ul id="lev-autocomplete-list" class="lev-autocomplete hidden"></ul>
+                    </div>
+                    <button onclick="levAdicionarKA()" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-5 rounded-xl transition-all text-sm">+ Adicionar</button>
+                </div>
+                <ul id="lev-ka-list" class="mt-4 space-y-2 text-sm"></ul>
+            </div>
+
+            <!-- Results -->
+            <div id="lev-results" class="hidden space-y-5">
+
+                <!-- KPIs -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass-card p-5 border-t-4 border-green-400 text-center">
+                        <p class="text-slate-500 text-[10px] uppercase font-black tracking-widest mb-1">Total Levantadas</p>
+                        <div id="lev-total" class="text-3xl font-black text-slate-800">0</div>
+                    </div>
+                    <div class="glass-card p-5 border-t-4 border-violet-400 text-center">
+                        <p class="text-slate-500 text-[10px] uppercase font-black tracking-widest mb-1">CSs Ativos</p>
+                        <div id="lev-total-cs" class="text-3xl font-black text-slate-800">0</div>
+                    </div>
+                    <div class="glass-card p-5 border-t-4 border-red-400 text-center">
+                        <p class="text-slate-500 text-[10px] uppercase font-black tracking-widest mb-1">Sem CS</p>
+                        <div id="lev-total-alertas" class="text-3xl font-black text-slate-800">0</div>
+                    </div>
+                    <div class="glass-card p-5 border-t-4 border-slate-400 text-center">
+                        <p class="text-slate-500 text-[10px] uppercase font-black tracking-widest mb-1">Sem Levantada</p>
+                        <div id="lev-total-sem" class="text-3xl font-black text-slate-800">0</div>
+                    </div>
+                </div>
+
+                <!-- Progresso da Meta -->
+                <div id="lev-meta-card" class="glass-card p-6 hidden">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="target" class="w-4 h-4 text-violet-500"></i>Progresso da Meta</h2>
+                        <span id="lev-meta-pct" class="text-2xl font-black text-violet-600">0%</span>
+                    </div>
+                    <div class="lev-progress-track mb-3">
+                        <div id="lev-meta-bar" class="lev-progress-fill" style="width:0%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-500 font-medium">
+                        <span id="lev-meta-feitas">0 feitas</span>
+                        <span id="lev-meta-faltam" class="text-violet-500 font-bold"></span>
+                        <span id="lev-meta-total"></span>
+                    </div>
+                </div>
+
+                <!-- Ranking -->
+                <div class="glass-card overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-100 p-5 flex justify-between items-center">
+                        <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i>Ranking por CS</h2>
+                        <button onclick="levCopiarRanking(event)" id="lev-btn-copiar"
+                            class="text-xs font-bold bg-white border border-slate-200 px-4 py-2 rounded-xl hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2 text-slate-700">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>Copiar Ranking
+                        </button>
+                    </div>
+                    <ul id="lev-ranking-list" class="divide-y divide-slate-100 text-slate-700"></ul>
+                </div>
+
+                <!-- Sem CS Atribuído -->
+                <div id="lev-alerta-card" class="glass-card overflow-hidden border border-red-100">
+                    <div class="bg-red-50 border-b border-red-100 p-5 flex justify-between items-center">
+                        <h2 class="font-bold text-red-700 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i>Negócios SEM CS Atribuído</h2>
+                        <button id="lev-btn-alertas" onclick="levCopiarAlertas(event)"
+                            class="hidden text-xs font-bold bg-white border border-red-200 px-4 py-2 rounded-xl hover:bg-red-50 transition-all shadow-sm text-red-700">Copiar Alertas</button>
+                    </div>
+                    <div class="p-5 bg-white">
+                        <ul id="lev-sem-cs-list" class="space-y-1 text-sm text-red-600"></ul>
+                    </div>
+                </div>
+
+            </div><!-- /lev-results -->
+        </div><!-- /lev-sub-leitor -->
+
+        <!-- ── Sub-aba: Acompanhamento ── -->
+        <div id="lev-sub-acompanhamento" class="hidden space-y-5">
+
+            <!-- Filtros -->
+            <div class="glass-card p-5">
+                <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <span class="text-xs font-black text-slate-500 uppercase tracking-wider">Período:</span>
+                    <button class="lev-periodo-btn ativo" onclick="levFiltrarPeriodo('mes', this)">Este mês</button>
+                    <button class="lev-periodo-btn" onclick="levFiltrarPeriodo('3meses', this)">3 meses</button>
+                    <button class="lev-periodo-btn" onclick="levFiltrarPeriodo('ano', this)">Este ano</button>
+                    <button class="lev-periodo-btn" onclick="levFiltrarPeriodo('tudo', this)">Tudo</button>
+                </div>
+                <div class="flex gap-2 flex-wrap items-center">
+                    <span class="text-xs font-black text-slate-500 uppercase tracking-wider">Analista:</span>
+                    <select id="lev-filtro-cs" onchange="levRenderAcompanhamento()" class="p-2 border border-slate-200 rounded-xl text-sm bg-slate-50 outline-none">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Gráfico de evolução -->
+            <div class="glass-card p-6">
+                <h2 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-violet-500"></i>Evolução ao longo do tempo</h2>
+                <div style="position:relative; height:280px;">
+                    <canvas id="lev-chart-evo"></canvas>
+                </div>
+            </div>
+
+            <!-- Checkpoints -->
+            <div class="glass-card overflow-hidden">
+                <div class="bg-slate-50 border-b border-slate-100 p-5 flex justify-between items-center">
+                    <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="bookmark" class="w-4 h-4 text-violet-500"></i>Checkpoints registrados</h2>
+                    <span id="lev-cp-count" class="text-xs text-slate-400 font-medium"></span>
+                </div>
+                <div id="lev-cp-lista" class="p-5 space-y-3"></div>
+            </div>
+
+            <!-- Evolução por analista -->
+            <div class="glass-card p-6">
+                <h2 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="bar-chart-horizontal" class="w-4 h-4 text-violet-500"></i>Evolução por analista</h2>
+                <div id="lev-evolucao-lista" class="space-y-1"></div>
+            </div>
+
+        </div><!-- /lev-sub-acompanhamento -->
+
+    </div><!-- /tab-levantadas -->
 
 </main>
 
@@ -2903,7 +3131,7 @@ let currentTab = 'gestor';
 
 function switchTab(tabId) {
     currentTab = tabId;
-    ['gestor','cs','produto'].forEach(t => {
+    ['gestor','cs','produto','levantadas'].forEach(t => {
         const el  = document.getElementById('tab-' + t);
         const btn = document.getElementById('tab-btn-' + t);
         if (!el || !btn) return;
@@ -2923,6 +3151,8 @@ function switchTab(tabId) {
         renderMelhorias();
         renderBugs();
         renderDesalinhamentos();
+    } else if (tabId === 'levantadas') {
+        levInitListeners();
     }
 }
 
@@ -3329,6 +3559,714 @@ function renderAlertasOILocal() {
 function renderKpisProduto() { _syncProdutoKpis(); }
 
 checkAuthAndLoad();
+
+// ═══════════════════════════════════════════════════════════════
+// LEVANTADAS TAB — Leitor de dados HubSpot
+// ═══════════════════════════════════════════════════════════════
+
+let _levKA = [];
+let _levCSFixos = [];
+let _levCSAliasFS = {};
+let _levMembrosAliasFS = {};
+let _levListenersInited = false;
+let _levSemCSAtribuidos = {};
+let _levSemCSExcluidos = new Set();
+let _levSemCSList = [];
+let _levAdminColecao = 'cs_analistas';
+let _levPeriodo = 'mes';
+let _levCheckpoints = [];
+let _levChart = null;
+
+// ── Helpers ──────────────────────────────────────────────────────
+function levNorm(s) {
+    if (!s) return '';
+    return s.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+}
+
+function levResolverNome(nome) {
+    if (!nome) return null;
+    const chave = levNorm(nome.trim());
+    // 1. cs_analistas — match exato
+    for (const [a, c] of Object.entries(_levCSAliasFS)) {
+        if (chave === levNorm(a)) return c;
+    }
+    // 2. cs_analistas — match parcial (mínimo 4 chars)
+    for (const [a, c] of Object.entries(_levCSAliasFS)) {
+        const na = levNorm(a);
+        if (na.length >= 4 && (chave.includes(na) || na.includes(chave))) return c;
+    }
+    // 3. cs_membros — match exato
+    for (const [a, c] of Object.entries(_levMembrosAliasFS)) {
+        if (chave === levNorm(a)) return { nome: c, ehMembro: true };
+    }
+    // 4. cs_membros — match parcial
+    for (const [a, c] of Object.entries(_levMembrosAliasFS)) {
+        const na = levNorm(a);
+        if (na.length >= 4 && (chave.includes(na) || na.includes(chave))) return { nome: c, ehMembro: true };
+    }
+    return nome.trim();
+}
+
+// ── Firebase Listeners ────────────────────────────────────────────
+function levInitListeners() {
+    if (_levListenersInited) return;
+    if (!fbReady && !initFirebase()) return;
+    _levListenersInited = true;
+
+    fbDb.collection('cs_analistas').onSnapshot(snap => {
+        const lista = [];
+        const aliasMap = {};
+        snap.forEach(d => {
+            const data = d.data();
+            const nome = data.nome || data.nome_completo;
+            if (!nome) return;
+            lista.push(nome);
+            aliasMap[nome.toLowerCase()] = nome;
+            if (Array.isArray(data.alias)) {
+                data.alias.forEach(a => { if (a && a.trim()) aliasMap[a.trim().toLowerCase()] = nome; });
+            }
+        });
+        lista.sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        _levCSFixos = lista;
+        _levCSAliasFS = aliasMap;
+        levRenderListaAdmin();
+        levPreencherFiltroCS();
+        lucide.createIcons();
+    });
+
+    fbDb.collection('cs_membros').onSnapshot(snap => {
+        const aliasMap = {};
+        snap.forEach(d => {
+            const data = d.data();
+            const nome = data.nome || data.nome_completo;
+            if (!nome) return;
+            aliasMap[nome.toLowerCase()] = nome;
+            if (Array.isArray(data.alias)) {
+                data.alias.forEach(a => { if (a && a.trim()) aliasMap[a.trim().toLowerCase()] = nome; });
+            }
+        });
+        _levMembrosAliasFS = aliasMap;
+    });
+}
+
+// ── Sub-tabs ─────────────────────────────────────────────────────
+function levTrocarSubAba(aba, btn) {
+    document.getElementById('lev-sub-leitor').classList.toggle('hidden', aba !== 'leitor');
+    document.getElementById('lev-sub-acompanhamento').classList.toggle('hidden', aba !== 'acompanhamento');
+    document.querySelectorAll('.lev-sub-btn').forEach(b => b.classList.remove('ativa'));
+    btn.classList.add('ativa');
+    if (aba === 'acompanhamento') levCarregarCheckpoints();
+}
+
+// ── Admin ─────────────────────────────────────────────────────────
+function levToggleAdmin() {
+    const content = document.getElementById('lev-admin-content');
+    const chevron = document.getElementById('lev-admin-chevron');
+    const nowHidden = content.classList.toggle('hidden');
+    chevron.style.transform = nowHidden ? '' : 'rotate(180deg)';
+    if (!nowHidden) levRenderListaAdmin();
+    lucide.createIcons();
+}
+
+function levTrocarTabAdmin(aba) {
+    _levAdminColecao = aba === 'analistas' ? 'cs_analistas' : 'cs_membros';
+    document.getElementById('lev-label-colecao').textContent = _levAdminColecao;
+    const btnA = document.getElementById('lev-tab-analistas');
+    const btnM = document.getElementById('lev-tab-membros');
+    btnA.className = aba === 'analistas'
+        ? 'px-4 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 shadow-sm transition-all'
+        : 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 transition-all';
+    btnM.className = aba === 'membros'
+        ? 'px-4 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 shadow-sm transition-all'
+        : 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 transition-all';
+    levRenderListaAdmin();
+}
+
+async function levAdicionarAnalista() {
+    if (!fbReady && !initFirebase()) { showToast('Firebase não conectado','bg-red-600'); return; }
+    const input = document.getElementById('lev-novo-analista');
+    const nome = input.value.trim();
+    if (!nome || nome.length < 2) { showToast('⚠️ Digite um nome válido.','bg-amber-600'); return; }
+    const id = levNorm(nome).replace(/\s+/g, '_');
+    await fbDb.collection(_levAdminColecao).doc(id).set({ nome });
+    input.value = '';
+    showToast(`✅ ${nome} adicionado(a)!`);
+}
+
+async function levRemoverAnalista(nome, colecao) {
+    if (!confirm(`Remover "${nome}" de ${colecao}?`)) return;
+    const id = levNorm(nome).replace(/\s+/g, '_');
+    await fbDb.collection(colecao).doc(id).delete();
+    showToast(`🗑️ ${nome} removido(a).`);
+}
+
+function levRenderListaAdmin() {
+    const container = document.getElementById('lev-lista-admin');
+    if (!container) return;
+    const lista = _levAdminColecao === 'cs_analistas'
+        ? _levCSFixos
+        : [...new Set(Object.values(_levMembrosAliasFS))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+    if (!lista.length) {
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhum analista cadastrado.</p>';
+        return;
+    }
+    container.innerHTML = lista.map(nome => `
+        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="text-sm font-medium text-slate-700">${nome}</span>
+            <button onclick="levRemoverAnalista('${nome.replace(/'/g,"\\'")}','${_levAdminColecao}')"
+                class="text-slate-300 hover:text-red-400 transition-colors text-xl font-bold leading-none">×</button>
+        </div>
+    `).join('');
+}
+
+// ── Autocomplete ──────────────────────────────────────────────────
+function levMostrarSugestoes() {
+    const input = document.getElementById('lev-ka-cs');
+    const lista = document.getElementById('lev-autocomplete-list');
+    const valor = input.value.trim().toLowerCase();
+    if (!valor) { lista.classList.add('hidden'); return; }
+    const filtrados = _levCSFixos.filter(cs => cs && cs.toLowerCase().includes(valor));
+    if (!filtrados.length) { lista.classList.add('hidden'); return; }
+    lista.innerHTML = '';
+    filtrados.forEach(cs => {
+        const li = document.createElement('li');
+        li.textContent = cs;
+        li.onclick = () => { input.value = cs; lista.classList.add('hidden'); };
+        lista.appendChild(li);
+    });
+    lista.classList.remove('hidden');
+}
+
+function levNavegueSugestoes(e) {
+    const lista = document.getElementById('lev-autocomplete-list');
+    const items = lista.querySelectorAll('li');
+    const ativo = lista.querySelector('li.active');
+    if (e.key === 'Escape') { lista.classList.add('hidden'); return; }
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!ativo) items[0]?.classList.add('active');
+        else { ativo.classList.remove('active'); (ativo.nextElementSibling || items[0]).classList.add('active'); }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!ativo) items[items.length - 1]?.classList.add('active');
+        else { ativo.classList.remove('active'); (ativo.previousElementSibling || items[items.length - 1]).classList.add('active'); }
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (ativo) { document.getElementById('lev-ka-cs').value = ativo.textContent; lista.classList.add('hidden'); }
+        else levAdicionarKA();
+    }
+}
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('#lev-ka-cs') && !e.target.closest('#lev-autocomplete-list'))
+        document.getElementById('lev-autocomplete-list')?.classList.add('hidden');
+});
+
+// ── Key Accounts ──────────────────────────────────────────────────
+function levAdicionarKA() {
+    const qtd = parseInt(document.getElementById('lev-ka-qtd').value);
+    const csRaw = document.getElementById('lev-ka-cs').value.trim();
+    const resolvido = levResolverNome(csRaw);
+    const csName = typeof resolvido === 'object' ? resolvido.nome : resolvido;
+    if (!qtd || qtd < 1 || !csName) { alert('Preencha a quantidade e o CS.'); return; }
+    _levKA.push({ qtd, nome: csName });
+    levRenderKA();
+    document.getElementById('lev-ka-qtd').value = '';
+    document.getElementById('lev-ka-cs').value = '';
+    if (!document.getElementById('lev-results').classList.contains('hidden')) levProcessar();
+}
+
+function levRemoverKA(idx) {
+    _levKA.splice(idx, 1);
+    levRenderKA();
+    if (!document.getElementById('lev-results').classList.contains('hidden')) levProcessar();
+}
+
+function levRenderKA() {
+    document.getElementById('lev-ka-list').innerHTML = _levKA.map(({ qtd, nome }, idx) => `
+        <li class="flex items-center justify-between bg-purple-50 border border-purple-100 rounded-xl px-4 py-2">
+            <div class="flex items-center gap-2 flex-wrap text-purple-800">
+                <span class="text-purple-400">⭐</span>
+                <span class="font-medium">${nome}</span>
+                <span class="text-xs text-purple-500 font-bold">+${qtd} levantada${qtd > 1 ? 's' : ''}</span>
+            </div>
+            <button onclick="levRemoverKA(${idx})" class="text-purple-300 hover:text-red-400 transition-colors text-xl font-bold ml-4">×</button>
+        </li>
+    `).join('');
+}
+
+function levLimpar() {
+    document.getElementById('lev-input').value = '';
+    document.getElementById('lev-results').classList.add('hidden');
+    _levSemCSAtribuidos = {};
+    _levSemCSExcluidos = new Set();
+    _levSemCSList = [];
+}
+
+// ── Processar Dados ───────────────────────────────────────────────
+function levProcessar() {
+    const rawText = document.getElementById('lev-input').value;
+    if (!rawText.trim()) return;
+
+    const blocks = rawText.split(/Exibir contato na HubSpot|Atividade da linha de tempo/g);
+    let totalSucesso = 0;
+    const csData = {};
+    const semCsList = [];
+    const invalidos = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro',':','/'];
+
+    blocks.forEach((block, blockIndex) => {
+        const trimmed = block.trim();
+        if (!trimmed || !trimmed.includes('Sucesso')) return;
+        const lines = trimmed.split('\n').map(l => l.trim()).filter(l => l && l !== 'Sucesso');
+        let contactName = lines[0];
+        const idxNeg = lines.findIndex(l => l.includes('Negócio criado!'));
+        if (idxNeg !== -1 && lines[idxNeg + 1]) contactName = lines[idxNeg + 1];
+        if (_levSemCSExcluidos.has(contactName)) return;
+        totalSucesso++;
+        if (_levSemCSAtribuidos[contactName]) {
+            const csName = _levSemCSAtribuidos[contactName];
+            if (!csData[csName]) csData[csName] = { count: 0, ka: 0, firstIndex: blockIndex };
+            csData[csName].count++;
+            return;
+        }
+        const csRaw = lines[lines.length - 1];
+        const invalido = !csRaw || csRaw.length < 3 || invalidos.some(t => csRaw.toLowerCase().includes(t));
+        if (invalido) { semCsList.push({ contactName }); return; }
+        const resolvido = levResolverNome(csRaw);
+        if (resolvido && typeof resolvido === 'object' && resolvido.ehMembro) {
+            semCsList.push({ contactName, motivo: 'MEMBROS', csRaw: resolvido.nome });
+            return;
+        }
+        const csName = typeof resolvido === 'string' ? resolvido : csRaw;
+        if (!_levCSFixos.includes(csName)) {
+            semCsList.push({ contactName, motivo: 'MEMBROS', csRaw });
+            return;
+        }
+        if (!csData[csName]) csData[csName] = { count: 0, ka: 0, firstIndex: blockIndex };
+        csData[csName].count++;
+    });
+
+    _levKA.forEach(({ qtd, nome }) => {
+        if (!csData[nome]) csData[nome] = { count: 0, ka: 0, firstIndex: Infinity };
+        csData[nome].count += qtd;
+        csData[nome].ka += qtd;
+    });
+
+    const csComLev = new Set(Object.keys(csData));
+    const csSemLev = _levCSFixos.filter(cs => !csComLev.has(cs));
+    const sorted = Object.entries(csData).sort((a, b) =>
+        b[1].count !== a[1].count ? b[1].count - a[1].count : a[1].firstIndex - b[1].firstIndex
+    );
+    const totalKA = _levKA.reduce((s, ka) => s + ka.qtd, 0);
+    const totalFinal = totalSucesso + totalKA;
+
+    // KPIs
+    document.getElementById('lev-total').innerText = totalFinal;
+    document.getElementById('lev-total-cs').innerText = Object.keys(csData).length;
+    document.getElementById('lev-total-alertas').innerText = semCsList.length;
+    document.getElementById('lev-total-sem').innerText = csSemLev.length;
+
+    // Meta
+    const meta = parseInt(document.getElementById('lev-meta-mes').value);
+    const metaCard = document.getElementById('lev-meta-card');
+    if (meta && meta > 0) {
+        metaCard.classList.remove('hidden');
+        const pct = Math.min(Math.round((totalFinal / meta) * 100), 100);
+        const faltam = Math.max(meta - totalFinal, 0);
+        document.getElementById('lev-meta-pct').innerText = pct + '%';
+        const bar = document.getElementById('lev-meta-bar');
+        bar.style.width = pct + '%';
+        bar.className = 'lev-progress-fill' + (pct >= 100 ? ' complete' : '');
+        document.getElementById('lev-meta-feitas').innerText = `${totalFinal} feitas`;
+        document.getElementById('lev-meta-faltam').innerText = faltam > 0 ? `Faltam ${faltam}` : '🎉 Meta atingida!';
+        document.getElementById('lev-meta-total').innerText = `Meta: ${meta}`;
+    } else {
+        metaCard.classList.add('hidden');
+    }
+
+    // Ranking
+    const ul = document.getElementById('lev-ranking-list');
+    ul.innerHTML = '';
+    if (!sorted.length) {
+        ul.innerHTML = '<li class="p-8 text-center text-slate-400">Nenhum dado de CS encontrado.</li>';
+    } else {
+        sorted.forEach(([name, data], index) => {
+            const li = document.createElement('li');
+            li.className = 'flex items-center justify-between p-4 hover:bg-slate-50 transition-colors';
+            const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+            const kaBadge = data.ka > 0
+                ? `<span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-semibold">⭐ ${data.ka} key</span>`
+                : '';
+            li.innerHTML = `
+                <div class="flex items-center gap-3 flex-wrap">
+                    <span class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500">${index + 1}º</span>
+                    <span class="font-semibold">${medal} ${name}</span>${kaBadge}
+                </div>
+                <div class="bg-violet-100 text-violet-700 px-3 py-1 rounded-full font-bold text-sm shrink-0">
+                    ${data.count} levantada${data.count !== 1 ? 's' : ''}
+                </div>`;
+            ul.appendChild(li);
+        });
+    }
+
+    // Zona de risco
+    if (csSemLev.length > 0) {
+        const sep = document.createElement('li');
+        sep.className = 'flex items-center justify-center px-4 py-3 bg-red-600';
+        sep.innerHTML = `<span style="letter-spacing:0.15em" class="text-white text-xs font-black uppercase">🚨 ZONA DE RISCO — SEM NENHUMA LEVANTADA 🚨</span>`;
+        ul.appendChild(sep);
+        csSemLev.forEach(cs => {
+            const li = document.createElement('li');
+            li.className = 'flex items-center justify-between p-4 bg-red-50 hover:bg-red-100 transition-colors';
+            li.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="w-7 h-7 flex items-center justify-center rounded-full bg-red-200 text-xs font-bold text-red-600">!</span>
+                    <span class="font-semibold text-red-700">${cs}</span>
+                </div>
+                <div class="bg-red-100 text-red-600 border border-red-200 px-3 py-1 rounded-full font-bold text-sm shrink-0">0 levantadas</div>`;
+            ul.appendChild(li);
+        });
+    }
+
+    // Sem CS
+    _levSemCSList = semCsList;
+    const semCsUl = document.getElementById('lev-sem-cs-list');
+    const btnAlertas = document.getElementById('lev-btn-alertas');
+    semCsUl.innerHTML = '';
+    if (semCsList.length > 0) {
+        btnAlertas.classList.remove('hidden');
+        semCsList.forEach(({ contactName, motivo, csRaw }, idx) => {
+            const li = document.createElement('li');
+            li.className = 'py-2 border-b border-red-50 last:border-0';
+            const badge = motivo === 'MEMBROS'
+                ? `<span class="text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">⚠️ MEMBROS: ${csRaw || ''}</span>`
+                : '';
+            const csOptions = _levCSFixos.map(cs => `<option value="${cs}">${cs}</option>`).join('');
+            li.innerHTML = `
+                <div class="flex items-start gap-2">
+                    <span class="opacity-40 mt-1 shrink-0">•</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                            <span class="text-red-700 break-words">${contactName}</span>${badge}
+                        </div>
+                        <div class="flex gap-1.5 flex-wrap">
+                            <button onclick="levMostrarFormAtribuir(${idx})" class="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-1 rounded-full hover:bg-blue-100 transition-colors font-semibold">➕ Atribuir CS</button>
+                            <button onclick="levExcluirDaMeta(${idx})" class="text-xs bg-slate-50 text-slate-400 border border-slate-200 px-2.5 py-1 rounded-full hover:bg-red-50 hover:text-red-400 hover:border-red-200 transition-colors font-semibold">✕ Excluir da meta</button>
+                        </div>
+                        <div id="lev-semcs-form-${idx}" class="hidden mt-2 flex items-center gap-2 flex-wrap">
+                            <select id="lev-semcs-sel-${idx}" class="flex-1 text-xs border border-blue-200 rounded-lg p-1.5 bg-white outline-none focus:ring-2 focus:ring-blue-300 min-w-0">${csOptions}</select>
+                            <button onclick="levConfirmarAtribuicao(${idx})" class="text-xs bg-blue-500 text-white px-3 py-1.5 rounded-lg hover:bg-blue-600 font-bold whitespace-nowrap">✓ OK</button>
+                            <button onclick="document.getElementById('lev-semcs-form-${idx}').classList.add('hidden')" class="text-xs text-slate-400 hover:text-slate-600 px-1 py-1.5">✕</button>
+                        </div>
+                    </div>
+                </div>`;
+            semCsUl.appendChild(li);
+        });
+        if (_levSemCSExcluidos.size > 0) {
+            const li = document.createElement('li');
+            li.className = 'pt-2 flex items-center justify-between';
+            li.innerHTML = `<span class="text-xs text-slate-400 italic">${_levSemCSExcluidos.size} negócio(s) excluído(s) da meta</span><button onclick="levLimparAjustes()" class="text-xs text-slate-400 underline hover:text-slate-600">Desfazer tudo</button>`;
+            semCsUl.appendChild(li);
+        }
+    } else {
+        btnAlertas.classList.add('hidden');
+        semCsUl.innerHTML = '<li class="text-green-600 font-medium text-center py-4">✨ Todos os negócios possuem um CS atribuído.</li>';
+    }
+
+    document.getElementById('lev-results').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function levMostrarFormAtribuir(idx) {
+    document.getElementById('lev-semcs-form-' + idx)?.classList.toggle('hidden');
+}
+function levConfirmarAtribuicao(idx) {
+    const sel = document.getElementById('lev-semcs-sel-' + idx);
+    if (!sel?.value || !_levSemCSList[idx]) return;
+    _levSemCSAtribuidos[_levSemCSList[idx].contactName] = sel.value;
+    levProcessar();
+}
+function levExcluirDaMeta(idx) {
+    if (!_levSemCSList[idx]) return;
+    _levSemCSExcluidos.add(_levSemCSList[idx].contactName);
+    delete _levSemCSAtribuidos[_levSemCSList[idx].contactName];
+    levProcessar();
+}
+function levLimparAjustes() {
+    _levSemCSAtribuidos = {};
+    _levSemCSExcluidos = new Set();
+    levProcessar();
+}
+
+// ── Copiar ────────────────────────────────────────────────────────
+function levCopiarRanking(event) {
+    const items = document.querySelectorAll('#lev-ranking-list li');
+    if (!items.length) return;
+    const total = document.getElementById('lev-total').innerText;
+    const meta = parseInt(document.getElementById('lev-meta-mes').value);
+    let text = '*🏆 RANKING DE LEVANTADAS - SUCESSO*\n';
+    text += `🚀 *Total da Equipe: ${total} levantadas*`;
+    if (meta > 0) {
+        const pct = Math.min(Math.round((parseInt(total) / meta) * 100), 100);
+        const faltam = Math.max(meta - parseInt(total), 0);
+        text += ` | 🎯 Meta: ${meta} | ${pct}% atingido`;
+        if (faltam > 0) text += ` | Faltam ${faltam}`;
+    }
+    text += '\n\n';
+    let pos = 1;
+    items.forEach(li => {
+        const nameEl = li.querySelector('.font-semibold');
+        const countEl = li.querySelector('.bg-violet-100, .bg-red-100');
+        if (!nameEl || !countEl) return;
+        const kaBadge = li.querySelector('.bg-purple-100');
+        const kaText = kaBadge ? ` (${kaBadge.innerText.trim()})` : '';
+        if (li.classList.contains('bg-red-50')) {
+            text += `🚨 ${nameEl.innerText.trim()} — SEM LEVANTADAS\n`;
+        } else {
+            text += `${pos}º ${nameEl.innerText.trim()}: ${countEl.innerText.trim()}${kaText}\n`;
+            pos++;
+        }
+    });
+    levCopiarTexto(text, event.currentTarget);
+    levSalvarFirestore(text);
+    levSalvarCheckpoint();
+}
+
+function levCopiarAlertas(event) {
+    const items = document.querySelectorAll('#lev-sem-cs-list li');
+    if (!items.length) return;
+    let text = '*⚠️ NEGÓCIOS SEM CS ATRIBUÍDO*\n\n';
+    items.forEach(item => {
+        const nomeEl = item.querySelectorAll('span')[1];
+        const badgeEl = item.querySelector('.bg-amber-100');
+        const nome = nomeEl?.innerText?.trim() || '';
+        if (nome) {
+            text += badgeEl
+                ? `• ${nome} — ⚠️ CS não encontrado (${badgeEl.innerText.replace('⚠️ MEMBROS: ','').trim()})\n`
+                : `• ${nome}\n`;
+        }
+    });
+    text += '\n_Por favor, atribuam os CSs nestes negócios no HubSpot._';
+    levCopiarTexto(text, event.currentTarget);
+}
+
+function levCopiarTexto(texto, botao) {
+    navigator.clipboard.writeText(texto).catch(() => {
+        const el = document.createElement('textarea');
+        el.value = texto; document.body.appendChild(el); el.select();
+        document.execCommand('copy'); document.body.removeChild(el);
+    });
+    const orig = botao.innerHTML;
+    botao.innerHTML = 'Copiado! ✅';
+    botao.classList.add('bg-green-50','text-green-700','border-green-200');
+    setTimeout(() => {
+        botao.innerHTML = orig;
+        botao.classList.remove('bg-green-50','text-green-700','border-green-200');
+        lucide.createIcons();
+    }, 2000);
+}
+
+// ── Firebase Save ─────────────────────────────────────────────────
+async function levSalvarFirestore(texto) {
+    try {
+        if (!fbReady && !initFirebase()) return;
+        const now = new Date();
+        const mes = now.getMonth() + 1;
+        const ano = now.getFullYear();
+        const mesStr = now.toISOString().slice(0, 7);
+        const total = parseInt(document.getElementById('lev-total').innerText) || 0;
+        const itens = [];
+        document.querySelectorAll('#lev-ranking-list li').forEach(li => {
+            let nome = li.querySelector('.font-semibold')?.innerText?.trim() || '';
+            nome = nome.replace(/^[🥇🥈🥉]\s*/u, '').trim();
+            const countEl = li.querySelector('.bg-violet-100');
+            const count = countEl ? parseInt(countEl.innerText) || 0 : 0;
+            if (nome && count > 0) itens.push({ nome, count });
+        });
+        await fbDb.collection('rankings_copiados').add({
+            mes, ano, mesStr, total, itens,
+            textoCopiado: texto,
+            criadoEm: firebase.firestore.Timestamp.now()
+        });
+    } catch(e) {
+        console.warn('Não foi possível salvar ranking:', e.message);
+    }
+}
+
+async function levSalvarCheckpoint() {
+    try {
+        if (!fbReady && !initFirebase()) return;
+        const now = new Date();
+        const mes = now.toISOString().slice(0, 7);
+        const dia = String(now.getDate()).padStart(2, '0');
+        const mesNome = now.toLocaleString('pt-BR', { month: 'short' });
+        const label = `Ranking ${dia}/${mesNome}`;
+        const dados = {};
+        document.querySelectorAll('#lev-ranking-list li').forEach(li => {
+            let nome = li.querySelector('.font-semibold')?.innerText?.trim() || '';
+            nome = nome.replace(/^[🥇🥈🥉]\s*/u, '').trim();
+            const countEl = li.querySelector('.bg-violet-100');
+            const count = countEl ? parseInt(countEl.innerText) || 0 : 0;
+            if (nome) dados[nome] = count;
+        });
+        _levCSFixos.forEach(cs => { if (!(cs in dados)) dados[cs] = 0; });
+        if (!Object.keys(dados).length) return;
+
+        // Substitui checkpoint do mesmo dia neste mês
+        const snapMes = await fbDb.collection('checkpoints').where('mes', '==', mes).get();
+        const deletes = [];
+        snapMes.forEach(d => {
+            if (d.data().label === label) deletes.push(fbDb.collection('checkpoints').doc(d.id).delete());
+        });
+        await Promise.all(deletes);
+        await fbDb.collection('checkpoints').add({
+            label, mes, dados, origem: 'ranking_copiado',
+            criadoEm: firebase.firestore.Timestamp.now()
+        });
+        showToast('📌 Checkpoint salvo no Acompanhamento!');
+    } catch(e) {
+        console.warn('Erro ao salvar checkpoint:', e.message);
+        showToast('⚠️ Erro ao salvar checkpoint: ' + e.message);
+    }
+}
+
+// ── Acompanhamento ────────────────────────────────────────────────
+async function levCarregarCheckpoints() {
+    if (!fbReady && !initFirebase()) return;
+    try {
+        const snap = await fbDb.collection('checkpoints').orderBy('criadoEm', 'asc').get();
+        _levCheckpoints = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        levRenderAcompanhamento();
+    } catch(e) {
+        console.error('Erro ao carregar checkpoints:', e);
+    }
+}
+
+function levFiltrarPeriodo(periodo, btn) {
+    _levPeriodo = periodo;
+    document.querySelectorAll('.lev-periodo-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    levRenderAcompanhamento();
+}
+
+function levCheckpointsFiltrados() {
+    const now = new Date();
+    const mesAtual = now.toISOString().slice(0, 7);
+    const anoAtual = now.getFullYear().toString();
+    return _levCheckpoints.filter(cp => {
+        if (_levPeriodo === 'mes')    return cp.mes === mesAtual;
+        if (_levPeriodo === '3meses') {
+            const d = new Date(cp.mes + '-01');
+            return (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth() <= 2;
+        }
+        if (_levPeriodo === 'ano')    return cp.mes?.startsWith(anoAtual);
+        return true;
+    });
+}
+
+function levPreencherFiltroCS() {
+    const sel = document.getElementById('lev-filtro-cs');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Todos</option>';
+    _levCSFixos.forEach(nome => {
+        const opt = document.createElement('option');
+        opt.value = nome; opt.textContent = nome;
+        sel.appendChild(opt);
+    });
+}
+
+function levRenderAcompanhamento() {
+    const cps = levCheckpointsFiltrados();
+    const filtro = document.getElementById('lev-filtro-cs')?.value || '';
+    const cpCount = document.getElementById('lev-cp-count');
+    if (cpCount) cpCount.textContent = cps.length + ' checkpoint(s)';
+
+    // Lista de checkpoints
+    const cpLista = document.getElementById('lev-cp-lista');
+    if (!cps.length) {
+        cpLista.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">Nenhum checkpoint neste período. Copie um ranking para registrar.</p>';
+    } else {
+        cpLista.innerHTML = '';
+        [...cps].reverse().forEach(cp => {
+            const div = document.createElement('div');
+            div.className = 'lev-cp-card';
+            const total = Object.values(cp.dados || {}).reduce((s,v) => s+v, 0);
+            const [y, m] = (cp.mes || '').split('-');
+            const dataFmt = m && y ? m + '/' + y : '';
+            div.innerHTML = `
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <span class="font-semibold text-slate-700 text-sm">${cp.label}</span>
+                        <span class="text-xs text-slate-400 ml-2">${dataFmt}</span>
+                    </div>
+                    <span class="text-xs bg-violet-100 text-violet-700 font-bold px-2 py-1 rounded-full">${total} levantadas</span>
+                </div>
+                <div class="flex flex-wrap gap-1">
+                    ${Object.entries(cp.dados || {}).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]).map(([n,v]) =>
+                        `<span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">${n.split(' ')[0]}: ${v}</span>`
+                    ).join('')}
+                </div>`;
+            cpLista.appendChild(div);
+        });
+    }
+
+    // Gráfico
+    const labels = cps.map(cp => cp.label);
+    const allCS = filtro ? [filtro] : _levCSFixos.filter(cs => cps.some(cp => (cp.dados || {})[cs] > 0)).slice(0, 8);
+    const colors = ['#7c3aed','#2563eb','#10b981','#f59e0b','#ec4899','#14b8a6','#ff7a59','#8b5cf6'];
+    const datasets = allCS.map((cs, i) => ({
+        label: cs.split(' ')[0],
+        data: cps.map(cp => (cp.dados || {})[cs] || 0),
+        borderColor: colors[i % colors.length],
+        backgroundColor: colors[i % colors.length] + '22',
+        borderWidth: 2, tension: 0.4, fill: false, pointRadius: 4,
+    }));
+    const ctx = document.getElementById('lev-chart-evo');
+    if (_levChart) _levChart.destroy();
+    if (ctx) {
+        _levChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { font:{size:11}, boxWidth:12, padding:10 } } },
+                scales: {
+                    x: { grid:{display:false}, ticks:{font:{size:11}} },
+                    y: { beginAtZero:true, ticks:{stepSize:1,font:{size:11}}, grid:{color:'#f1f5f9'} }
+                }
+            }
+        });
+    }
+
+    // Evolução por analista (primeiro vs último checkpoint)
+    const evolDiv = document.getElementById('lev-evolucao-lista');
+    if (cps.length < 2) {
+        evolDiv.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">Precisa de pelo menos 2 checkpoints para comparar.</p>';
+    } else {
+        const primeiro = cps[0];
+        const ultimo = cps[cps.length - 1];
+        const csParaMostrar = filtro ? [filtro] : _levCSFixos;
+        const maxVal = Math.max(...csParaMostrar.map(cs => (ultimo.dados || {})[cs] || 0), 1);
+        evolDiv.innerHTML = '';
+        csParaMostrar
+            .map(cs => ({ cs, ini: (primeiro.dados || {})[cs] || 0, fim: (ultimo.dados || {})[cs] || 0 }))
+            .sort((a,b) => b.fim - a.fim)
+            .forEach(({ cs, ini, fim }) => {
+                const delta = fim - ini;
+                const cls = delta > 0 ? 'lev-delta-up' : delta < 0 ? 'lev-delta-down' : 'lev-delta-same';
+                const deltaText = delta > 0 ? '+'+delta : delta === 0 ? '=' : delta;
+                const pct = Math.round((fim / maxVal) * 100);
+                const row = document.createElement('div');
+                row.className = 'lev-evolucao-row';
+                row.innerHTML = `
+                    <span class="text-sm font-medium text-slate-700 w-28 truncate shrink-0">${cs.split(' ')[0]}</span>
+                    <div class="lev-evolucao-bar-bg"><div class="lev-evolucao-bar-fill" style="width:${pct}%"></div></div>
+                    <span class="text-sm font-bold text-slate-700 w-8 text-right shrink-0">${fim}</span>
+                    <span class="lev-delta ${cls} shrink-0">${deltaText}</span>`;
+                evolDiv.appendChild(row);
+            });
+    }
+}
 </script>
 </body>
 </html>
