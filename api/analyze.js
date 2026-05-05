@@ -346,13 +346,13 @@ async function getMeta(transcript, numbers) {
 }
 
 function makeTextInstruction(notasStr) {
-    return 'Auditor de CS do Nibo. Notas dos pilares (nota 1 a 5): ' + notasStr + '. ' +
-        'REGRA 1 — Pilares COM nota (listados acima): ' +
-        'porque: OBRIGATÓRIO e NÃO pode ficar vazio — se houver trecho literal relevante, cite entre aspas (Trecho: "..." | Leitura: ...); ' +
-        'se não houver trecho específico, descreva objetivamente o comportamento do CS neste pilar com base no que foi observado na transcrição. ' +
-        'melhoria: se nota=5 escreva "Excelência atingida."; para nota 1, 2, 3 ou 4 escreva 1 frase objetiva do que faltou para atingir nota 5 — NUNCA deixe vazio. ' +
-        'REGRA 2 — Pilares SEM nota (não aparecem na lista acima): porque = "Sem evidência na transcrição."; melhoria = "". ' +
-        'NUNCA invente citação que não exista na transcrição. Quando não houver trecho específico, use observação direta sobre o comportamento.';
+    return 'Você é um Auditor de CS do Nibo. Notas recebidas: ' + notasStr + '.\n' +
+        'Sua tarefa é retornar um JSON com as chaves `porque_pilar` e `melhoria_pilar` para cada pilar.\n' +
+        'REGRAS RÍGIDAS:\n' +
+        '1. NUNCA deixe um campo vazio.\n' +
+        '2. Para pilares COM NOTA: preencha "porque_" com a justificativa detalhada (cite a transcrição se possível, formato: Trecho: "..." | Leitura: ...) e "melhoria_" com o que faltou para a nota 5 (se nota for 5, escreva "Excelência atingida.").\n' +
+        '3. Para pilares SEM NOTA: preencha "porque_" com "Sem evidência na transcrição." e "melhoria_" com "Não se aplica."\n' +
+        'Retorne APENAS um JSON válido.';
 }
 
 async function getTextsA(transcript, numbers) {
@@ -668,8 +668,8 @@ export default async function handler(req, res) {
                 texts['porque_'   + k] = 'Sem evidência na transcrição.';
                 texts['melhoria_' + k] = null;
             } else {
-                texts['porque_'   + k] = texts['porque_'   + k] || 'Sem justificativa disponível.';
-                texts['melhoria_' + k] = texts['melhoria_' + k] || (numbers['nota_' + k] === 5 ? 'Excelência atingida.' : 'Informação não disponível.');
+                texts['porque_'   + k] = texts['porque_'   + k] || 'Justificativa omitida pelo LLM.';
+                texts['melhoria_' + k] = texts['melhoria_' + k] || (numbers['nota_' + k] === 5 ? 'Excelência atingida.' : 'Informação omitida.');
             }
         });
 
