@@ -3794,9 +3794,13 @@ function levLimpar() {
 }
 
 // ── Processar Dados ───────────────────────────────────────────────
-function levProcessar() {
+async function levProcessar() {
     const rawText = document.getElementById('lev-input').value;
     if (!rawText.trim()) return;
+    if (!_levCSFixos.length) {
+        await levCarregarEquipeDaAPI();
+        if (!_levCSFixos.length) { showToast('⚠️ Nenhum membro da equipe carregado. Verifique o cadastro em Equipe.', 'bg-amber-600'); return; }
+    }
 
     const blocks = rawText.split(/Exibir contato na HubSpot|Atividade da linha de tempo/g);
     let totalSucesso = 0;
@@ -3823,13 +3827,9 @@ function levProcessar() {
         const invalido = !csRaw || csRaw.length < 3 || invalidos.some(t => csRaw.toLowerCase().includes(t));
         if (invalido) { semCsList.push({ contactName }); return; }
         const resolvido = levResolverNome(csRaw);
-        if (resolvido && typeof resolvido === 'object' && resolvido.ehMembro) {
-            semCsList.push({ contactName, motivo: 'MEMBROS', csRaw: resolvido.nome });
-            return;
-        }
-        const csName = typeof resolvido === 'string' ? resolvido : csRaw;
+        const csName = resolvido && typeof resolvido === 'object' ? resolvido.nome : (typeof resolvido === 'string' ? resolvido : csRaw);
         if (!_levCSFixos.includes(csName)) {
-            semCsList.push({ contactName, motivo: 'MEMBROS', csRaw });
+            semCsList.push({ contactName, motivo: 'MEMBROS', csRaw: csName || csRaw });
             return;
         }
         if (!csData[csName]) csData[csName] = { count: 0, ka: 0, firstIndex: blockIndex };
