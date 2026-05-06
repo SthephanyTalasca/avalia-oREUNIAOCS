@@ -795,6 +795,7 @@
             </table>
             <div id="empty-reunioes" class="hidden text-center py-12"><i data-lucide="inbox" class="w-10 h-10 text-slate-200 mx-auto mb-3"></i><p class="text-slate-400 font-semibold">Nenhuma avaliação encontrada</p></div>
         </div>
+        <div id="paginacao-reunioes" class="border-t border-slate-100"></div>
     </div>
 
     </div><!-- /tab-gestor -->
@@ -1192,6 +1193,8 @@ const CK_LABELS = {
 
 let allReunioes=[], todasReunioes=[], statsData={}, chartEvo=null, chartCoord=null, perfilRadar=null;
 let reunioesSortCol='data', reunioesSortDir=-1;
+let reunioesPagAtual=1;
+const REUNIOES_POR_PAG=20;
 let rankingSortCol='media', rankingSortDir=-1;
 let perfilSortCol='data', perfilSortDir=-1;
 let chartRadars=[null,null,null,null];
@@ -1378,6 +1381,15 @@ function findReuniaoById(id) {
     return todasReunioes.find(x=>x.id===id) || allReunioes.find(x=>x.id===id) || null;
 }
 
+function semanaAtualDatas() {
+    const hoje = new Date();
+    const diaSemana = hoje.getDay(); // 0=dom
+    const seg = new Date(hoje);
+    seg.setDate(hoje.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1));
+    const fmt = d => d.toISOString().split('T')[0];
+    return { inicio: fmt(seg), fim: fmt(hoje) };
+}
+
 async function loadData() {
     showLoading(true);
     try {
@@ -1392,20 +1404,13 @@ async function loadData() {
         if(coord) params.append('coordenador',coord);
         if(anal) params.append('analista',anal);
         if(orig) params.append('origem',orig);
-        const [res, resTodas] = await Promise.all([
-            fetch('/api/dashboard?'+params.toString()),
-            fetch('/api/dashboard').catch(()=>null)
-        ]);
+        const res = await fetch('/api/dashboard?'+params.toString());
         if(!res.ok) throw new Error('HTTP '+res.status);
         const data = await res.json();
-        allReunioes = data.reunioes||[];
-        statsData   = data.stats||{};
-        if(resTodas && resTodas.ok) {
-            const dataTodas = await resTodas.json();
-            todasReunioes = dataTodas.reunioes||[];
-        } else {
-            todasReunioes = [...allReunioes];
-        }
+        allReunioes   = data.reunioes||[];
+        statsData     = data.stats||{};
+        todasReunioes = [...allReunioes];
+        reunioesPagAtual = 1;
         // Preserva seleção após reload
         calcDestaques();
         populateFilters();
@@ -1486,8 +1491,9 @@ function populateFilters() {
 }
 
 function limparFiltros() {
-    document.getElementById('f-data-inicio').value = '';
-    document.getElementById('f-data-fim').value = '';
+    const sw = semanaAtualDatas();
+    document.getElementById('f-data-inicio').value = sw.inicio;
+    document.getElementById('f-data-fim').value    = sw.fim;
     document.getElementById('f-coordenador').value = '';
     document.getElementById('f-analista').value = '';
     document.getElementById('f-origem').value = '';
@@ -2134,6 +2140,7 @@ function updateSortHeaders(prefix, col, dir){
 }
 function sortReunioes(col){
     if(reunioesSortCol===col){ reunioesSortDir*=-1; } else { reunioesSortCol=col; reunioesSortDir=1; }
+    reunioesPagAtual=1;
     updateSortHeaders('reunioes',col,reunioesSortDir);
     renderReunioes();
 }
@@ -2170,12 +2177,23 @@ function renderPerfilTabela(){
 
 function renderReunioes(){
     const tbody=document.getElementById('tbody-reunioes'),empty=document.getElementById('empty-reunioes');
-    document.getElementById('badge-total').textContent=allReunioes.length+' registros';
-    if(!allReunioes.length){tbody.innerHTML='';empty.classList.remove('hidden');return;}
+    if(!allReunioes.length){
+        tbody.innerHTML='';
+        empty.classList.remove('hidden');
+        document.getElementById('badge-total').textContent='0 registros';
+        renderPaginacao(0,0);
+        return;
+    }
     empty.classList.add('hidden');
     const sorted=[...allReunioes].sort((a,b)=>reunioesSortDir*compareVal(a,b,reunioesSortCol));
     updateSortHeaders('reunioes',reunioesSortCol,reunioesSortDir);
-    tbody.innerHTML=sorted.map(r=>{
+    const total=sorted.length;
+    const totalPags=Math.ceil(total/REUNIOES_POR_PAG);
+    reunioesPagAtual=Math.min(reunioesPagAtual,totalPags);
+    const inicio=(reunioesPagAtual-1)*REUNIOES_POR_PAG;
+    const pagina=sorted.slice(inicio,inicio+REUNIOES_POR_PAG);
+    document.getElementById('badge-total').textContent=total+' registros';
+    tbody.innerHTML=pagina.map(r=>{
         const analistaNome=r.analista_nome||'—';
         const naoId=analistaNome.toLowerCase().includes('identificado')||analistaNome==='—';
         const media=r.media_final??0;
@@ -2206,6 +2224,32 @@ function renderReunioes(){
         </tr>`;
     }).join('');
     lucide.createIcons();
+    renderPaginacao(totalPags, total);
+}
+
+function renderPaginacao(totalPags, total) {
+    const wrap = document.getElementById('paginacao-reunioes');
+    if (!wrap) return;
+    if (totalPags <= 1) { wrap.innerHTML = ''; return; }
+    const inicio = (reunioesPagAtual-1)*REUNIOES_POR_PAG+1;
+    const fim    = Math.min(reunioesPagAtual*REUNIOES_POR_PAG, total);
+    wrap.innerHTML = `
+        <div class="flex items-center justify-between px-2 py-3 text-sm text-slate-500">
+            <span>${inicio}–${fim} de ${total} registros</span>
+            <div class="flex gap-1">
+                <button onclick="irParaPag(1)" ${reunioesPagAtual===1?'disabled':''} class="px-2 py-1 rounded border border-slate-200 hover:bg-slate-100 disabled:opacity-30">«</button>
+                <button onclick="irParaPag(${reunioesPagAtual-1})" ${reunioesPagAtual===1?'disabled':''} class="px-2 py-1 rounded border border-slate-200 hover:bg-slate-100 disabled:opacity-30">‹</button>
+                <span class="px-3 py-1 font-semibold text-slate-700">${reunioesPagAtual} / ${totalPags}</span>
+                <button onclick="irParaPag(${reunioesPagAtual+1})" ${reunioesPagAtual===totalPags?'disabled':''} class="px-2 py-1 rounded border border-slate-200 hover:bg-slate-100 disabled:opacity-30">›</button>
+                <button onclick="irParaPag(${totalPags})" ${reunioesPagAtual===totalPags?'disabled':''} class="px-2 py-1 rounded border border-slate-200 hover:bg-slate-100 disabled:opacity-30">»</button>
+            </div>
+        </div>`;
+}
+
+function irParaPag(pag) {
+    const totalPags = Math.ceil(allReunioes.length/REUNIOES_POR_PAG);
+    reunioesPagAtual = Math.max(1, Math.min(pag, totalPags));
+    renderReunioes();
 }
 
 // ── PERFIL DO ANALISTA ────────────────────────────────────────────────────
@@ -2861,6 +2905,10 @@ async function checkAuthAndLoad(){
         }
         // Inicializa edição em lote para usuários autorizados
         initBatchForUser(user.email);
+        // Carrega com filtro padrão: semana atual
+        const sw = semanaAtualDatas();
+        document.getElementById('f-data-inicio').value = sw.inicio;
+        document.getElementById('f-data-fim').value    = sw.fim;
         loadData();
     }catch(e){window.location.href='/api/auth';}
 }
