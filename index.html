@@ -4150,7 +4150,10 @@ async function levSalvarFirestore(texto) {
 
 async function levSalvarCheckpoint() {
     try {
-        if (!fbReady && !initFirebase()) return;
+        if (!fbReady && !initFirebase()) {
+            showToast('⚠️ Firebase não conectado. Recarregue a página e tente novamente.');
+            return;
+        }
         const now = new Date();
         const mes = now.toISOString().slice(0, 7);
         const dia = String(now.getDate()).padStart(2, '0');
@@ -4165,7 +4168,10 @@ async function levSalvarCheckpoint() {
             if (nome) dados[nome] = count;
         });
         _levCSFixos.forEach(cs => { if (!(cs in dados)) dados[cs] = 0; });
-        if (!Object.keys(dados).length) return;
+        if (!Object.keys(dados).length) {
+            showToast('⚠️ O ranking está vazio. Copie um ranking antes de salvar o checkpoint.');
+            return;
+        }
 
         // Substitui checkpoint do mesmo dia neste mês
         const snapMes = await fbDb.collection('checkpoints').where('mes', '==', mes).get();
