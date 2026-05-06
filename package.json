@@ -3,6 +3,6 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": { "build": "echo 'Nenhum build necessario'" },
-  "dependencies": { "@google/genai": "latest" }
+  "dependencies": { "@google/genai": "latest", "firebase-admin": "^12.0.0" }
 }
 
