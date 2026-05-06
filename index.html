@@ -2745,6 +2745,7 @@ async function carregarEquipe(incluirInativos){
         const url = '/api/team' + (incluirInativos ? '?incluir_inativos=1' : '');
         const res = await fetch(url)
         equipeData=await res.json();renderEquipeList();
+        if (_levListenersInited && !incluirInativos) levCarregarEquipeDaAPI();
     }catch(e){
         document.getElementById('eq-loading').classList.add('hidden');
         document.getElementById('eq-empty').classList.remove('hidden');
@@ -3602,43 +3603,68 @@ function levResolverNome(nome) {
 // ── Firebase Listeners ────────────────────────────────────────────
 function levInitListeners() {
     if (_levListenersInited) return;
-    if (!fbReady && !initFirebase()) return;
     _levListenersInited = true;
 
-    fbDb.collection('cs_analistas').onSnapshot(snap => {
-        const aliasMap = {};
-        snap.forEach(d => {
-            const data = d.data();
-            const nome = data.nome || data.nome_completo;
-            if (!nome) return;
-            aliasMap[nome.toLowerCase()] = nome;
-            if (Array.isArray(data.alias)) {
-                data.alias.forEach(a => { if (a && a.trim()) aliasMap[a.trim().toLowerCase()] = nome; });
-            }
-        });
-        _levCSAliasFS = aliasMap;
-    });
+    // Carrega equipe ativa via API (mesma fonte do modal Equipe)
+    levCarregarEquipeDaAPI();
 
-    fbDb.collection('cs_membros').onSnapshot(snap => {
+    // Listeners Firebase para aliases de resolução de nomes
+    if (fbReady || initFirebase()) {
+        fbDb.collection('cs_analistas').onSnapshot(snap => {
+            const aliasMap = {};
+            snap.forEach(d => {
+                const data = d.data();
+                const nome = data.nome || data.nome_completo;
+                if (!nome) return;
+                aliasMap[nome.toLowerCase()] = nome;
+                if (Array.isArray(data.alias)) {
+                    data.alias.forEach(a => { if (a && a.trim()) aliasMap[a.trim().toLowerCase()] = nome; });
+                }
+            });
+            _levCSAliasFS = aliasMap;
+        });
+
+        fbDb.collection('cs_membros').onSnapshot(snap => {
+            const aliasMap = {};
+            snap.forEach(d => {
+                const data = d.data();
+                const nome = data.nome_completo || data.nome;
+                if (!nome) return;
+                aliasMap[nome.toLowerCase()] = nome;
+                if (Array.isArray(data.alias)) {
+                    data.alias.forEach(a => { if (a && a.trim()) aliasMap[a.trim().toLowerCase()] = nome; });
+                }
+            });
+            _levMembrosAliasFS = aliasMap;
+        });
+    }
+}
+
+async function levCarregarEquipeDaAPI() {
+    try {
+        const res = await fetch('/api/team');
+        if (!res.ok) return;
+        const membros = await res.json();
+        const lista = membros.map(m => m.nome_completo || m.nome).filter(Boolean);
+        lista.sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        _levCSFixos = lista;
+        // Atualiza alias map também
         const aliasMap = {};
-        const listaAtivos = [];
-        snap.forEach(d => {
-            const data = d.data();
-            const nome = data.nome_completo || data.nome;
+        membros.forEach(m => {
+            const nome = m.nome_completo || m.nome;
             if (!nome) return;
             aliasMap[nome.toLowerCase()] = nome;
-            if (Array.isArray(data.alias)) {
-                data.alias.forEach(a => { if (a && a.trim()) aliasMap[a.trim().toLowerCase()] = nome; });
+            if (Array.isArray(m.alias)) {
+                m.alias.forEach(a => { if (a && a.trim()) aliasMap[a.trim().toLowerCase()] = nome; });
             }
-            if (data.ativo !== false) listaAtivos.push(nome);
         });
-        listaAtivos.sort((a, b) => a.localeCompare(b, 'pt-BR'));
-        _levMembrosAliasFS = aliasMap;
-        _levCSFixos = listaAtivos;
+        _levCSAliasFS = { ..._levCSAliasFS, ...aliasMap };
         levRenderListaAdmin();
         levPreencherFiltroCS();
         lucide.createIcons();
-    });
+    } catch (e) {
+        console.warn('levCarregarEquipeDaAPI:', e);
+    }
 }
 
 // ── Sub-tabs ─────────────────────────────────────────────────────
