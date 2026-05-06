@@ -981,22 +981,14 @@
             <!-- Gerenciar Equipe -->
             <div class="glass-card p-6 border-l-[6px] border-amber-400">
                 <div class="flex items-center justify-between cursor-pointer" onclick="levToggleAdmin()">
-                    <h2 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-amber-500"></i>Gerenciar Equipe</h2>
+                    <h2 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-amber-500"></i>Equipe do Ranking</h2>
                     <i id="lev-admin-chevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200"></i>
                 </div>
                 <div id="lev-admin-content" class="hidden mt-4">
-                    <p class="text-xs text-slate-400 mb-3">Gerencie analistas do ranking e membros ativos da equipe CS.</p>
-                    <div class="flex gap-1 mb-4 bg-slate-100 p-1 rounded-xl w-fit">
-                        <button id="lev-tab-analistas" onclick="levTrocarTabAdmin('analistas')" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 shadow-sm transition-all">📊 cs_analistas</button>
-                        <button id="lev-tab-membros" onclick="levTrocarTabAdmin('membros')" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 transition-all">👥 cs_membros</button>
+                    <div class="flex items-center gap-2 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                        <i data-lucide="info" class="w-4 h-4 text-amber-500 shrink-0"></i>
+                        <p class="text-xs text-amber-700">Membros sincronizados automaticamente com a equipe cadastrada no sistema. Para adicionar ou remover, use o botão <strong>Equipe</strong> no topo.</p>
                     </div>
-                    <div class="flex gap-3 mb-4">
-                        <input type="text" id="lev-novo-analista" placeholder="Nome completo"
-                            onkeydown="if(event.key==='Enter') levAdicionarAnalista()"
-                            class="flex-1 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-300 outline-none text-sm bg-slate-50"/>
-                        <button onclick="levAdicionarAnalista()" class="bg-amber-400 hover:bg-amber-500 text-white font-bold py-3 px-5 rounded-xl transition-all text-sm">+ Adicionar</button>
-                    </div>
-                    <div id="lev-label-colecao" class="text-xs text-slate-400 mb-2 font-black uppercase tracking-wider">cs_analistas</div>
                     <div id="lev-lista-admin" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
                 </div>
             </div>
@@ -3614,38 +3606,38 @@ function levInitListeners() {
     _levListenersInited = true;
 
     fbDb.collection('cs_analistas').onSnapshot(snap => {
-        const lista = [];
         const aliasMap = {};
         snap.forEach(d => {
             const data = d.data();
             const nome = data.nome || data.nome_completo;
             if (!nome) return;
-            lista.push(nome);
             aliasMap[nome.toLowerCase()] = nome;
             if (Array.isArray(data.alias)) {
                 data.alias.forEach(a => { if (a && a.trim()) aliasMap[a.trim().toLowerCase()] = nome; });
             }
         });
-        lista.sort((a, b) => a.localeCompare(b, 'pt-BR'));
-        _levCSFixos = lista;
         _levCSAliasFS = aliasMap;
-        levRenderListaAdmin();
-        levPreencherFiltroCS();
-        lucide.createIcons();
     });
 
     fbDb.collection('cs_membros').onSnapshot(snap => {
         const aliasMap = {};
+        const listaAtivos = [];
         snap.forEach(d => {
             const data = d.data();
-            const nome = data.nome || data.nome_completo;
+            const nome = data.nome_completo || data.nome;
             if (!nome) return;
             aliasMap[nome.toLowerCase()] = nome;
             if (Array.isArray(data.alias)) {
                 data.alias.forEach(a => { if (a && a.trim()) aliasMap[a.trim().toLowerCase()] = nome; });
             }
+            if (data.ativo !== false) listaAtivos.push(nome);
         });
+        listaAtivos.sort((a, b) => a.localeCompare(b, 'pt-BR'));
         _levMembrosAliasFS = aliasMap;
+        _levCSFixos = listaAtivos;
+        levRenderListaAdmin();
+        levPreencherFiltroCS();
+        lucide.createIcons();
     });
 }
 
@@ -3668,31 +3660,6 @@ function levToggleAdmin() {
     lucide.createIcons();
 }
 
-function levTrocarTabAdmin(aba) {
-    _levAdminColecao = aba === 'analistas' ? 'cs_analistas' : 'cs_membros';
-    document.getElementById('lev-label-colecao').textContent = _levAdminColecao;
-    const btnA = document.getElementById('lev-tab-analistas');
-    const btnM = document.getElementById('lev-tab-membros');
-    btnA.className = aba === 'analistas'
-        ? 'px-4 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 shadow-sm transition-all'
-        : 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 transition-all';
-    btnM.className = aba === 'membros'
-        ? 'px-4 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 shadow-sm transition-all'
-        : 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 transition-all';
-    levRenderListaAdmin();
-}
-
-async function levAdicionarAnalista() {
-    if (!fbReady && !initFirebase()) { showToast('Firebase não conectado','bg-red-600'); return; }
-    const input = document.getElementById('lev-novo-analista');
-    const nome = input.value.trim();
-    if (!nome || nome.length < 2) { showToast('⚠️ Digite um nome válido.','bg-amber-600'); return; }
-    const id = levNorm(nome).replace(/\s+/g, '_');
-    await fbDb.collection(_levAdminColecao).doc(id).set({ nome });
-    input.value = '';
-    showToast(`✅ ${nome} adicionado(a)!`);
-}
-
 async function levRemoverAnalista(nome, colecao) {
     if (!confirm(`Remover "${nome}" de ${colecao}?`)) return;
     const id = levNorm(nome).replace(/\s+/g, '_');
@@ -3703,18 +3670,15 @@ async function levRemoverAnalista(nome, colecao) {
 function levRenderListaAdmin() {
     const container = document.getElementById('lev-lista-admin');
     if (!container) return;
-    const lista = _levAdminColecao === 'cs_analistas'
-        ? _levCSFixos
-        : [...new Set(Object.values(_levMembrosAliasFS))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+    const lista = _levCSFixos;
     if (!lista.length) {
-        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhum analista cadastrado.</p>';
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhum membro ativo cadastrado.<br><span class="text-slate-300">Adicione membros pelo botão "Equipe" no topo.</span></p>';
         return;
     }
     container.innerHTML = lista.map(nome => `
-        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <i data-lucide="user-check" class="w-4 h-4 text-green-400 shrink-0"></i>
             <span class="text-sm font-medium text-slate-700">${nome}</span>
-            <button onclick="levRemoverAnalista('${nome.replace(/'/g,"\\'")}','${_levAdminColecao}')"
-                class="text-slate-300 hover:text-red-400 transition-colors text-xl font-bold leading-none">×</button>
         </div>
     `).join('');
 }
