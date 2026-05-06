@@ -842,6 +842,7 @@
                     <div class="bg-violet-50 rounded-2xl p-4 text-center border border-violet-100">
                         <div id="cs-levantadas-label" class="text-4xl font-black text-violet-600 mb-0.5">—</div>
                         <div class="text-[9px] font-bold text-violet-600 uppercase tracking-wide">Levantadas</div>
+                        <div id="cs-levantadas-source" class="text-[9px] text-slate-400 mt-0.5 truncate"></div>
                     </div>
                 </div>
                 <!-- Barra de pilares do analista -->
@@ -1072,10 +1073,16 @@
                 <div class="glass-card overflow-hidden">
                     <div class="bg-slate-50 border-b border-slate-100 p-5 flex justify-between items-center">
                         <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i>Ranking por CS</h2>
-                        <button onclick="levCopiarRanking(event)" id="lev-btn-copiar"
-                            class="text-xs font-bold bg-white border border-slate-200 px-4 py-2 rounded-xl hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2 text-slate-700">
-                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>Copiar Ranking
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="levSalvarCheckpoint()" id="lev-btn-checkpoint"
+                                class="text-xs font-bold bg-violet-50 border border-violet-200 px-4 py-2 rounded-xl hover:bg-violet-100 transition-all shadow-sm flex items-center gap-2 text-violet-700">
+                                <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>Salvar Checkpoint
+                            </button>
+                            <button onclick="levCopiarRanking(event)" id="lev-btn-copiar"
+                                class="text-xs font-bold bg-white border border-slate-200 px-4 py-2 rounded-xl hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2 text-slate-700">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>Copiar Ranking
+                            </button>
+                        </div>
                     </div>
                     <ul id="lev-ranking-list" class="divide-y divide-slate-100 text-slate-700"></ul>
                 </div>
@@ -3139,6 +3146,7 @@ function switchTab(tabId) {
         chartRadars.forEach(c => c && c.resize());
     } else if (tabId === 'cs') {
         renderPainelCS();
+        if (!_levCheckpointsCarregados) levCarregarCheckpoints(true);
     } else if (tabId === 'produto') {
         renderKpisProduto();
         renderMelhorias();
@@ -3498,16 +3506,25 @@ function renderPainelCS() {
     const medias   = reunioes.map(r => r.media_final).filter(Boolean);
     const media    = medias.length ? avgArr(medias).toFixed(1) : '—';
     const melhor   = medias.length ? Math.max(...medias).toFixed(1) : '—';
-    const levTotal = reunioes.reduce((s, r) => s +
-        (r.analise_json?.melhorias||[]).length +
-        (r.analise_json?.bugs||[]).length +
-        (r.analise_json?.desalinhamentos||[]).length, 0);
+
+    // Levantadas: busca no checkpoint mais recente
+    const mesAtual = new Date().toISOString().slice(0, 7);
+    const cpsMes = _levCheckpoints.filter(cp => cp.mes === mesAtual).sort((a, b) => {
+        const ta = a.criadoEm?.toMillis ? a.criadoEm.toMillis() : 0;
+        const tb = b.criadoEm?.toMillis ? b.criadoEm.toMillis() : 0;
+        return tb - ta;
+    });
+    const ultimoCp = cpsMes[0] || null;
+    const levTotal = ultimoCp ? (ultimoCp.dados?.[analista] ?? '—') : '—';
+    const levSource = ultimoCp ? ultimoCp.label : null;
 
     document.getElementById('cs-nome-label').textContent      = analista;
     document.getElementById('cs-media-label').textContent     = media;
     document.getElementById('cs-total-label').textContent     = reunioes.length;
     document.getElementById('cs-melhor-label').textContent    = melhor;
     document.getElementById('cs-levantadas-label').textContent = levTotal;
+    const levSourceEl = document.getElementById('cs-levantadas-source');
+    if (levSourceEl) levSourceEl.textContent = levSource ? levSource : (_levCheckpointsCarregados ? 'Sem checkpoint no mês' : 'Carregando...');
 
     // Mini barra de pilares
     const resumoEl = document.getElementById('cs-pilares-resumo');
@@ -3568,6 +3585,7 @@ let _levSemCSList = [];
 let _levAdminColecao = 'cs_analistas';
 let _levPeriodo = 'mes';
 let _levCheckpoints = [];
+let _levCheckpointsCarregados = false;
 let _levChart = null;
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -4019,7 +4037,6 @@ function levCopiarRanking(event) {
     });
     levCopiarTexto(text, event.currentTarget);
     levSalvarFirestore(text);
-    levSalvarCheckpoint();
 }
 
 function levCopiarAlertas(event) {
@@ -4113,7 +4130,8 @@ async function levSalvarCheckpoint() {
             label, mes, dados, origem: 'ranking_copiado',
             criadoEm: firebase.firestore.Timestamp.now()
         });
-        showToast('📌 Checkpoint salvo no Acompanhamento!');
+        showToast('📌 Checkpoint salvo!');
+        levCarregarCheckpoints(true);
     } catch(e) {
         console.warn('Erro ao salvar checkpoint:', e.message);
         showToast('⚠️ Erro ao salvar checkpoint: ' + e.message);
@@ -4121,12 +4139,15 @@ async function levSalvarCheckpoint() {
 }
 
 // ── Acompanhamento ────────────────────────────────────────────────
-async function levCarregarCheckpoints() {
+async function levCarregarCheckpoints(silent = false) {
     if (!fbReady && !initFirebase()) return;
     try {
         const snap = await fbDb.collection('checkpoints').orderBy('criadoEm', 'asc').get();
         _levCheckpoints = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        levRenderAcompanhamento();
+        _levCheckpointsCarregados = true;
+        if (!silent) levRenderAcompanhamento();
+        // Atualiza painel CS se estiver visível
+        if (!document.getElementById('cs-painel-pessoal')?.classList.contains('hidden')) renderPainelCS();
     } catch(e) {
         console.error('Erro ao carregar checkpoints:', e);
     }
